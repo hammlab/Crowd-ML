@@ -18,9 +18,11 @@ We'll make it public by June 19th
 
 12. No constant files for clients.
 
-[reference 1][ref1] is what?
+[ref1][#ref1] :  blah
+
 
 A..
 
-[ref1]: ref 1. blah
 
+
+[#ref1]: blah
