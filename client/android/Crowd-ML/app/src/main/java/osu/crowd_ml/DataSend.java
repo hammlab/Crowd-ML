@@ -192,7 +192,7 @@ public class DataSend extends AppCompatActivity {
         });
 
         Button mCancel = (Button) findViewById(R.id.cancel);
-        mSendTrainingData.setOnClickListener(new View.OnClickListener() {
+        mCancel.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 dataCount = 0;

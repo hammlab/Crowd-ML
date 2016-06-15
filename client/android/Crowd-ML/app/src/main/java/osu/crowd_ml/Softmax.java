@@ -32,9 +32,24 @@ public class Softmax implements LossFunction{
         for(int i = 0; i < D*K; i++){
             grad.add(i, 0.0);
         }
+        //Weights are read and gradients stored in column-major vectorization form for [W0,W1,W2,...,Wk]
+
+        //dotMax used to prevent overflow
+        double dot = 0;
+        double dotMax = 0;
+        for(int i = 0; i < K; i++){
+            //dot product w_i·x
+            dot = 0;
+            for(int j = 0; j < D; j++){
+                dot += X[j] * weights.get(j + (D*i));
+            }
+
+            if(dot > dotMax){
+                dotMax = dot;
+            }
+        }
 
         //denom = Σ(i:k) exp(Θ_i · X)
-        double dot = 0;
         double denom = 0;
         for(int i = 0; i < K; i++){
             //dot product w_i·x
@@ -43,7 +58,7 @@ public class Softmax implements LossFunction{
                 dot += X[j] * weights.get(j + (D*i));
             }
 
-            denom += Math.exp(dot);
+            denom += Math.exp(dot - dotMax);
         }
 
         //regularization constants
@@ -61,7 +76,7 @@ public class Softmax implements LossFunction{
             for (int j = 0; j < D; j++) {
                 dot += X[j] * weights.get(j + (D * i));
             }
-            prob = Math.exp(dot) / denom;
+            prob = Math.exp(dot - dotMax) / denom;
             int match = 0;
             if(i == Y){
                 match = 1;
