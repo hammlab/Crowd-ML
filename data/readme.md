@@ -1,6 +1,6 @@
 #### Example datasets
-The MNIST datasets (http://yann.lecun.com/exdb/mnist/) were re-formatted into text files, 
-for 10-class and binary (0 vs 1) classification problems. 
+The MNIST datasets (http://yann.lecun.com/exdb/mnist/) were re-formatted into comma-separated text files, 
+with one sample per line, for 10-class and binary (0 vs 1) classification problems. 
 Move the training and testing files to appropriate locations when you build and run the clients and the server.
 
 File dimensions:
