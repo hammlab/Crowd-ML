@@ -17,12 +17,3 @@ We'll make it public by June 19th
 11. firebased:crowdml/users/uid/paramIter: 
 
 12. No constant files for clients.
-
-[ref1][#ref1] :  blah
-
-
-A..
-
-
-
-[#ref1]: blah
