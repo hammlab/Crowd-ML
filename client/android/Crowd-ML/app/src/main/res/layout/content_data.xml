@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:orientation="vertical" android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <Button
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Send Training Data"
+        android:id="@+id/sendTrainingData"
+        android:layout_gravity="center_horizontal"
+        android:layout_centerVertical="true"
+        android:layout_alignEnd="@+id/messageDisplay" />
+    <Button
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Cancel"
+        android:id="@+id/cancel"
+        android:layout_gravity="center_horizontal"
+        android:layout_above="@+id/messageDisplay"
+        android:layout_alignEnd="@+id/textView3" />
+
+    <EditText
+        android:layout_width="100dp"
+        android:layout_height="wrap_content"
+        android:inputType="number"
+        android:ems="10"
+        android:text="1"
+        android:id="@+id/inputCount"
+        android:layout_above="@+id/sendTrainingData"
+        android:layout_centerHorizontal="true"
+        android:layout_marginBottom="57dp"
+        android:gravity="right"/>
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textAppearance="?android:attr/textAppearanceLarge"
+        android:text="Number of gradients to send:"
+        android:id="@+id/textView3"
+        android:layout_above="@+id/inputCount"
+        android:layout_centerHorizontal="true" />
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textAppearance="?android:attr/textAppearanceLarge"
+        android:text=""
+        android:id="@+id/messageDisplay"
+        android:layout_marginTop="52dp"
+        android:layout_below="@+id/sendTrainingData"
+        android:layout_centerHorizontal="true" />
+
+</RelativeLayout>
