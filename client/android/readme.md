@@ -5,8 +5,9 @@
 1. Download Android Studio 1.5 or higher
 2. Install Android SDK Manager
 3. Download Android Studio project and retrieve the package name
-3. From the Firebase console at console.firebase.google.com, go to your Firebase project and click 'Add Firebase to your Android app' and follow the steps
-4. Copy the downloaded google-services.json file into your app's module folder, typically app/
+4. Paste the training data feature and label files (found in the data folder) and paste them into /Crowd-ML/client/android/Crowd-ML/app/src/main/assets/ 
+5. From the Firebase console at console.firebase.google.com, go to your Firebase project and click 'Add Firebase to your Android app' and follow the steps
+6. Copy the downloaded google-services.json file into your app's module folder, typically app/
 
 #####Add the SDK 
 
