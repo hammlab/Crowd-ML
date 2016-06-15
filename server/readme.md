@@ -11,9 +11,10 @@
 3. Go to your project page in the firebase website. Download firebase service account json object from <your firebase app>/Settings/Permissions/Service Accounts/Create service account' and place it in same directory as server. 
 
    *Make sure to select 'Furnish a new private key' and select the key type as JSON, and leave 'Enable Google Apps Domain-wide Delegation' unselected.*
-4. Set server and gradient constant values in Constants.js file
-5. Download crowdML-server.js 
-6. Run command
+4. Paste Testing data feature and label files (found in the data folder) into the Server's 'DataFiles' folder.   
+5. Set server and gradient constant values in Constants.js file
+6. Download crowdML-server.js 
+7. Run command
 
   ```
   $nodejs crowdML-server.js
