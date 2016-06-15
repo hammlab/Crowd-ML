@@ -13,7 +13,7 @@ More specifically, can we outsource the machine learning to crowd of connected d
 
 ### What it does
 The library allows devices (Android, iOS, and python clients) to learn a common classifier/regression model with differential privacy, by solving the ERM problem: min_w f(w) = 1/M sum_{i=1}^M f_i(w), where f_i(w) = 1/n sum_j l(h_w(x_{ij}), y_{ij}).
-The library implements private distributed synchronous risk minimization based on [Hamm'15], using [Google Firebase](https://firebase.google.com/) as a simple and robust syncrhonization method.  
+The library implements private distributed synchronous risk minimization based on [**Hamm'15**], using [Google Firebase](https://firebase.google.com/) as a simple and robust syncrhonization method.  
 A user can decide the type and amount of noise to guarantee differential privacy under different assumptions, 
 such as in [Rajkumar'12], [Song'13], [Bassily'14]. 
 By selecting no noise, a user can use the libary as a crowd-based parallel or distributed optimization of general functions [Tsitsiklis'84], [Agarwal'11], [Dekel'11]. 
