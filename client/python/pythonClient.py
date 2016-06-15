@@ -2,26 +2,47 @@ from firebase import firebase
 from firebase_token_generator import create_token
 
 import numpy as np
-#import math
-#import random
 #import numpy.random
 import time
 
-#from Constants import *
-
 
 ### Change these
-url = 'https://amber-torch-9565.firebaseio.com'
-uid = "1" # Can be an arbitrary string
-secret = '9BnhaCoSE8HhKjFI0c7TVqzRXKqbpZhmm1gpo7qd'
+url = <Your firebase url>
+uid = <arbitrary string>
+secret = <Copy and paste the string from firebase db>
 maxiter = 100
-naught = 10.
-localTraining = False
+
+# For testing
+dataDir = './DataFiles' # Where you put your files
+testFeatures = 'MNISTTestImages.dat';
+testLabels = 'MNISTTestLabels.dat';
+Ntest = 1000
+Dtest = 784
+Ktest = 10
+
+# For local training
+naught = 1.
+localTraining = False # Set this true for faster, local training.
+
+params = {}
+if localTraining: # local version for testing purposes.
+    params = {}
+    params['D'] = 784
+    params['K'] = 10
+    params['L']= 1e-6
+    params['N'] = 10000
+    params['clientBatchSize'] = 100
+    params['featureSource'] = 'MNISTTrainImages.dat'
+    params['labelSource'] = 'MNISTTrainLabels.dat'
+    params['lossFunction'] = 'Softmax'
+    params['noiseDistribution'] = 'NoNoise'
+    params['noiseScale'] = 0.
+
 ###
 
 
 '''
-# w is the paramter vector
+# w is the paramter vector (, which is from the K x D matrix W for softmax)
 # X is the N x D array of N samples of D-dimensional features
 # y is the N x 1 array of N samples
 # The output of a loss function is the averaged gradient over N samples, and the loss value
@@ -56,9 +77,9 @@ def computeGradLoss_logreg(w, X, y, L):
 #softmax
 def computeGradLoss_softmax(w, X, y, K, L):
     N,D = X.shape
-    W = w.reshape((D,K))
+    W = w.reshape((K,D))
     
-    XW = np.dot(X,W) # N x K
+    XW = np.dot(X,W.T) # N x K
     #XW -= np.tile(XW.max(axis=1).reshape((N,1)),(1,K))
     expXW = np.exp(XW) # N x K
     sumexpXW = expXW.sum(axis=1) # N x 1
@@ -70,13 +91,14 @@ def computeGradLoss_softmax(w, X, y, K, L):
     l = -1.0/N*XWy.sum() + 1.0/N*np.log(sumexpXW).sum() +.5*L*(W**2).sum()#(axis=(0,1))
 
     # df/dwk = -1/N*sum(x(y==k,:),1) + 1/N*sum_t exp(wk'xt)*xt/(sum_k exp(wk'xt))] + L*wk
-    g = np.zeros((D,K))
+    G = np.zeros((K,D))
     for k in range(K):
         indk = np.where(y==k)[0]    
-        g[:,k] = -1.0/N*X[indk,:].sum(axis=0).reshape((D,)) \
-            + 1.0/N*np.dot(expXW[:,k]/sumexpXW,X).reshape((D,)) + L*W[:,k].reshape((D,))
+        G[k,:] = -1.0/N*X[indk,:].sum(axis=0).reshape((D,)) \
+            + 1.0/N*np.dot(expXW[:,k]/sumexpXW,X).reshape((D,)) + L*W[k,:].reshape((D,))
     
-    return (g.reshape((D*K,)),l)
+    g = G.reshape((K*D,))
+    return (g,l)
 
 
 # Gaussian noise
@@ -93,25 +115,23 @@ def GenerateLaplaceNoise(scale=1.,tsize=None):
 
 #Train model, and retrieve/upload w and loss
 def trainModel():
+
+    print 'Setting up firebase'
+    ref = firebase.FirebaseApplication(url, None)
+    users = firebase.FirebaseApplication(url+'/users', None)
+    auth_payload = {"uid": uid}
+    token = create_token(secret, auth_payload)
+    user = '/users/'+uid+'/'
+
+    print 'Pre-loading test data'
+    Xtest,ytest = loadData(dataDir,testFeatures,testLabels,Ntest,Dtest,Ktest)
+    
+
     while True:
         paramIter = -1
         weightIter = -1
-        params = {}
-        if localTraining: # local version for testing purposes.
-            params['D'] = 784
-            params['K'] = 10
-            params['L']= 1e-6
-            params['N'] = 10000
-            params['clientBatchSize'] = 100
-            params['featureSource'] = 'MNISTtrainingimages.dat'
-            params['labelSource'] = 'MNISTtraininglabels.dat'
-            params['lossFunction'] = 'Softmax'
-            params['noiseDistribution'] = 'NoNoise'
-            params['noiseScale'] = 0.
-            #featureFilename = './DataFiles/trainingFeature.dat'
-               #labelFilename = './DataFiles/trainingLabel.dat'
-        else: # Read all params from server
-            print '\n\n\n'
+        if not localTraining: # Read all params from server
+            print ' '
             print 'Downloading parameters from server'
             paramIter = np.int(ref.get('/parameters/paramIter', None, params = {"auth":token}))
             params['D'] = np.int(ref.get('/parameters/D', None, params = {"auth":token}))
@@ -127,13 +147,13 @@ def trainModel():
 
         print params
         
-        # Re-load data
-        X,y = loadData(params['featureSource'],params['labelSource'],params['N'],params['D'],params['K'])
+        print 'Loading trainig data'
+        X,y = loadData(dataDir,params['featureSource'],params['labelSource'],params['N'],params['D'],params['K'])
 
         # Re-init w
         w = initW(params['lossFunction'],params['D'],params['K'])
 
-        # Begin iteration
+        print 'Begin iteration'
         for gradIter in range(1,maxiter+1):
             print ' '
             print 'paramIter = ', str(paramIter)
@@ -142,22 +162,23 @@ def trainModel():
 
             # Ready to send weights?
             reset = False
+            print 'Checking server status'
             while not localTraining:
                 if (gradIter==1): # beginning
                     break;
-                print 'Checking server status'
+                print '.',
                 time.sleep(1.) # sleep for 1 sec
                 paramIter_server = np.int(ref.get('parameters/paramIter', None, params = {"auth":token}))
                 if (paramIter_server > paramIter): # parameter has changed. Reset
                     reset = True
                     break
-                # Else
+
                 gradientProcessed = ref.get(user+'gradientProcessed', None, params = {"auth":token})
                 gradIter_server = np.int(ref.get(user+'gradIter', None, params = {"auth":token}))
                 #print 'gradientProcessed:',str(gradientProcessed),',   gradIter_server:',str(gradIter_server)
                 if (gradientProcessed and gradIter_server == gradIter-1):
                     break
-
+            print ' '
             if reset:
                 print 'Parameter reset'
                 break;
@@ -212,47 +233,30 @@ def trainModel():
                 # Simple learning rate
                 w -= naught/gradIter*g 
             else:
-                gradJson = g.tolist()
                 print 'Uploading gradients'
+                gradJson = g.tolist()
                 ref.put(user, 'paramIter', paramIter, params = {"auth":token})                 
                 ref.put(user, 'weightIter', weightIter, params = {"auth":token})          
                 ref.put(user, 'gradIter', gradIter, params = {"auth":token})
                 ref.put(user, 'gradients', gradJson, params = {"auth":token}) 
                 ref.put(user ,'gradientProcessed', False, params = {"auth":token})
 
-        # Iteration ended
-        if (gradIter==maxiter):
-            testModel(w,params['K'])
+        ## Iteration ended
+        #if (gradIter==maxiter):
+            testModel(w,Xtest,ytest,params['K'])
+
 
         if localTraining:
             break
             
 # Test
-def testModel(w,K):
+def testModel(w,X,y,K):
 
-    #testFeatures = 'MNISTtestimages.dat'#
-    #testLabels = 'MNISTtestlabels.dat'#
-    X = np.loadtxt('DataFiles/MNISTtestimages.dat', dtype=float)
-    print X.shape
-    '''
-    if (X.shape[0]!=params['N']):
-    print 'Wrong number of samples'
-    return
-    if (X.shape[1]!=params['D']):
-    print 'Wrong feature dimension'
-    return
-    '''
-    y = np.loadtxt('DataFiles/MNISTtestlabels.dat', dtype=float).astype(int)
-
+    # Implemented for only Softmax. Change it later.
     N,D = X.shape
-    W = w.reshape((D,K))
-    #BatchSize = params['N']
-    # Randomly choose some samples from the training data 
-    #ind = np.random.choice(range(params['N']),size=(batchSize,),replace=False)        
-    #tX = X[ind,:]
-    #ty = y[ind]
+    W = w.reshape((K,D))
 
-    ypred = np.argmax(np.dot(X,W),axis=1) # N x K
+    ypred = np.argmax(np.dot(X,W.T),axis=1) # N x K
     ind_correct = np.where(ypred==y)[0]    
     ncorrect = ind_correct.size
     rate = float(ncorrect) / float(ypred.size)
@@ -260,20 +264,21 @@ def testModel(w,K):
 
 
 # Load data
-def loadData(featureSource,labelSource,N,D,K):
+def loadData(dataDir,featureSource,labelSource,N,D,K):
     # Load data
-    X = np.loadtxt('DataFiles/'+featureSource, dtype=float)
+    X = np.loadtxt(dataDir+'/'+featureSource, delimiter=',', dtype=float)
     #print X.shape
+    
     if (X.shape[0]!=N):
         print 'Wrong number of samples'
-        return
+        #return
     if (X.shape[1]!=D):
         print 'Wrong feature dimension'
         return
-    y = np.loadtxt('DataFiles/'+labelSource, dtype=float).astype(int)
+    y = np.loadtxt(dataDir+'/'+labelSource, dtype=float).astype(int)
     if (y.size!=N):
         print 'Wrong number of labels'
-        return
+        #return
     if (K==2):
         y[y==0] = -1
         if any((y!=1) & (y!=-1)):
@@ -306,12 +311,6 @@ def initW(lossFunction,D,K):
 ###############################################################################################
 # Begining of main
 
-ref = firebase.FirebaseApplication(url, None)
-users = firebase.FirebaseApplication(url+'/users', None)
-auth_payload = {"uid": uid}
-token = create_token(secret, auth_payload)
-user = '/users/'+uid+'/'
 
 trainModel() 
-
 
