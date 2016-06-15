@@ -7,8 +7,8 @@ File dimensions:
 
 * MNISTTrainImages - 10,000 samples of 784-dimension data
 * MNISTTrainLabels - 10,000 samples of 10-class labels from 0-9
-* MNISTTestImages - 5,000 samples of 784-dimension data
-* MNISTTestLabels - 5,000 samples of 10-class labels from 0-9
+* MNISTTestImages - 1,000 samples of 784-dimension data
+* MNISTTestLabels - 1,000 samples of 10-class labels from 0-9
 * binaryTrainImages - 12,445 samples of 785-dimension data
 * binaryTrainLabels - 12,445 samples of 2-class labels from 0-1
 * binaryTestImages - 220 samples of 785-dimension data
