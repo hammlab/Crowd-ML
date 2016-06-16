@@ -1,6 +1,6 @@
 ### Crowd-ML (Machine Learning)
 #### is a framework for a crowd of devices to perform machine learning with privacy.
-
+---
 Smart and connected devices are becoming increasingly pervasive in daily life,
 including smartphones, wearables, smart home appliance, smart meters, connected cars, surveillance cameras, 
 enviromental sensors, etc. 
@@ -11,7 +11,6 @@ More specifically, can we outsource the machine learning to crowd of connected d
 
 ![Crowd-ML concept figure](schematic1-5.jpg "Crowd-ML concept")
 
-### What it does
 The library allows devices (Android, iOS, and python clients) to learn a common classifier/regression model with differential privacy, by solving the ERM problem: min_w f(w) = 1/M sum_{i=1}^M f_i(w), where f_i(w) = 1/n sum_j l(h_w(x_{ij}), y_{ij}).
 The library implements private distributed synchronous risk minimization based on [**Hamm'15**], using [Google Firebase](https://firebase.google.com/) as a simple and robust syncrhonization method.  
 A user can decide the type and amount of noise to guarantee differential privacy under different assumptions, 
@@ -21,6 +20,7 @@ By selecting no noise, a user can use the libary as a crowd-based parallel or di
 
 
 ### Features
+---
 #### Implemented client types
 Android (JAVA), iOS (Objective C), linux (python)
 
@@ -43,6 +43,7 @@ Node.js
 
 
 ### How to use the Crowd-ML library
+---
 #### 1. Set up firebase account.
 See [firebase/readme.md](firebase/readme.md) for more instructions.
 #### 2. Download and build client apps
@@ -57,7 +58,7 @@ See [server/readme.md](server/readme.md) for more instructions.
 
 
 ### Acknowledgements
-
+---
 * Jihun Hamm (PI, OSU [homepage](https://web.cse.ohio-state.edu/~hammj/))
 * Jackson Luken (Undergraduate, OSU)
 * Yani Xie (Undergraduate, OSU)
@@ -66,11 +67,12 @@ This research was supported in part by Google Faculty Research Award 2015 and Go
 
 
 ### License
+---
 Released under the Apache License 2.0.  See the [LICENSE.txt](LICENSE.txt) file for further details.
 
 
 ### References
-
+---
 * [Hamm'15]: J. Hamm, A. Champion, G. Chen, M. Belkin, and D.Xuan, 
 "Crowd-ML: A privacy-preserving learning framework for a crowd of smart devices." In Proceedings of the 35th IEEE
 International Conference on Distributed Computing Systems (ICDCS). IEEE, 2015. [pdf](docs/icdcs15_jh_final.pdf)
