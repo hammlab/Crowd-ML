@@ -1,10 +1,23 @@
-//
-//  ViewController.m
-//  FireBase_iOS_Client_Demo
-//
-//  Created by JINJIN SHAO and Yani Xie on 3/7/16.
-//  Copyright © 2016 Crowd-ML Team. All rights reserved.
-//
+/**
+ 
+ Copyright 2016 Crowd-ML team
+ 
+ Licensed under the Apache License, Version 2.0 (the "License");
+ you may not use this file except in compliance with the License.
+ You may obtain a copy of the License at
+ 
+ http://www.apache.org/licenses/LICENSE-2.0
+ 
+ Unless required by applicable law or agreed to in writing, software
+ distributed under the License is distributed on an "AS IS" BASIS,
+ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ See the License for the specific language governing permissions and
+ limitations under the License
+ 
+ 
+ FireBase_iOS_Client_Demo
+ 
+ **/
 
 #import "ViewController.h"
 #import "TrainingAlgo.h"
@@ -18,6 +31,11 @@
  *  The Firebase reference this viewcontroller instance uses.
  */
 @property (nonatomic, strong) FIRDatabaseReference *rootRef;
+
+/**
+ *  The Firebase reference this viewcontroller instance uses.
+ */
+@property (nonatomic, strong) FIRDatabaseReference *paramRef;
 
 /**
  *  The user name of that user who has already signed in.
@@ -57,11 +75,6 @@
  */
 @property (nonatomic) BOOL isTrainOnce;
 
-/**
- *  Check if login has problem.
- */
-@property (nonatomic) BOOL LoginError;
-
 
 /**
  *  Record the weightIter under "user"
@@ -82,8 +95,10 @@
     [super viewDidLoad];
     
     self.rootRef = [[FIRDatabase database] reference];
+    self.paramRef = [self.rootRef child:@"parameters"];
     self.trainModel = [[TrainingAlgo alloc] init];
     self.userParam = [[UserDefine alloc] init];
+    [self.userParam Initialize:self.paramRef];
     self.countTrainingTime = 0;
     self.isTrainOnce = true;
     
@@ -99,14 +114,33 @@
     NSLog(@"View Appeared");
     
     [self login];
+   
 }
 
 - (void) login{
     UIAlertController *LoginController = [UIAlertController
-                                          alertControllerWithTitle:@"Login"
+                                          alertControllerWithTitle:@"Login/Sign up"
                                           message:@"Enter your email and password"
                                           preferredStyle:UIAlertControllerStyleAlert];
     
+    [LoginController addTextFieldWithConfigurationHandler:^(UITextField *textField)
+     {
+         textField.placeholder = NSLocalizedString(@"Email", @"Login");
+         [textField addTarget:self
+                       action:@selector(alertTextFieldDidChange:)
+             forControlEvents:UIControlEventEditingChanged];
+         
+     }];
+    
+    [LoginController addTextFieldWithConfigurationHandler:^(UITextField *textField)
+     {
+         textField.placeholder = NSLocalizedString(@"Password", @"Password");
+         textField.secureTextEntry = YES;
+         [textField addTarget:self
+                       action:@selector(alertTextFieldDidChange:)
+             forControlEvents:UIControlEventEditingChanged];
+     }];
+
     
     UIAlertAction *okAction = [UIAlertAction
                                actionWithTitle:NSLocalizedString(@"OK", @"OK action")
@@ -129,52 +163,28 @@
                                        } else {
                                            self.logginUID = authData.uid;
                                        }
-                                       
-                                       
                                    }];
-                                   
-                                   
                                }];
     
-    /*
-    UITextField *login = LoginController.textFields.firstObject;
-    UITextField *password = LoginController.textFields.lastObject;
-    if(login.text.length > 5 && password.text.length > 5){
-            okAction.enabled = YES;
-    }else{
-        okAction.enabled = NO;
-    }
-     */
-    [LoginController addTextFieldWithConfigurationHandler:^(UITextField *textField)
-     {
-         textField.placeholder = NSLocalizedString(@"Email", @"Login");
-         
-     }];
-    
-    [LoginController addTextFieldWithConfigurationHandler:^(UITextField *textField)
-     {
-         textField.placeholder = NSLocalizedString(@"Password", @"Password");
-         textField.secureTextEntry = YES;
-         [textField addTarget:self
-                       action:@selector(alertTextFieldDidChange:)
-             forControlEvents:UIControlEventEditingChanged];
-     }];
-
+    okAction.enabled = NO;
     
     [LoginController addAction:okAction];
     [self presentViewController:LoginController animated:YES completion:nil];
-    
+
+
 
 }
 
+//Check valid login information
 - (void)alertTextFieldDidChange:(UITextField *)sender
 {
     UIAlertController *alertController = (UIAlertController *)self.presentedViewController;
     if (alertController)
     {
         UITextField *email = alertController.textFields.firstObject;
+        UITextField *password = alertController.textFields.lastObject;
         UIAlertAction *okAction = alertController.actions.lastObject;
-        okAction.enabled = email.text.length > 5 ;
+        okAction.enabled = password.text.length > 5 && email.text.length > 5;
     }
 }
 
@@ -187,7 +197,7 @@
 - (void) createUserInFireBaseWithUserName: (NSString *) userName
                                  Password: (NSString *) password
 {
-
+    
     [[FIRAuth auth] createUserWithEmail:userName password:password completion:^(FIRUser *result, NSError *error) {
         
         if(error)
@@ -204,7 +214,6 @@
             [errorControl addAction:acceptAction];
             [self presentViewController:errorControl animated:YES completion:nil];
             
-            self.LoginError = true;
         }
         else
         {
@@ -223,8 +232,10 @@
             [self presentViewController:createNewUser animated:YES completion:nil];
             
         }
+        
     }];
-    if(self.LoginError){
+    
+    if(self.logginUID == NULL){
         [self login];
     }
     
@@ -268,7 +279,13 @@
                 *(w + i) = [[wArray objectAtIndex:i] floatValue];
             }
             
-            float accuracy = [self.trainModel calculateTrainAccuracyWithWeight:w];
+            
+            NSString *labelName = [self.userParam labelSourceName];
+            NSString *featureName = [self.userParam featureSourceName];
+            NSString *fileType = [self.userParam sourceType];
+            int DFeatureSize = [self.userParam D];
+            
+            float accuracy = [self.trainModel calculateTrainAccuracyWithWeight:w :labelName :featureName :fileType :DFeatureSize];
             
             [self.trainErrorLabel setText:[NSString stringWithFormat:@"%.3f", accuracy]];
             
@@ -306,9 +323,13 @@
             FIRDatabaseReference *gradIterRef = [[[self.rootRef child:@"users" ] child:self.logginUID] child:@"gradIter"];
             NSString *graditer = @"1";
             
+            FIRDatabaseReference *paraIterRef = [[[self.rootRef child:@"users" ] child:self.logginUID] child:@"paramIter"];
+            NSNumber *paramNum = [NSNumber numberWithInt:[self.userParam paramIter] ];
+            
             [gradIterRef setValue:graditer];
             [gradlossRef setValue:gradlossDict];
             [infoRef setValue:infoDict];
+            [paraIterRef setValue: paramNum];
             [self UpdateWeightIter];
             
             
@@ -364,14 +385,17 @@
             FIRDatabaseReference *infoRef = [[[self.rootRef child:@"users" ] child:self.logginUID] child:@"gradientProcessed"];
             
             FIRDatabaseReference *gradIterRef = [[[self.rootRef child:@"users" ] child:self.logginUID] child:@"gradIter"];
-            NSString *graditer = @"1";
+           
+            NSString *graditer = @"1";FIRDatabaseReference *paraIterRef = [[[self.rootRef child:@"users" ] child:self.logginUID] child:@"paramIter"];
+            NSNumber *paramNum = [NSNumber numberWithInt:[self.userParam paramIter] ];
+
             
             [gradIterRef setValue:graditer];
             [gradlossRef setValue:gradlossDict];
             [infoRef setValue:infoDict];
+            [paraIterRef setValue:paramNum];
             [self UpdateWeightIter];
 
-            
 
             UIAlertController *checkedAlert = [UIAlertController alertControllerWithTitle:@"Warning" message:@"No user info exists in Firebase. New user info set up. Please tap this button again and begin to train your model." preferredStyle:UIAlertControllerStyleAlert];
             
@@ -386,19 +410,6 @@
             [self GetWeightIterUnderUserAndTrainingWeights];
             NSNumber *response = snapshot.value;
             
-            /**
-            if(![self.wIterU isEqualToString:self.wIterTW] && !self.isTrainAgain){
-                NSLog(@"s1");
-                [self UpdateWeightIter];
-                [self loadReadByServerFromFirebase];
-                
-            }else if(self.isTrainAgain){
-                NSLog(@"s2");
-                self.isTrainAgain = false;
-                [self UpdateWeightIter];
-                [self loadWeightFromFireBaseAndTrain];
-                
-            }else */
             if([response integerValue]== 0){
                 
                 if(![self.wIterU isEqualToString:self.wIterTW]){
@@ -426,33 +437,6 @@
                 [self loadWeightFromFireBaseAndTrain];
 
             }
-
-            
-            /**
-            if((int)response == 0)
-            {
-                //Multiple training
-                if(self.countTrainingTime > 0 && !self.isTrainOnce) {
-                    //[NSThread sleepForTimeInterval:.3];
-                    
-                    [self UpdateWeightIter];
-                    [self tryTrainingAgain];
-                }else {
-                    UIAlertController *checkedAlert = [UIAlertController alertControllerWithTitle:@"Warning" message:@"Old gradients has not been checked out. " preferredStyle:UIAlertControllerStyleAlert];
-                    
-                    UIAlertAction *deaultAction = [UIAlertAction actionWithTitle:@"OK" style:UIAlertActionStyleDefault handler:^(UIAlertAction * _Nonnull action) {
-                    }];
-                    
-                    [checkedAlert addAction:deaultAction];
-                    [self presentViewController:checkedAlert animated:YES completion:nil];
-                }
-            }else if([self.wIterU isEqualToString:self.wIterTW]){
-                [self UpdateWeightIter];
-            }
-            else{
-                [self loadWeightFromFireBaseAndTrain];
-            }
-             */
         
         }
     }];
@@ -516,10 +500,24 @@
 - (void)trainModelAndUploadGradLossWithWeight: (float *) w {
     
     float *gradloss;
-    gradloss = [self.trainModel trainModelWithWeight:w];
+    
+    int lossType = (int)[self.userParam lossOpt];
+    int noiseType = (int)[self.userParam noiseOpt];
+    int class = [self.userParam K];
+    int batchsize= [self.userParam clientBatchSize];
+    float regConstant = [self.userParam L];
+    float variance = [self.userParam noiseScale];
+    NSString *labelName = [self.userParam labelSourceName];
+    NSString *featureName = [self.userParam featureSourceName];
+    NSString *fileType = [self.userParam sourceType];
+    int DFeatureSize = [self.userParam D];
+    
+    
+    gradloss = [self.trainModel trainModelWithWeight:w :lossType :noiseType :class :batchsize :regConstant :variance :labelName :featureName :fileType :DFeatureSize];
+    
     self.trainFeatureSize = self.trainModel.featureSize;
-    if([self.userParam Classes] > 2){
-        self.trainFeatureSize = self.trainModel.featureSize * [self.userParam Classes];
+    if(class > 2){
+        self.trainFeatureSize = self.trainModel.featureSize * class;
     }
     
     NSLog(@"Get gradient");
@@ -553,7 +551,6 @@
   
     //Update gradloss
     NSDictionary *gradlossDict = [[NSMutableDictionary alloc] initWithCapacity:self.trainFeatureSize];
-    
     for(int i = 0; i < self.trainFeatureSize; i++) {
         [gradlossDict setValue: [NSNumber numberWithFloat: *(gradloss + i)] forKey:[NSString stringWithFormat:@"%d", i]];
     }

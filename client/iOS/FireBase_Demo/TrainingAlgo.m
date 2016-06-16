@@ -1,10 +1,24 @@
-//
-//  trainingLogReg.m
-//  FireBase_iOS_Client_Demo
-//
-//  Created by JINJIN SHAO and Yani Xie on 3/7/16.
-//  Copyright © 2016 Crowd-ML Team. All rights reserved.
-//
+/**
+ 
+ Copyright 2016 Crowd-ML team
+ 
+ Licensed under the Apache License, Version 2.0 (the "License");
+ you may not use this file except in compliance with the License.
+ You may obtain a copy of the License at
+ 
+ http://www.apache.org/licenses/LICENSE-2.0
+ 
+ Unless required by applicable law or agreed to in writing, software
+ distributed under the License is distributed on an "AS IS" BASIS,
+ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ See the License for the specific language governing permissions and
+ limitations under the License
+ 
+ 
+ FireBase_iOS_Client_Demo
+ 
+ **/
+
 
 #import "TrainingAlgo.h"
 #import "UserDefine.h"
@@ -14,7 +28,6 @@
 
 @property (nonatomic, readwrite) NSInteger trainingModelSize;
 @property (nonatomic, readwrite) NSInteger featureSize;
-@property (nonatomic, strong) UserDefine *userParam;
 
 
 @end
@@ -31,11 +44,13 @@ float * laplace (const float *loss, long D, float variance)
     
     for(int i = 0; i < D; i++){
         u = *(loss + i);
-        radm = arc4random_uniform((UInt32)1) - 0.5;
+        radm = (arc4random_uniform(100) / 100.0f) - 0.5;
         if(radm < 0){
             b = -1;
+        }else{
+            b = 1;
         }
-        lap = u - variance * b * radm * expf( 1 - 2 * fabsf(radm));
+        lap = u - variance * b * expf( 1 - 2 * fabsf(radm));
         *(noise + i) = lap;
     }
     
@@ -52,8 +67,12 @@ float * gaussian (const float *loss, long D, float variance)
     for(int i = 0; i < D; i++){
         u = *(loss + i);
         
+        //Box-Muller Transformation:
         float x1 = arc4random_uniform(100) / 100.0f;
         float x2 = arc4random_uniform(100) / 100.0f;
+        while(logf(x1) == INFINITY || logf(x1) == -INFINITY ){
+            x1 = arc4random_uniform(100) / 100.0f;
+        }
 
         radm = sqrtf(-2 * logf(x1)) * cosf(2* M_PI * x2);
         
@@ -70,10 +89,12 @@ float * computeLossSVM (const float *trainingFeature, const float *trainingLabel
     
     float h = 0;
     
-    float y =(int)*trainingLabel ;
-    if (y == 0 && class ==2)
-        y = -1;
+    //Categorize
+    float y = -1;
+    if (*trainingLabel > 0)
+        y = 1;
     
+    //Compute dot product
     for(int i = 0; i < D; i++){
         h += *(trainingFeature + i) * *(w + i);
         
@@ -83,18 +104,16 @@ float * computeLossSVM (const float *trainingFeature, const float *trainingLabel
     //Regularization variable
     float lambda = regConstant;
     
-    
+    //Compute gradients
     for(int i = 0; i < D; i++){
-        float temp = *(trainingFeature + i) * y;
-        float reg =2 * *(w + i) * lambda;
         
-        if(*trainingLabel * h >= 1)
+        float temp = *(trainingFeature + i) * y;
+        float reg = 2 * *(w + i) * lambda;
+        
+        if(y * h >= 1)
             *(loss + i) = 0 + reg;
         else
             *(loss + i) = -1 * temp + reg;
-        
-        //calculate and add regularization
-        //*(loss + i) = MAX(0, 1 - *trainingLabel * h) + *(w + i) * lambda;
         
     }
 
@@ -105,23 +124,25 @@ float * computeLossSVM (const float *trainingFeature, const float *trainingLabel
 
 
 //This function is used for log regression
-float * computeLossLog (const float *trainingFeature, const float *trainingLabel, const float *w, long D)
+float * computeLossLog (const float *trainingFeature, const float *trainingLabel, const float *w, long D, float regConstant)
 {
+    //Dot product
     float h = 0;
     
+    //Categorize
     float y = -1;
     if (*trainingLabel > 0)
         y = 1;
     
+    //Compute dot product
     for(int i = 0; i < D; i++)
         h += *(trainingFeature + i) * *(w + i);
     
     float temp = exp( y * -1 * h);
     temp = y * temp / (1 + temp) * -1;
     
-    float lambda = 0.000001;
+    float lambda = regConstant;
     
-
     float *loss = (float *) malloc(D * sizeof(float));
     
     vDSP_vsmul(trainingFeature, 1, &temp, loss, 1, D);
@@ -137,7 +158,7 @@ float * computeLossLog (const float *trainingFeature, const float *trainingLabel
 float * computeSoftMax (const float *trainingFeature, const float *trainingLabel, const float *w, long D, int classes, float regConstant)
 {
     //If it is a binary class, change the variable to 1 in order to ensure the code below not to work
-    //for multiple classes.
+    //for multiple classes form.
     if(classes <= 2){
         classes = 1;
     }
@@ -146,24 +167,35 @@ float * computeSoftMax (const float *trainingFeature, const float *trainingLabel
     
     
     float dot = 0;
-    float denom = 0;
+    double denom = 0;
+    double max=DBL_MIN;
+    double *ai = (double *) malloc(classes * sizeof(double));
     
+    //Store x dot w, and find the max dot product
     for(int i = 0; i < classes; i++){
         dot = 0;
-        for(int j = 0; j < D; j++)
+        for(int j = 0; j < D; j++){
             dot += *(trainingFeature + j) * *(w + (D * i + j));
-
-        denom += expf(dot);
+        }
+        *(ai + i) = dot;
+        max = MAX(dot, max);
 
     }
     
+    //Compute the denominator of softmax function
+    for(int i = 0; i < classes; i ++){
+        denom += exp(*(ai + i) - max);
+    }
+   
+    //Compute regularization
     float *regular = (float *) malloc(D*classes * sizeof(float));
     for (int i = 0; i < D*classes; i++){
         *(regular + i) = 2 * *(w + i) * regConstant;
        
     }
     
-    float prob;
+    //Compute gradients without adding regularization
+    float prob = 0.0;
     int y = (int)*trainingLabel;
     if (y == 0 && classes == 2)
         y = -1;
@@ -172,8 +204,9 @@ float * computeSoftMax (const float *trainingFeature, const float *trainingLabel
         dot = 0;
         for(int j = 0; j < D; j++){
             dot += *(trainingFeature + j) * *(w + (j + D * i));
+
         }
-        prob = expf(dot)/denom;
+        prob = expf(dot - max)/denom;
         int match = 0;
         if(i == y){
             match = 1;
@@ -182,7 +215,8 @@ float * computeSoftMax (const float *trainingFeature, const float *trainingLabel
             *(gradloss + (j + D * i)) = -1 * *(trainingFeature + j) * (match - prob);
         }
     }
-    
+
+    //add regularization
     for(int i = 0; i < D * classes; i++){
         *(gradloss + i) = *(gradloss + i) + *(regular + i);
     }
@@ -197,128 +231,52 @@ float * computeLoss (const float *trainingFeature, const float *trainingLabel, c
 {
     
     //the choice of loss functions and noise functions depends on a user's definition in "UserDefine.m".
-    float *loss;
     if(lossopt == 1)
-        loss = computeLossLog(trainingFeature, trainingLabel, w, D);
+        return computeLossLog(trainingFeature, trainingLabel, w, D, regConstant);
     else if(lossopt == 2)
-        loss = computeLossSVM(trainingFeature, trainingLabel, w, D, regConstant,classes);
+        return computeLossSVM(trainingFeature, trainingLabel, w, D, regConstant,classes);
     else
-        loss = computeSoftMax(trainingFeature, trainingLabel, w, D, classes, regConstant);
+        return computeSoftMax(trainingFeature, trainingLabel, w, D, classes, regConstant);
 
-
-    return loss;
     
 }
 
+//Use one of noise funtions
+float * noiseLoss(float *loss, int noiseFunction, int length, float variance){
+    if(noiseFunction == 1)
+       return laplace(loss, length, variance);
+    else if(noiseFunction == 2)
+        return gaussian(loss, length, variance);
+    else{
+        return loss;
+    }
+    
+}
 
 @implementation TrainingAlgo
 
-- (void) trainModelWithSelfTest {
-    float *labelVector;
-    labelVector = [self readTrainingLabelFile];
-    
-    float **featureVector;
-    featureVector = [self readTrainingFeatureFile];
-    
-    NSLog(@"The training set size: %ld", self.trainingModelSize);
-    NSLog(@"The feature vector size: %ld", self.featureSize);
-    
-    self.userParam = [[UserDefine alloc] init];
-    
-    int lossFunction = (int)[self.userParam lossOpt];
-    int noiseFunction = (int)[self.userParam noiseOpt];
 
-    NSInteger Niter = 5;
-    NSInteger t = 0;
-    float *w;
-    w = (float *)malloc(self.featureSize * sizeof(float));
-    
-    for(int i = 0; i < self.featureSize; i++) {
-        *(w + i) = 0;
-    }
-    
-    float *loss;
-    float rate;
-    float c = 1e-6;
-    float regConstant = [self.userParam RegConstant];
-    float variance = [self.userParam variance];
-    int classes = [self.userParam Classes];
-
-    for (int i = 0; i < Niter; i++) {
-        for (int j = 0; j < self.trainingModelSize; j++) {
-            t += 1;
-            
-            loss = computeLoss(*(featureVector + j), labelVector + j, w, self.featureSize,lossFunction, regConstant, classes);
-            rate = c / t * -1;
-            
-            vDSP_vsma(loss, 1, &rate, w, 1, w, 1, self.featureSize);
-            
-            free(loss);
-        }
-    }
-    
-    NSLog(@"Training Done!");
-    NSLog(@"Calculating training error ... ");
-    
-    //Self Test
-    long truePositive = 0;
-    
-    for(int i = 0; i < self.trainingModelSize; i++) {
-        float h = 0;
-        for(int j = 0; j < self.featureSize; j++) {
-            h += *(*(featureVector + i) + j) * *(w + j);
-        }
-        
-        if(h > 0 && *(labelVector + i) > 0) {
-            truePositive += 1;
-        }
-        
-        if(h < 0 && *(labelVector + i) < 1) {
-            truePositive += 1;
-        }
-        
-    }
-    
-    free(labelVector);
-    
-    for(int i = 0; i < self.trainingModelSize; i++) {
-        free(*(featureVector + i));
-    }
-    
-    free(featureVector);
-    
-    NSLog(@"Training Error: %f", 1.0 * truePositive / self.trainingModelSize);
-    
-}
-
-- (float *)trainModelWithWeight: (float *)w
+/**
+ Train model
+ **/
+- (float *) trainModelWithWeight:(float *)w :(int)lossFunction :(int)noiseFunction :(int)classes :(int)sbatch :(float)regConstant :(float)variance :(NSString *)labelName :(NSString *)featureName :(NSString *)fileType :(int) DFeatureSize
 {
     float *labelVector;
-    labelVector = [self readTrainingLabelFile];
+    labelVector = [self readTrainingLabelFile:labelName : fileType];
     
     float **featureVector;
-    featureVector = [self readTrainingFeatureFile];
+    featureVector = [self readTrainingFeatureFile:featureName : fileType : DFeatureSize];
     
     NSLog(@"The training set size: %ld", self.trainingModelSize);
     NSLog(@"The feature vector size: %ld", (long)self.featureSize);
 
     
-    self.userParam = [[UserDefine alloc] init];
-    int lossFunction =(int)[self.userParam lossOpt];
-    int noiseFunction = (int)[self.userParam noiseOpt];
-    int classes = [self.userParam Classes];
-    
-    
-    int sbatch = [self.userParam batchSize];
-    float regConstant = [self.userParam RegConstant];
-    float variance = [self.userParam variance];
-    
     int length = (int)self.featureSize;
     if(classes > 2){
         length = length * classes;
     }
-   
     
+    //Array that is used to store randomized numbers which are indices of labelVector
     NSMutableArray *modelInd = [NSMutableArray array];
     for(int i = 0; i < self.trainingModelSize;i++){
         [modelInd addObject:@(i)];
@@ -329,8 +287,9 @@ float * computeLoss (const float *trainingFeature, const float *trainingLabel, c
     for(int i = 0; i < length; i++) {
         *(avgloss + i) = 0;
     }
-    
-    //Average loss.
+    float *noiseloss=(float *) malloc(length * sizeof(float));
+
+    //compute gradients with batchSize
     if(w != NULL) {
         for(int i = 1; i <= sbatch; i++){
             long j =arc4random_uniform((UInt32)self.trainingModelSize);
@@ -341,24 +300,15 @@ float * computeLoss (const float *trainingFeature, const float *trainingLabel, c
             }
             [modelInd addObject:@(j)];
             loss = computeLoss(*(featureVector + j), labelVector + j, w, self.featureSize,lossFunction,regConstant,classes);
+            noiseloss = noiseLoss(loss,noiseFunction, length, variance);
             
             for(int k = 0; k <length;k++){
-                *(avgloss + k) = (*(loss + k) + *(avgloss + k))/i;
+                *(avgloss + k) = (*(noiseloss + k) + *(avgloss + k))/i;
             }
             loss = NULL;
         }
     }
     
-    float *noiseloss=(float *) malloc(length * sizeof(float));
-    if(noiseFunction == 1)
-        noiseloss = laplace(avgloss, self.featureSize, variance);
-    else if(noiseFunction == 2)
-        noiseloss = gaussian(avgloss, self.featureSize, variance);
-    else{
-        for(int i = 0; i < length; i++) {
-            *(noiseloss + i) = *(avgloss + i);
-        }
-    }
     
    
     free(labelVector);
@@ -374,15 +324,18 @@ float * computeLoss (const float *trainingFeature, const float *trainingLabel, c
     return noiseloss;
 }
 
-- (float)calculateTrainAccuracyWithWeight:(float *)w
+/**
+ Calculate accuracy for binary test
+ **/
+- (float)calculateTrainAccuracyWithWeight:(float *)w : (NSString *)labelName : (NSString *)featureName : (NSString *)fileType : (int) DFeatureSize
+
 {
-    self.userParam = [[UserDefine alloc] init];
     
     float *labelVector;
-    labelVector = [self readTrainingLabelFile];
+    labelVector = [self readTrainingLabelFile:labelName : fileType];
     
     float **featureVector;
-    featureVector = [self readTrainingFeatureFile];
+    featureVector = [self readTrainingFeatureFile:featureName : fileType : DFeatureSize];
     
     long truePositive = 0;
     
@@ -413,10 +366,12 @@ float * computeLoss (const float *trainingFeature, const float *trainingLabel, c
     return 1.0 * truePositive / self.trainingModelSize;
 }
 
-- (float *) readTrainingLabelFile {
-    self.userParam = [[UserDefine alloc] init];
+/**
+ Read label file
+ **/
+- (float *) readTrainingLabelFile: (NSString *)labelSource : (NSString *) filetype {
     
-    NSString *fileContent = [self readFileContentWithPath:[self.userParam labelSourceName] type:[self.userParam sourceType] encoding:NSUTF8StringEncoding];
+    NSString *fileContent = [self readFileContentWithPath:labelSource type: filetype encoding:NSUTF8StringEncoding];
     
     NSArray *listContent = [fileContent componentsSeparatedByString:@"\n"];
     NSInteger labelSize = [listContent count];
@@ -435,10 +390,15 @@ float * computeLoss (const float *trainingFeature, const float *trainingLabel, c
     return labelVector;
 }
 
-- (float **) readTrainingFeatureFile {
-    self.userParam = [[UserDefine alloc] init];
+
+
+/**
+ Read feature file
+ **/
+- (float **) readTrainingFeatureFile: (NSString *)FeatureSource : (NSString *) filetype : (int) DfeatureSize {
     
-    NSString *fileContent = [self readFileContentWithPath:[self.userParam featureSourceName] type:[self.userParam sourceType] encoding:NSUTF8StringEncoding];
+    
+    NSString *fileContent = [self readFileContentWithPath:FeatureSource type:filetype encoding:NSUTF8StringEncoding];
     
     NSArray *listContent = [fileContent componentsSeparatedByString:@"\n"];
     NSInteger labelSize = [listContent count];
@@ -454,8 +414,7 @@ float * computeLoss (const float *trainingFeature, const float *trainingLabel, c
         return NULL;
     
     NSArray *features = [[listContent objectAtIndex:0] componentsSeparatedByString:@" "];
-    //self.featureSize = [features count];
-    self.featureSize = [self.userParam featureSize];
+    self.featureSize = DfeatureSize;
     float **featureVectors = (float **) malloc(self.trainingModelSize * sizeof(float *));
     
     for (int i = 0; i < self.trainingModelSize; i++) {
