@@ -80,7 +80,7 @@ def computeGradLoss_softmax(w, X, y, K, L):
     W = w.reshape((K,D))
     
     XW = np.dot(X,W.T) # N x K
-    #XW -= np.tile(XW.max(axis=1).reshape((N,1)),(1,K))
+    XW -= np.tile(XW.max(axis=1).reshape((N,1)),(1,K))
     expXW = np.exp(XW) # N x K
     sumexpXW = expXW.sum(axis=1) # N x 1
     XWy = XW[range(N),y] # N x 1
@@ -147,7 +147,7 @@ def trainModel():
 
         print params
         
-        print 'Loading trainig data'
+        print 'Loading training data'
         X,y = loadData(dataDir,params['featureSource'],params['labelSource'],params['N'],params['D'],params['K'])
 
         # Re-init w
@@ -180,7 +180,7 @@ def trainModel():
                     break
             print ' '
             if reset:
-                print 'Parameter reset'
+                print 'Parameter changed !!!'
                 break;
 
             # Randomly choose (clientBatchSize) samples
