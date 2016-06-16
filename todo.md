@@ -6,10 +6,12 @@ Add header in every file
 
 Polishing server-side app: robust to user error, more diagnostic info, speed!
 
-Test cases:
+Make server.js take setting file name as argument.
+
+Test cases: put some results as figures in crowd-ml/test
 
 
+Neural network exmaple: JH
 
-Neural network exmaple.
 
 
