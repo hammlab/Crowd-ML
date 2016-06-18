@@ -1,5 +1,8 @@
 	var firebase = require('firebase');
-	var constants = require('./Constants')
+	
+	var constFile = process.argv[2]
+	var constStr = './'+constFile
+	var constants = require(constStr)
 	var test = require('./test')
 
 	firebase.initializeApp({
@@ -175,9 +178,11 @@ function addToWeightBatch(weightArray){
 		testNum++;
 		if(testNum == testFreq && testType == 'multiTest'){
 			testNum = 0;
+			console.log('Weight iteration ',iter)
 			test.multiTest(newWeight);}
 		if(testNum == testFreq && testType == 'binary'){
 			testNum = 0;
+			console.log('Weight iteration ',iter)
 			test.binaryTest(newWeight);}
 
 		iter++;
