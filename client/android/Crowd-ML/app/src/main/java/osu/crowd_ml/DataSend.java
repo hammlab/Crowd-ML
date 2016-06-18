@@ -78,7 +78,7 @@ public class DataSend extends AppCompatActivity {
     private List<List<Double>> batch = new ArrayList<List<Double>>();
     int batchSlot = 0;
 
-    private int length = D;
+    private int length;
 
 
     @Override
@@ -125,6 +125,9 @@ public class DataSend extends AppCompatActivity {
                 noiseScale = params.getNoiseScale();
                 L = params.getL();
 
+                dataCount = 0;
+
+                length = D;
                 if(K > 2){
                     length = D*K;
                 }
@@ -196,6 +199,8 @@ public class DataSend extends AppCompatActivity {
             @Override
             public void onClick(View v) {
                 dataCount = 0;
+                ready = true;
+                message.setText("Waiting for data");
             }
         });
 
@@ -249,16 +254,23 @@ public class DataSend extends AppCompatActivity {
             }
 
             batch.add(noisyGrad);
+
             batchSlot++;
         }
 
         if(batchSlot >= batchSize){
             List<Double> avgGrad = new ArrayList<Double>(length);
             double sum;
+            System.out.println("length");
+            System.out.println(length);
             for(int i = 0; i < length; i++) {
                 sum = 0;
+                System.out.println("i");
+                System.out.println(i);
                 for (int j = 0; j < batchSize; j++) {
                     sum += batch.get(j).get(i);
+                    System.out.println("sum");
+                    System.out.println(sum);
                 }
                 avgGrad.add(sum/batchSize);
             }
@@ -266,10 +278,8 @@ public class DataSend extends AppCompatActivity {
             batchSlot = 0;
             batch.clear();
             userData.setGradientProcessed(false);
-            double[] gradArray = new double[avgGrad.size()];
-            for(int i = 0; i < avgGrad.size(); i ++){
-                gradArray[i] = avgGrad.get(i);
-            }
+            System.out.println("avgGrad");
+            System.out.println(avgGrad);
             userData.setGradients(avgGrad);
             gradientIteration++;
             userData.setGradIter(gradientIteration);
