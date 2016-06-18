@@ -9,7 +9,10 @@ Binary MNIST classification using SVM (hinge loss) without noise and with simple
 (Look at [Constants1.js](./Constants1.js) to see the details.)
 
 Results:
-[figure for the test error up to 40 weight updates]
+
+![Test 1](test1.png)
+
+(Note that this is averaged over multiple tests due to the random nature of feature sample selection)
 
 
 
