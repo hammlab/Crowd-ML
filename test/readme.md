@@ -22,7 +22,8 @@ Results:
 (Look at [Constants2.js](./Constants2.js) to see the details.)
 
 Results:
-[figure for the test error up to 100 weight updates]
+
+![Test 2](test2.png)
 
 
 
