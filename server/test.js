@@ -42,8 +42,8 @@
 				correct++;}		
 		}
 	
-		var accuracy = correct/N;
-		console.log(accuracy)
+		var accuracy = 100*correct/N;
+		console.log('Accuracy: ', accuracy, '%')
 	}
 
 	function binaryTest(testWeight){
@@ -72,7 +72,7 @@
 		}
 	
 		var accuracy = 100*correct/N;
-		console.log('Accuracy: ',accuracy,'%')
+		console.log('Accuracy: ', accuracy, '%')
 	}
 
 	exports.binaryTest = binaryTest;
