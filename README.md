@@ -1,5 +1,5 @@
 ### Crowd-ML (Machine Learning)
-#### is a framework for a crowd of devices to perform machine learning with privacy.
+#### is a framework for crowd-sourced machine learning with privacy mechanisms.
 ---
 Smart and connected devices are becoming increasingly pervasive in daily life,
 including smartphones, wearables, smart home appliance, smart meters, connected cars, surveillance cameras, 
@@ -11,7 +11,7 @@ More specifically, can we outsource the machine learning to crowd of connected d
 
 ![Crowd-ML concept figure](schematic1-5.jpg "Crowd-ML concept")
 
-The library allows devices (Android, iOS, and python clients) to learn a common classifier/regression model with differential privacy, by solving the ERM problem: min_w f(w) = 1/M sum_{i=1}^M f_i(w), where f_i(w) = 1/n sum_j l(h_w(x_{ij}), y_{ij}).
+The library allows devices (Android, iOS, and python clients) to learn a common classifier/regression model with differential privacy, by solving the distributed ERM problem: min_w f(w) = 1/M sum_{i=1}^M f_i(w), where f_i(w) = 1/n sum_j l(h_w(x_{ij}), y_{ij}).
 The library implements private distributed synchronous risk minimization based on [**Hamm'15**], using [Google Firebase](https://firebase.google.com/) as a simple and robust syncrhonization method.  
 A user can decide the type and amount of noise to guarantee differential privacy under different assumptions, 
 such as in [Rajkumar'12], [Song'13], [Bassily'14]. 
@@ -34,12 +34,12 @@ Node.js
 * Learning rate: constant, 1/t, 1/sqrt{t}, AdaGrad, RMSprop
 * Client- and server-side minibatch
 
-#### Examples
-* MNIST-binary
-* MNIST-10
-
-
-
+#### Applications
+---
+Currently, the system is demonstrated with the MNIST dataset (http://yann.lecun.com/exdb/mnist/),
+for 10-class and binary (0-vs-1) classification problems. 
+Ideally, the most relevant types of data whose privacy is important are those generated
+from smartphones and IoT devices. More examples will be added in the near future. 
 
 
 ### How to use the Crowd-ML library
