@@ -3,20 +3,19 @@
 ---
 Smart and connected devices are becoming increasingly pervasive in daily life,
 including smartphones, wearables, smart home appliance, smart meters, connected cars, surveillance cameras, 
-enviromental sensors, etc. 
-Can we benefit from the analysis of massive data generated from such devices, without central collection of all data nor the breach of users' privacy?
-More specifically, can we outsource the machine learning to crowd of connected devices with a guarantee of differential privacy? 
-(The idea has been featured in [Gigaom] (https://gigaom.com/2015/01/22/researchers-show-a-machine-learning-network-for-connected-devices/).) 
-
+and environmental sensors. 
+Can we benefit from analysis of massive data generated from such devices, without storing all data centrally or breaching  users' privacy?
+More specifically, can machine learning be outsourced to a crowd of connected devices, with a guarantee of differential privacy? 
 
 ![Crowd-ML concept figure](schematic1-5.jpg "Crowd-ML concept")
 
 The library allows devices (Android, iOS, and python clients) to learn a common classifier/regression model with differential privacy, by solving the distributed ERM problem: min_w f(w) = 1/M sum_{i=1}^M f_i(w), where f_i(w) = 1/n sum_j l(h_w(x_{ij}), y_{ij}).
 The library implements private distributed synchronous risk minimization based on [**Hamm'15**], using [Google Firebase](https://firebase.google.com/) as a simple and robust syncrhonization method.  
-A user can decide the type and amount of noise to guarantee differential privacy under different assumptions, 
-such as in [Rajkumar'12], [Song'13], [Bassily'14]. 
-By selecting no noise, a user can use the libary as a crowd-based parallel or distributed optimization of general functions [Tsitsiklis'84], [Agarwal'11], [Dekel'11]. 
+(The idea has also been featured in [Gigaom] (https://gigaom.com/2015/01/22/researchers-show-a-machine-learning-network-for-connected-devices/).) 
 
+Choosing the type and amount of noise to guarantee differential privacy is left to the library user; the type and the amount 
+depend on model assumptions. Please see [Chaudhuri'11], [Rajkumar'12], [Song'13], [Bassily'14]. 
+If noise is not used, this library can also serve as a crowd-based, parallel/distributed optimization framework [Tsitsiklis'84], [Agarwal'11], [Dekel'11].
 
 
 ### Features
@@ -71,6 +70,7 @@ This research was supported in part by Google Faculty Research Award 2015 and Go
 * [Hamm'15]: J. Hamm, A. Champion, G. Chen, M. Belkin, and D.Xuan, 
 "Crowd-ML: A privacy-preserving learning framework for a crowd of smart devices." In Proceedings of the 35th IEEE
 International Conference on Distributed Computing Systems (ICDCS). IEEE, 2015. [pdf](docs/icdcs15_jh_final.pdf)
+* [Chaudhuri'11]: K. Chaudhuri, C. Monteleoni, and A. D. Sarwate, "Differentially private empirical risk minimization," JMLR, vol. 12, 2011, pp. 1069–1109
 * [Rajkumar'12]: A. Rajkumar, and S. Agarwal. "A differentially private stochastic
 gradient descent algorithm for multiparty classification." In AISTATS, 2012, pp. 933–941
 * [Song'13]: S. Song, K. Chaudhuri, and A. D. Sarwate, "Stochastic gradient descent with differentially private updates," in Proc. IEEE GlobalSIP, 2013.
