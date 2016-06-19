@@ -66,11 +66,6 @@ See [server/readme.md](server/readme.md) for more instructions.
 This research was supported in part by Google Faculty Research Award 2015 and Google Internet of Things Technology Research Award 2016. 
 
 
-### License
----
-Released under the Apache License 2.0.  See the [LICENSE.txt](LICENSE.txt) file for further details.
-
-
 ### References
 ---
 * [Hamm'15]: J. Hamm, A. Champion, G. Chen, M. Belkin, and D.Xuan, 
@@ -86,4 +81,7 @@ tion." in Proc. NIPS, 2011, pp. 873–881.
 * [Dekel'11]: O. Dekel, R. Gilad-Bachrach, O. Shamir, and L. Xiao, "Optimal distributed online prediction," in Proc. ICML, 2011.
 
 
+### License
+---
+Released under the Apache License 2.0.  See the [LICENSE.txt](LICENSE.txt) file for further details.
 
