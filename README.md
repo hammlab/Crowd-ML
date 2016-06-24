@@ -10,12 +10,11 @@ More specifically, can machine learning be outsourced to a crowd of connected de
 ![Crowd-ML concept figure](schematic1-5.jpg "Crowd-ML concept")
 
 The library allows devices (Android, iOS, and python clients) to learn a common classifier/regression model with differential privacy, by solving the distributed ERM problem: min_w f(w) = 1/M sum_{i=1}^M f_i(w), where f_i(w) = 1/n sum_j l(h_w(x_{ij}), y_{ij}).
-The library implements private distributed synchronous risk minimization based on [**Hamm'15**], using [Google Firebase](https://firebase.google.com/) as a simple and robust syncrhonization method.  
-(The idea has also been featured in [Gigaom] (https://gigaom.com/2015/01/22/researchers-show-a-machine-learning-network-for-connected-devices/).) 
+The library implements private distributed synchronous risk minimization based on [**Hamm'15**], using [Google Firebase](https://firebase.google.com/) as a simple and robust syncrhonization method.  This idea was featured in [Gigaom] (https://gigaom.com/2015/01/22/researchers-show-a-machine-learning-network-for-connected-devices/).
 
 Choosing the type and amount of noise to guarantee differential privacy is left to the library user; the type and the amount 
-depend on model assumptions. Please see [Chaudhuri'11], [Rajkumar'12], [Song'13], [Bassily'14]. 
-If noise is not used, this library can also serve as a crowd-based, parallel/distributed optimization framework [Tsitsiklis'84], [Agarwal'11], [Dekel'11].
+depend on model assumptions. Please see [Chaudhuri'11], [Rajkumar'12], [Song'13], [Bassily'14], [Hamm'16].
+If noise is not used, this library can also serve as a crowd-based, parallel/distributed optimization framework [Tsitsiklis'84], [Agarwal'11], [Dekel'11]. 
 
 
 ### Features
@@ -75,11 +74,11 @@ International Conference on Distributed Computing Systems (ICDCS). IEEE, 2015. [
 gradient descent algorithm for multiparty classification." In AISTATS, 2012, pp. 933–941
 * [Song'13]: S. Song, K. Chaudhuri, and A. D. Sarwate, "Stochastic gradient descent with differentially private updates," in Proc. IEEE GlobalSIP, 2013.
 * [Bassily'14]: R. Bassily, A. Smith, and A. Thakurta, A. "Private empirical risk minimization: Efficient algorithms and tight error bounds." In Foundations of Computer Science (FOCS), 2014, pp. 464-473
+* [Hamm'16]: J. Hamm, P. Cao, and M. Belkin, "Learning privately from multiparty data," in Proc. ICML, 2016
 * [Tsitsiklis'84]: J.N. Tsitsiklis, D.P. Bertsekas, and M. Athans, "Distributed asynchronous deterministic and stochastic gradient optimization algorithms." in American Control Conference, 1984, pp. 484-489 
 * [Agarwal'11]: A. Agarwal and J. C. Duchi, "Distributed delayed stochastic optimiza-
 tion." in Proc. NIPS, 2011, pp. 873–881.
 * [Dekel'11]: O. Dekel, R. Gilad-Bachrach, O. Shamir, and L. Xiao, "Optimal distributed online prediction," in Proc. ICML, 2011.
-
 
 ### License
 ---
