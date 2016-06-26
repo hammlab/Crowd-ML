@@ -16,9 +16,8 @@
         android:layout_height="wrap_content"
         android:text="Cancel"
         android:id="@+id/cancel"
-        android:layout_gravity="center_horizontal"
-        android:layout_centerVertical="true"
-        android:layout_alignEnd="@+id/textView3" />
+        android:layout_below="@+id/inputCount"
+        android:layout_toEndOf="@+id/inputCount" />
 
     <EditText
         android:layout_width="100dp"
@@ -36,7 +35,7 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:textAppearance="?android:attr/textAppearanceLarge"
-        android:text="Number of gradients to send:"
+        android:text="Number of gradient batches to send:"
         android:id="@+id/textView3"
         android:layout_above="@+id/inputCount"
         android:layout_centerHorizontal="true" />
