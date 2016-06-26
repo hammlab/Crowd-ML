@@ -76,6 +76,8 @@ public class DataSend extends AppCompatActivity {
     private double L;
 
     private List<List<Double>> batch = new ArrayList<List<Double>>();
+    private List<double[]> xBatch = new ArrayList<double[]>();
+    private List<Integer> yBatch = new ArrayList<Integer>();
     int batchSlot = 0;
 
     private int length;
@@ -180,11 +182,11 @@ public class DataSend extends AppCompatActivity {
                     message.setText("Not a number");
                     dataCount = 0;
                 }
-                if(dataCount > N){
+                if(dataCount > N/batchSize){
                     message.setText("Input count too high");
                 }
 
-                if (ready && dataCount > 0 && dataCount <= N) {
+                if (ready && dataCount > 0 && dataCount <= N/batchSize) {
                     message.setText("Sending Data");
                     ready = false;
                     sendGradient();
@@ -237,15 +239,21 @@ public class DataSend extends AppCompatActivity {
         userData = new UserData();
         userData.setParamIter(paramIter);
 
+        List<Integer> batchSamples = new ArrayList<Integer>();
         List<Double> currentWeights = weightVals.getWeights();
         userData.setWeightIter(weightVals.getCurrentIteration());
-        while(dataCount > 0 && batchSlot < batchSize){
-            int sample = order.get(dataCount-1);
+        int batchSlot = 0;
+        while(dataCount > 0 && batchSlot < batchSize) {
+            batchSamples.add(order.get((batchSize*(dataCount-1) + batchSlot)));
+            batchSlot++;
+        }
             dataCount--;
-            System.out.println(labelSource);
-            double[] X = readSample(sample);
-            int Y = readType(sample);
+            xBatch = readSample(batchSamples);
+            yBatch = readType(batchSamples);
 
+        for(int i = 0; i < batchSize; i++){
+            double[] X = xBatch.get(i);
+            int Y = yBatch.get(i);
             List<Double> grad = loss.gradient(currentWeights, X, Y, D, K, L);
 
             List<Double> noisyGrad = new ArrayList<Double>(length);
@@ -254,49 +262,43 @@ public class DataSend extends AppCompatActivity {
             }
 
             batch.add(noisyGrad);
-
-            batchSlot++;
         }
 
-        if(batchSlot >= batchSize){
-            List<Double> avgGrad = new ArrayList<Double>(length);
-            double sum;
-            System.out.println("length");
-            System.out.println(length);
-            for(int i = 0; i < length; i++) {
-                sum = 0;
-                System.out.println("i");
-                System.out.println(i);
-                for (int j = 0; j < batchSize; j++) {
-                    sum += batch.get(j).get(i);
-                    System.out.println("sum");
-                    System.out.println(sum);
-                }
-                avgGrad.add(sum/batchSize);
-            }
 
-            batchSlot = 0;
-            batch.clear();
-            userData.setGradientProcessed(false);
-            System.out.println("avgGrad");
-            System.out.println(avgGrad);
-            userData.setGradients(avgGrad);
-            gradientIteration++;
-            userData.setGradIter(gradientIteration);
-            userValues.setValue(userData);
-            avgGrad.clear();}
+        List<Double> avgGrad = new ArrayList<Double>(length);
+        double sum;
+        for(int i = 0; i < length; i++) {
+            sum = 0;
+            for (int j = 0; j < batchSize; j++) {
+                sum += batch.get(j).get(i);
+            }
+            avgGrad.add(sum/batchSize);
+        }
+
+        batch.clear();
+        userData.setGradientProcessed(false);
+        userData.setGradients(avgGrad);
+        gradientIteration++;
+        userData.setGradIter(gradientIteration);
+        userValues.setValue(userData);
+        avgGrad.clear();
 
     }
 
-    public double[] readSample(int sample){
+    public List<double[]> readSample(List<Integer> sampleBatch){
         final TextView message = (TextView) findViewById(R.id.messageDisplay);
-        double[] sampleFeatures = new double[D];
+        List<double[]> xBatch = new ArrayList<double[]>();
+        System.out.println("sampleBatch size");
+        System.out.println(sampleBatch.size());
+        System.out.println("sampleBatch max");
+        System.out.println(Collections.max(sampleBatch));
         try {
             BufferedReader br = new BufferedReader(new InputStreamReader(getAssets().open(featureSource)));
             String line = null;
             int counter = 0;
-            while ((line = br.readLine()) != null && counter < sample){
-                if(counter == (sample-1)){
+            while ((line = br.readLine()) != null && counter <= Collections.max(sampleBatch)){
+                if(sampleBatch.contains(counter)){
+                    double[] sampleFeatures = new double[D];
                     String[] features = line.split(",|\\ ");
                     List<String> featureList = new ArrayList<String>(Arrays.asList(features));
                     featureList.removeAll(Arrays.asList(""));
@@ -304,7 +306,9 @@ public class DataSend extends AppCompatActivity {
                     {
                         sampleFeatures[i] = Double.parseDouble(featureList.get(i));
                     }
+                    xBatch.add(sampleFeatures);
                 }
+
                 counter++;
             }
         } catch (FileNotFoundException e) {
@@ -316,21 +320,26 @@ public class DataSend extends AppCompatActivity {
             message.setText("Sample IO exception");
         }
 
-        return sampleFeatures;
+        return xBatch;
 
     }
 
-    public int readType(int sample){
+    public List<Integer> readType(List<Integer> sampleBatch){
         final TextView message = (TextView) findViewById(R.id.messageDisplay);
         int sampleLabel = 0;
+        List<Integer> yBatch = new ArrayList<Integer>();
         try {
             BufferedReader br = new BufferedReader(new InputStreamReader(getAssets().open(labelSource)));
             String line = null;
             int counter = 0;
-            while ((line = br.readLine()) != null && counter < sample){
+            while ((line = br.readLine()) != null && counter <= Collections.max(sampleBatch)){
                 String cleanLine = line.trim();
-                if(counter == (sample-1)){
+                if(sampleBatch.contains(counter)){
                     sampleLabel = (int)Double.parseDouble(cleanLine);
+                    if(sampleLabel == 0 && loss.binary()){
+                        sampleLabel = -1;
+                    }
+                    yBatch.add(sampleLabel);
                 }
                 counter++;
             }
@@ -342,11 +351,9 @@ public class DataSend extends AppCompatActivity {
             e.printStackTrace();
             message.setText("Type IO exception");
         }
-        if(sampleLabel == 0 && loss.binary()){
-            sampleLabel = -1;
-        }
 
-        return sampleLabel;
+
+        return yBatch;
     }
 
 }
