@@ -50,7 +50,7 @@ float * laplace (const float *loss, long D, float scale)
         }else{
             sgn = 1;
         }
-        lap = u - sgn*sqrt(2)*scale* expf( 1 - 2 * fabsf(radm));
+        lap = u - sgn/sqrt(2)*scale* expf( 1 - 2 * fabsf(radm));
         *(noise + i) = lap;
     }
     
