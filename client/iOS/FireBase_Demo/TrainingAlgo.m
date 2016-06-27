@@ -33,10 +33,10 @@
 @end
 
 // Add Laplace noise
-float * laplace (const float *loss, long D, float variance)
+float * laplace (const float *loss, long D, float scale)
 {
     float u;
-    float b = 1;
+    float sgn = 1;
     float radm;
     float lap;
     
@@ -46,11 +46,11 @@ float * laplace (const float *loss, long D, float variance)
         u = *(loss + i);
         radm = (arc4random_uniform(100) / 100.0f) - 0.5;
         if(radm < 0){
-            b = -1;
+            sgn = -1;
         }else{
-            b = 1;
+            sgn = 1;
         }
-        lap = u - variance * b * expf( 1 - 2 * fabsf(radm));
+        lap = u - sgn*sqrt(2)*scale* expf( 1 - 2 * fabsf(radm));
         *(noise + i) = lap;
     }
     
@@ -58,7 +58,7 @@ float * laplace (const float *loss, long D, float variance)
 }
 
 // Add Gaussian noise
-float * gaussian (const float *loss, long D, float variance)
+float * gaussian (const float *loss, long D, float scale)
 {
     float *noise = (float *) malloc(D * sizeof(float));
     float radm;
@@ -76,7 +76,7 @@ float * gaussian (const float *loss, long D, float variance)
 
         radm = sqrtf(-2 * logf(x1)) * cosf(2* M_PI * x2);
         
-        *(noise + i) = radm * variance + u;
+        *(noise + i) = radm * scale + u;
     }
     
     return noise;
