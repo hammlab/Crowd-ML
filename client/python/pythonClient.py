@@ -21,14 +21,23 @@ import numpy as np
 #import numpy.random
 import time
 
+from scipy.optimize import check_grad
 
-### Change these
+import loss_hinge
+import loss_logreg
+import loss_softmax
+import loss_nndemo1
+
+
+####### Change below
+'''
 url = <Your firebase url>
 uid = <arbitrary string>
 secret = <Copy and paste the string from firebase db>
-maxiter = 100
+'''
+maxiter = 3000
 
-# For testing
+## For testing
 dataDir = './DataFiles' # Where you put your files
 testFeatures = 'MNISTTestImages.dat';
 testLabels = 'MNISTTestLabels.dat';
@@ -36,9 +45,9 @@ Ntest = 1000
 Dtest = 784
 Ktest = 10
 
-# For local training
+## For local training
 naught = 1.
-localTraining = False # Set this true for faster, local training.
+localTraining = True # Set this true for faster, local training.
 
 params = {}
 if localTraining: # local version for testing purposes.
@@ -46,15 +55,13 @@ if localTraining: # local version for testing purposes.
     params['D'] = 784
     params['K'] = 10
     params['L']= 1e-6
-    params['N'] = 10000
+    params['N'] = 60000
     params['clientBatchSize'] = 100
     params['featureSource'] = 'MNISTTrainImages.dat'
     params['labelSource'] = 'MNISTTrainLabels.dat'
-    params['lossFunction'] = 'Softmax'
+    params['lossFunction'] = 'NNdemo1'#'Softmax'
     params['noiseDistribution'] = 'NoNoise'
     params['noiseScale'] = 0.
-
-###
 
 
 '''
@@ -64,80 +71,33 @@ if localTraining: # local version for testing purposes.
 # The output of a loss function is the averaged gradient over N samples, and the loss value
 '''
 
-#Hinge loss
-def computeGradLoss_hinge(w, X, y, L):
-    N,D = X.shape
-    ind = np.where(y*np.dot(X,w) < 1.)[0]
-    if len(ind)==0:
-        l = .5*L*(w**2).sum()
-        g = L*w
-    else:
-        l = -1.0/len(ind)*(1.-y[ind]*np.dot(X[ind,:],w)).sum() + .5*L*(w**2).sum()
-        g = -1.0/len(ind)*np.dot(y[ind],X[ind,:]).reshape((D,)) + L*w
-   
-    return (g,l)
-
-
-#logistic regression 
-def computeGradLoss_logreg(w, X, y, L):
-    N,D = X.shape
-
-    # f = 1/N*sum_t log(1 + exp(-w'ytxt)) + .5*L*||w||^2
-    l = 1.0/N* np.log(1. + np.exp(-y*np.dot(X,w))).sum() + .5*L*(w**2).sum() 
-    # df = 1/N*sum_t -ytxt/(1 + exp(w'ytxt)) + L*w 
-    g = -1.0/N*np.dot(y/(1. + np.exp(np.dot(X,w)*y)),X).reshape((D,)) + L*w
-
-    return (g,l)
  
 
-#softmax
-def computeGradLoss_softmax(w, X, y, K, L):
-    N,D = X.shape
-    W = w.reshape((K,D))
-    
-    XW = np.dot(X,W.T) # N x K
-    XW -= np.tile(XW.max(axis=1).reshape((N,1)),(1,K))
-    expXW = np.exp(XW) # N x K
-    sumexpXW = expXW.sum(axis=1) # N x 1
-    XWy = XW[range(N),y] # N x 1
 
-    # f = -1/N*sum_t log(exp(w(yt)'xt)/sum_k exp(wk'xt)) + .5*l*||W||^2
-    # = -1/N*sum_t [w(yt)'*xt - log(sum_k exp(wk'xt))] + .5*l*||W||^2
-    # = -1/N*sum(sum(W(:,y).*X,1),2) + 1/N*sum(log(sumexpWX),2) + .5l*sum(sum(W.^2));
-    l = -1.0/N*XWy.sum() + 1.0/N*np.log(sumexpXW).sum() +.5*L*(W**2).sum()#(axis=(0,1))
-
-    # df/dwk = -1/N*sum(x(y==k,:),1) + 1/N*sum_t exp(wk'xt)*xt/(sum_k exp(wk'xt))] + L*wk
-    G = np.zeros((K,D))
-    for k in range(K):
-        indk = np.where(y==k)[0]    
-        G[k,:] = -1.0/N*X[indk,:].sum(axis=0).reshape((D,)) \
-            + 1.0/N*np.dot(expXW[:,k]/sumexpXW,X).reshape((D,)) + L*W[k,:].reshape((D,))
-    
-    g = G.reshape((K*D,))
-    return (g,l)
-
-
-# Gaussian noise
+############################################################################################################
+## Gaussian noise
 def GenerateGaussianNoise(scale=1.,tsize=None):
     noise = np.random.normal(0., scale, tsize)
     return noise
 
-# Laplace noise
+## Laplace noise
 def GenerateLaplaceNoise(scale=1.,tsize=None):
     U = np.random.uniform(-0.5, 0.5,tsize)
     noise = - np.sqrt(0.5)*scale*np.sign(U)*np.log(1. - 2.*np.abs(U))
     return noise
 
 
-#Train model, and retrieve/upload w and loss
+############################################################################################################
+## Train model, and retrieve/upload w and loss
 def trainModel():
 
     print 'Setting up firebase'
-    ref = firebase.FirebaseApplication(url, None)
-    users = firebase.FirebaseApplication(url+'/users', None)
-    auth_payload = {"uid": uid}
-    token = create_token(secret, auth_payload)
-    user = '/users/'+uid+'/'
+    if not localTraining:
+        ref = firebase.FirebaseApplication(url, None)
+        users = firebase.FirebaseApplication(url+'/users', None)
+        auth_payload = {"uid": uid}
+        token = create_token(secret, auth_payload)
+        user = '/users/'+uid+'/'
 
     print 'Pre-loading test data'
     Xtest,ytest = loadData(dataDir,testFeatures,testLabels,Ntest,Dtest,Ktest)
@@ -167,7 +127,18 @@ def trainModel():
         X,y = loadData(dataDir,params['featureSource'],params['labelSource'],params['N'],params['D'],params['K'])
 
         # Re-init w
-        w = initW(params['lossFunction'],params['D'],params['K'])
+        if (params['lossFunction']=='Hinge'):
+            w = loss_hinge.init(params['D'])
+        elif (params['lossFunction']=='LogReg'):
+            w = loss_logreg.init(params['D'])
+        elif (params['lossFunction']=='Softmax'):
+            w = loss_softmax.init(params['D'],params['K'])
+        elif (params['lossFunction']=='NNdemo1'):
+            w = loss_nndemo1.init(params['D'],params['K'])
+        else:
+            print 'Unknown loss type'
+            exit()
+        
 
         print 'Begin iteration'
         for gradIter in range(1,maxiter+1):
@@ -216,16 +187,16 @@ def trainModel():
             # Use one of loss functions.
             # The output is the averaged gradient
             if (params['lossFunction']=='Hinge'):
-                g,l = computeGradLoss_hinge(w,tX,ty,params['L'])
+                g,l = loss_hinge.getAvgGradient(w,tX,ty,params['L'])
             elif (params['lossFunction']=='LogReg'):
-                g,l = computeGradLoss_logreg(w,tX,ty,params['L'])
+                g,l = loss_logreg.getAvgGradient(w,tX,ty,params['L'])
             elif (params['lossFunction']=='Softmax'):
-                g,l = computeGradLoss_softmax(w,tX,ty,params['K'],params['L'])
-            elif (params['lossFunction']=='NN'):
-                g,l = computeGradLoss_NN(w,tX,ty,params['K'],params['L'])
+                g,l = loss_softmax.getAvgGradient(w,tX,ty,params['L'],params['K'])
+            elif (params['lossFunction']=='NNdemo1'):
+                g,l = loss_nndemo1.getAvgGradient(w,tX,ty,params['L'],params['K'])
             else:
                 print 'Unknown loss type'
-                return
+                exit()
             
             if (params['noiseDistribution']=='NoNoise'):
                 noise = np.zeros(w.shape)
@@ -235,13 +206,13 @@ def trainModel():
                 noise = GenerateLaplaceNoise(params['noiseScale'], w.shape)
             else:
                 print 'Unknown noise type'
-                return
+                exit()
                     
             g += noise
             
             if np.isnan(g).any():
                 print 'Nan in gradient'
-                return
+                exit()
             #print str((g**2).sum())
             print 'loss = ',str(l)
 
@@ -258,28 +229,35 @@ def trainModel():
                 ref.put(user ,'gradientProcessed', False, params = {"auth":token})
 
         ## Iteration ended
-        #if (gradIter==maxiter):
-            testModel(w,Xtest,ytest,params['K'])
+        if (gradIter==maxiter):
+            testModel(w,Xtest,ytest,params['K'],params['lossFunction'])
 
 
         if localTraining:
             break
             
-# Test
-def testModel(w,X,y,K):
+## Test
+def testModel(w,X,y,K,lossFunction):
 
-    # Implemented for only Softmax. Change it later.
-    N,D = X.shape
-    W = w.reshape((K,D))
+    if (lossFunction=='Hinge'):
+        ypred = loss_hinge.predict(w,X)
+    elif (lossFunction=='LogReg'):
+        ypred = loss_logreg.predict(w,X)
+    elif (lossFunction=='Softmax'):
+        ypred = loss_softmax.predict(w,X,K)
+    elif (lossFunction=='NNdemo1'):
+        ypred = loss_nndemo1.predict(w,X,K)
+    else:
+        print 'Unknown loss type'
+        exit()
 
-    ypred = np.argmax(np.dot(X,W.T),axis=1) # N x K
     ind_correct = np.where(ypred==y)[0]    
     ncorrect = ind_correct.size
     rate = float(ncorrect) / float(ypred.size)
     print 'accuracy = ', str(rate)
 
 
-# Load data
+## Load data
 def loadData(dataDir,featureSource,labelSource,N,D,K):
     # Load data
     X = np.loadtxt(dataDir+'/'+featureSource, delimiter=',', dtype=float)
@@ -287,46 +265,41 @@ def loadData(dataDir,featureSource,labelSource,N,D,K):
     
     if (X.shape[0]!=N):
         print 'Wrong number of samples'
+        exit()
         #return
     if (X.shape[1]!=D):
         print 'Wrong feature dimension'
-        return
+        exit()
+        #return
     y = np.loadtxt(dataDir+'/'+labelSource, dtype=float).astype(int)
     if (y.size!=N):
         print 'Wrong number of labels'
+        exit()
         #return
     if (K==2):
         y[y==0] = -1
         if any((y!=1) & (y!=-1)):
             print 'Wrong labels'
-            return
+            exit()
     if (K>2):
         if any((y<0) | (y>K-1)):
             print 'Wrong labels'
-            return
+            exit()
 
     return (X,y)
 
 
-def initW(lossFunction,D,K):
-    # Init w
-    if (lossFunction=='Hinge'):
-        w = np.zeros((D,),dtype = np.double)
-    elif (lossFunction=='LogReg'):
-        w = np.zeros((D,),dtype = np.double)
-    elif (lossFunction=='Softmax'):
-        w = np.zeros((D*K,),dtype = np.double)
-    elif (lossFunction=='NN'):
-        pass#g = computeGradLoss_NN(w,tX,ty,params['K'],params['L'])
-    else:
-        print 'Unknown loss type'
-        return
-
-    return w
-
 ###############################################################################################
-# Begining of main
+## Begining of main
 
+'''
+loss_hinge.self_test1()
+loss_logreg.self_test1()
+loss_softmax.self_test1()
+loss_nndemo1.self_test1()
+exit()
+'''
 
 trainModel() 
+
 
