@@ -35,7 +35,7 @@ url = <Your firebase url>
 uid = <arbitrary string>
 secret = <Copy and paste the string from firebase db>
 '''
-maxiter = 3000
+maxiter = 1000
 
 ## For testing
 dataDir = './DataFiles' # Where you put your files
