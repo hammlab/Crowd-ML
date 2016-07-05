@@ -33,7 +33,7 @@
 @end
 
 // Add Laplace noise
-float * laplace (const float *loss, long D, float scale)
+float * laplace (const float *grad, long D, float scale)
 {
     float u;
     float sgn = 1;
@@ -43,14 +43,14 @@ float * laplace (const float *loss, long D, float scale)
     float *noise = (float *) malloc(D * sizeof(float));
     
     for(int i = 0; i < D; i++){
-        u = *(loss + i);
-        radm = (arc4random_uniform(100) / 100.0f) - 0.5;
+        u = *(grad + i);
+        radm = (arc4random_uniform(INT_MAX) / (INT_MAX *1.0f)) - 0.5;
         if(radm < 0){
             sgn = -1;
         }else{
             sgn = 1;
         }
-        lap = u - sgn/sqrt(2)*scale* expf( 1 - 2 * fabsf(radm));
+        lap = u - (scale/sqrt(2)) * sgn * exp( 1 - 2 * fabsf(radm));
         *(noise + i) = lap;
     }
     
@@ -58,25 +58,25 @@ float * laplace (const float *loss, long D, float scale)
 }
 
 // Add Gaussian noise
-float * gaussian (const float *loss, long D, float scale)
+float * gaussian (const float *grad, long D, float scale)
 {
     float *noise = (float *) malloc(D * sizeof(float));
     float radm;
     float u;
     
     for(int i = 0; i < D; i++){
-        u = *(loss + i);
+        u = *(grad + i);
         
         //Box-Muller Transformation:
-        float x1 = arc4random_uniform(100) / 100.0f;
-        float x2 = arc4random_uniform(100) / 100.0f;
+        float x1 = arc4random_uniform(INT_MAX) / (INT_MAX *1.0f);
+        float x2 = arc4random_uniform(INT_MAX) / (INT_MAX *1.0f);
         while(logf(x1) == INFINITY || logf(x1) == -INFINITY ){
-            x1 = arc4random_uniform(100) / 100.0f;
+            x1 = arc4random_uniform(INT_MAX) / (INT_MAX *1.0f);
         }
 
         radm = sqrtf(-2 * logf(x1)) * cosf(2* M_PI * x2);
         
-        *(noise + i) = radm * scale + u;
+        *(noise + i) =  radm * (scale/sqrt(2)) + u;
     }
     
     return noise;
@@ -168,7 +168,7 @@ float * computeSoftMax (const float *trainingFeature, const float *trainingLabel
     
     float dot = 0;
     double denom = 0;
-    double max=DBL_MIN;
+    double max= -DBL_MAX;
     double *ai = (double *) malloc(classes * sizeof(double));
     
     //Store x dot w, and find the max dot product
