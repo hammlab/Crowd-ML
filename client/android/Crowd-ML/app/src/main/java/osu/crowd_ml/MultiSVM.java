@@ -22,8 +22,8 @@ limitations under the License
 
 public class MultiSVM implements LossFunction{
 
-    public boolean binary(){
-        return false;
+    public String lossType() {
+        return "multi";
     }
 
     public List<Double> gradient(List<Double> weights, double[] X, int Y, int D, int K, double L){

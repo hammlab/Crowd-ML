@@ -127,13 +127,18 @@ public class DataSend extends AppCompatActivity {
                 noiseScale = params.getNoiseScale();
                 L = params.getL();
 
+                int nh = 200;
+
                 dataCount = 0;
 
                 length = D;
-                if(K > 2){
+                if(loss.lossType().equals("multi")){
                     length = D*K;
                 }
-                if(loss.binary() && K > 2){
+                if(loss.lossType().equals("NN")){
+                    length = D*nh + nh + nh*nh + nh + nh*K + K;
+                }
+                if(loss.lossType().equals("binary") && K > 2){
                     message.setText("Binary classifier used on non-binary data");
                     dataCount = -1;
                 }
@@ -336,7 +341,7 @@ public class DataSend extends AppCompatActivity {
                 String cleanLine = line.trim();
                 if(sampleBatch.contains(counter)){
                     sampleLabel = (int)Double.parseDouble(cleanLine);
-                    if(sampleLabel == 0 && loss.binary()){
+                    if(sampleLabel == 0 && loss.lossType().equals("binary")){
                         sampleLabel = -1;
                     }
                     yBatch.add(sampleLabel);

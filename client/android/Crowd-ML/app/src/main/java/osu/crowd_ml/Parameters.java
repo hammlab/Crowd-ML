@@ -93,6 +93,9 @@ public class Parameters {
         else if(lossFunction.equals("MultiSVM")){
             loss = new MultiSVM();
         }
+        else if(lossFunction.equals("SoftmaxNN")){
+            loss = new SoftmaxNN();
+        }
         return loss;
     }
     public void setLossFunction(String loss){
