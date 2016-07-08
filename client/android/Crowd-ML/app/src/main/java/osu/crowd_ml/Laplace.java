@@ -26,6 +26,7 @@ public class Laplace implements Distribution{
             sgn = -1;
         else
             sgn = 1;
+        double b = noiseScale / sqrt(2);
         double noise = mu - noiseScale*sgn*Math.log(1-2*Math.abs(rng-0.5)); //inverse cumulative laplace Distribution
         return noise;
     }
