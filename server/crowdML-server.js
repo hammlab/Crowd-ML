@@ -187,6 +187,10 @@ function addToWeightBatch(weightArray){
 			testNum = 0;
 			console.log('Weight iteration ',iter)
 			test.binaryTest(newWeight);}
+		if(testNum == testFreq && testType == 'NNTest'){
+			testNum = 0;
+			console.log('Weight iteration ',iter)
+			test.NNTest(newWeight);}
 
 		iter++;
 		weight.update({
