@@ -40,7 +40,7 @@
 		throw new Error("Invalid Noise Type");
 		}
 
-	if(lossFunction != 'LogReg' && lossFunction != 'Hinge' && lossFunction != 'Softmax')
+	if(lossFunction != 'LogReg' && lossFunction != 'Hinge' && lossFunction != 'Softmax' && lossFunction != 'SoftmaxNN')
 	{
 		throw new Error("Invalid Loss Type");
 		}
