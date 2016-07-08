@@ -1,30 +1,49 @@
 
 	var paramIter = 0;
 	
-	var serviceAccount = <Enter json file name here>;	
-	var databaseURL = <Enter Firebase database url here>;
+	var serviceAccount = 'GD-Prototype-credentials.json';	
+	var databaseURL = 'https://gd-prototype.firebaseio.com';
 	var D = 784;
 	//var maxWeightBatchSize = 1;
 	var maxGradBatchSize = 1;
-	var naughtRate = 0.01;
+	var naughtRate = 10;
 	var eps = 0.00000001;
 	var K = 10;
-	var descentAlg = 'adagrad'; //constant, simple, sqrt, adagrad, rmsProp
+	var descentAlg = 'adagrad'; //simple, sqrt, adagrad, rmsProp
 	var testFeatures = 'MNISTTestImages.dat';
 	var testLabels = 'MNISTTestLabels.dat';
 	var testN = 1000;
-	var testType = 'multiTest'; //none, binary, multiTest
+	var testType = 'multiTest'; //none, binary, multitest
 	var testFrequency = 1;
 
 	var L = 1e-6;
     	var noiseScale = 1;
     	var noiseDistribution = 'NoNoise';
-    	var lossFunction = 'Softmax';
+    	var lossFunction = 'SoftmaxNN';
     	var labelSource = 'MNISTTrainLabels.dat';
     	var featureSource = 'MNISTTrainImages.dat';
-	var N = 10000;
-	var clientBatchSize = 10;
+	var N = 60000;
+	var clientBatchSize = 1;
 
+	if(descentAlg != 'simple' && descentAlg != 'sqrt' && descentAlg != 'adagrad' && descentAlg != 'rmsProp')
+	{
+		throw new Error("Invalid descent Algorithm");
+		}
+
+	if(testType != 'None' && testType != 'binary' && testType != 'multiTest')
+	{
+		throw new Error("Invalid test Type");
+		}
+
+	if(noiseDistribution != 'NoNoise' && noiseDistribution != 'Gaussian' && noiseDistribution != 'Laplace')
+	{
+		throw new Error("Invalid Noise Type");
+		}
+
+	if(lossFunction != 'LogReg' && lossFunction != 'Hinge' && lossFunction != 'Softmax')
+	{
+		throw new Error("Invalid Loss Type");
+		}
 	exports.paramIter = paramIter;
 	exports.serviceAccount = serviceAccount;
 	exports.databaseURL = databaseURL;

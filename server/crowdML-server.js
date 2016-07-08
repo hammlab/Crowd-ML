@@ -26,6 +26,7 @@
 	var descentAlg = constants.descentAlg;
 	var testType = constants.testType;
 	var testFreq = constants.testFrequency;
+	var nh = 200;
 
 	var testNum = 0;	
 	var changeiter = 0;
@@ -44,6 +45,8 @@
 	var length = D;
 	if (K > 2){
 		length = D*K;}
+	if (constants.lossFunction = 'SoftmaxNN'){
+		length = D*nh + nh + nh*nh + nh + nh*K + K;}
 	var adaG = new Array(length);
 	var rms = new Array(length);
 
@@ -178,7 +181,7 @@ function addToWeightBatch(weightArray){
 		testNum++;
 		if(testNum == testFreq && testType == 'multiTest'){
 			testNum = 0;
-			console.log('Weight iteration ',iter)
+			//console.log('Weight iteration ',iter)
 			test.multiTest(newWeight);}
 		if(testNum == testFreq && testType == 'binary'){
 			testNum = 0;
