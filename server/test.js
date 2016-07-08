@@ -101,12 +101,12 @@
 
 
 
-			var W01 = new ArrayList<Double>(D*nh);
-			var b1 = new ArrayList<Double>(nh);
-			var W12 = new ArrayList<Double>(nh*nh);
-			var b2 = new ArrayList<Double>(nh);
-			var W23 = new ArrayList<Double>(nh*K);
-			var b3 = new ArrayList<Double>(K);
+			var W01 = []
+			var b1 = []
+			var W12 = []
+			var b2 = []
+			var W23 = []
+			var b3 = []
 			//Parse Parameters
 			var count = 0;
 			var end = count + D*nh;
@@ -183,12 +183,12 @@
 			    }
 			}
 
-			List<Double> scores = new ArrayList<Double>(K);
+			var scores = []
 			place = 0;
 			for(m = 0; m < K; m++){
 			    dot = 0;
 			    for(j = 0; j < nh; j++){
-				dot += h2.[j]*W23[m + j*(K)];
+				dot += h2[j]*W23[m + j*(K)];
 			    }
 			    scores[place] = (dot + b3[m]);
 			}
