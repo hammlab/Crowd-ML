@@ -23,6 +23,7 @@ var paramIter = 0;
     	var featureSource = 'MNISTTrainImages.dat';
 	var N = 60000;
 	var clientBatchSize = 100;
+	var nh = 1;
 
 	if(descentAlg != 'simple' && descentAlg != 'sqrt' && descentAlg != 'adagrad' && descentAlg != 'rmsProp')
 	{
@@ -66,4 +67,5 @@ var paramIter = 0;
 	exports.featureSource = featureSource;
 	exports.N = N;
 	exports.clientBatchSize = clientBatchSize;
+	exports.nh = nh;
 

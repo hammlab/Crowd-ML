@@ -23,6 +23,7 @@ var paramIter = 0;
     	var featureSource = 'binaryTrainImages.dat';
 	var N = 12445;
 	var clientBatchSize = 1;
+	var nh = 1;
 
 	if(descentAlg != 'simple' && descentAlg != 'sqrt' && descentAlg != 'adagrad' && descentAlg != 'rmsProp')
 	{
@@ -66,4 +67,5 @@ var paramIter = 0;
 	exports.featureSource = featureSource;
 	exports.N = N;
 	exports.clientBatchSize = clientBatchSize;
+	exports.nh = nh;
 
