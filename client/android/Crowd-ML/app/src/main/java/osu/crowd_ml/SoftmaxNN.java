@@ -26,8 +26,7 @@ public class SoftmaxNN implements LossFunction {
         return "NN";
     }
 
-    public List<Double> gradient(List<Double> weights, double[] X, int Y, int D, int K, double L){
-        int nh = 200;
+    public List<Double> gradient(List<Double> weights, double[] X, int Y, int D, int K, double L, int nh){
         int length = D*nh + nh + nh*nh + nh + nh*K + K;
         List<Double> grad = new ArrayList<Double>(length);
 
@@ -111,6 +110,10 @@ public class SoftmaxNN implements LossFunction {
             scores.add(dot + b3.get(i));
         }
 
+        System.out.println("scores");
+        System.out.println(scores);
+        System.out.println("correct");
+        System.out.println(Y);
 
         //dotMax used to prevent overflow
         double dotMax = 0;
@@ -164,7 +167,7 @@ public class SoftmaxNN implements LossFunction {
 
         for(int i = 0; i < nh; i++){
             for(int j = 0; j < K; j++){
-                dW23.add(probs.get(j)*h2.get(i) + L*W23.get(i*nh + j));
+                dW23.add(probs.get(j)*h2.get(i) + L*W23.get(i*K + j));
             }
         }
         for(int i = 0; i < K; i++){
@@ -206,7 +209,7 @@ public class SoftmaxNN implements LossFunction {
 
         for(int i = 0; i < D; i++){
             for(int j = 0; j < nh; j++){
-                dW01.add(dh1.get(j)*X[i] + L*W01.get(i*D + j));
+                dW01.add(dh1.get(j)*X[i] + L*W01.get(i*nh + j));
             }
         }
         for(int i = 0; i < nh; i++){

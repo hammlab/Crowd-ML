@@ -74,11 +74,12 @@ public class DataSend extends AppCompatActivity {
     private int batchSize;
     private double noiseScale;
     private double L;
+    private int nh;
 
-    private List<List<Double>> batch = new ArrayList<List<Double>>();
+    //private List<List<Double>> batch = new ArrayList<List<Double>>();
     private List<double[]> xBatch = new ArrayList<double[]>();
     private List<Integer> yBatch = new ArrayList<Integer>();
-    int batchSlot = 0;
+    //int batchSlot = 0;
 
     private int length;
 
@@ -126,8 +127,8 @@ public class DataSend extends AppCompatActivity {
                 batchSize = params.getClientBatchSize();
                 noiseScale = params.getNoiseScale();
                 L = params.getL();
+                nh = params.getNH();
 
-                int nh = 200;
 
                 dataCount = 0;
 
@@ -255,48 +256,54 @@ public class DataSend extends AppCompatActivity {
             dataCount--;
             xBatch = readSample(batchSamples);
             yBatch = readType(batchSamples);
+        List<Double> avgGrad = new ArrayList<Double>(length);
+        for(int i = 0; i < length; i ++){
+            avgGrad.add(0.0);
+        }
 
         for(int i = 0; i < batchSize; i++){
             double[] X = xBatch.get(i);
             int Y = yBatch.get(i);
-            List<Double> grad = loss.gradient(currentWeights, X, Y, D, K, L);
+            List<Double> grad = loss.gradient(currentWeights, X, Y, D, K, L, nh);
+            System.out.println("test grad total");
+            double tot = 0;
+            for(int j = 0; j < grad.size(); j++){
+                tot += grad.get(j);
+            }
+            System.out.println(tot);
 
             List<Double> noisyGrad = new ArrayList<Double>(length);
             for (int j = 0; j < length; j++){
                 noisyGrad.add(dist.noise(grad.get(j), noiseScale));
             }
-
-            batch.add(noisyGrad);
+            double sum;
+            //batch.add(noisyGrad);
+            for(int j = 0; j < length; j++) {
+                sum = avgGrad.get(j) + noisyGrad.get(j);
+                avgGrad.set(j,sum);
+            }
         }
 
 
-        List<Double> avgGrad = new ArrayList<Double>(length);
+        //List<Double> avgGrad = new ArrayList<Double>(length);
         double sum;
         for(int i = 0; i < length; i++) {
-            sum = 0;
-            for (int j = 0; j < batchSize; j++) {
-                sum += batch.get(j).get(i);
-            }
-            avgGrad.add(sum/batchSize);
+            sum = avgGrad.get(i);
+            avgGrad.set(i, sum/batchSize);
         }
 
-        batch.clear();
+        //batch.clear();
         userData.setGradientProcessed(false);
         userData.setGradients(avgGrad);
         gradientIteration++;
         userData.setGradIter(gradientIteration);
         userValues.setValue(userData);
         avgGrad.clear();
-
     }
 
     public List<double[]> readSample(List<Integer> sampleBatch){
         final TextView message = (TextView) findViewById(R.id.messageDisplay);
         List<double[]> xBatch = new ArrayList<double[]>();
-        System.out.println("sampleBatch size");
-        System.out.println(sampleBatch.size());
-        System.out.println("sampleBatch max");
-        System.out.println(Collections.max(sampleBatch));
         try {
             BufferedReader br = new BufferedReader(new InputStreamReader(getAssets().open(featureSource)));
             String line = null;
