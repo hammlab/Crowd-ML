@@ -13,7 +13,7 @@
 	var testFeatures = 'MNISTTestImages.dat';
 	var testLabels = 'MNISTTestLabels.dat';
 	var testN = 1000;
-	var testType = 'multiTest'; //none, binary, multitest
+	var testType = 'NNTest'; //none, binary, multitest
 	var testFrequency = 1;
 
 	var L = 1e-6;
@@ -23,14 +23,15 @@
     	var labelSource = 'MNISTTrainLabels.dat';
     	var featureSource = 'MNISTTrainImages.dat';
 	var N = 60000;
-	var clientBatchSize = 1;
+	var clientBatchSize = 50;
+	var nh = 75;
 
 	if(descentAlg != 'simple' && descentAlg != 'sqrt' && descentAlg != 'adagrad' && descentAlg != 'rmsProp')
 	{
 		throw new Error("Invalid descent Algorithm");
 		}
 
-	if(testType != 'None' && testType != 'binary' && testType != 'multiTest')
+	if(testType != 'None' && testType != 'binary' && testType != 'multiTest' && testType != 'NNTest')
 	{
 		throw new Error("Invalid test Type");
 		}
@@ -67,4 +68,5 @@
 	exports.featureSource = featureSource;
 	exports.N = N;
 	exports.clientBatchSize = clientBatchSize;
+	exports.nh = nh;
 

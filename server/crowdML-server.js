@@ -3,7 +3,6 @@
 	var constFile = process.argv[2]
 	var constStr = './'+constFile
 	var constants = require(constStr)
-	var test = require('./test')
 
 	firebase.initializeApp({
   		serviceAccount: constants.serviceAccount,
@@ -26,7 +25,7 @@
 	var descentAlg = constants.descentAlg;
 	var testType = constants.testType;
 	var testFreq = constants.testFrequency;
-	var nh = 200;
+	var nh = constants.nh;
 
 	var testNum = 0;	
 	var changeiter = 0;
@@ -37,6 +36,9 @@
 	var gradBatch = [];
 	var iter = 1;
 	var learningRate = c;
+
+	var testFile = './'+testType;
+	var test = require(testFile);
 
 	var auth = firebase.auth();
 	var token = auth.createCustomToken("Server");
@@ -50,16 +52,16 @@
 	var adaG = new Array(length);
 	var rms = new Array(length);
 
-	var zeroWeight = new Array(length);
+	var initWeight = new Array(length);
 	for(i = 0; i < length; i++){
-		zeroWeight[i] = 0;
+		initWeight[i] = (Math.random() - 0.5);
 		adaG[i] = 0;
 		rms[i] = 0;}
 	weight.update({
-		weights: zeroWeight,
+		weights: initWeight,
 		iteration: iter
 		});
-	console.log('zeroes set');
+	console.log('weights initialized');
 
 	//send parameters to clients
 	params.update({
@@ -73,7 +75,8 @@
 		featureSource: constants.featureSource,
 		D: D,
 		N: constants.N,
-		clientBatchSize: constants.clientBatchSize
+		clientBatchSize: constants.clientBatchSize,
+		nh: nh
 		})
 	console.log('parameters set');
 
@@ -181,16 +184,16 @@ function addToWeightBatch(weightArray){
 		testNum++;
 		if(testNum == testFreq && testType == 'multiTest'){
 			testNum = 0;
-			//console.log('Weight iteration ',iter)
-			test.multiTest(newWeight);}
+			console.log('Weight iteration ',iter)
+			test.accuracy(newWeight, constStr);}
 		if(testNum == testFreq && testType == 'binary'){
 			testNum = 0;
 			console.log('Weight iteration ',iter)
-			test.binaryTest(newWeight);}
+			test.accuracy(newWeight, constStr);}
 		if(testNum == testFreq && testType == 'NNTest'){
 			testNum = 0;
 			console.log('Weight iteration ',iter)
-			test.NNTest(newWeight);}
+			test.accuracy(newWeight, constStr);}
 
 		iter++;
 		weight.update({
