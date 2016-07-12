@@ -1,13 +1,21 @@
 
 ### Todo
 
-Yani: Check NN. Compare with pythonClient up to 30 iterations.
-Jackson: NN accuracy. Change test.js, see if we can re-use virtual python clients...
-Jihun: check NN. Virtual clients.... 
+Yani: Commit codes. Local weight update. 
 
-Next:
-ADMM
+Jackson: NN accuracy (bias terms and -1 in dscore)
+
+Common: 
+New hyperparameter at the server side : localUpdateNum
+Perform local weight update : w <- w - naught/sqrt(t)*g as many as localUpdateNum
+
+
+ADMM, SDCA
+
 Write test scripts for unit testing
+
+Reduce data dim using PCA.
+
 
 HogWild
 
