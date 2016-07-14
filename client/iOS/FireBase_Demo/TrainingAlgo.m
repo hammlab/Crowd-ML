@@ -51,6 +51,7 @@ float * laplace (const float *grad, long D, double scale)
             sgn = 1;
         }
         lap = u - (scale/sqrt(2)) * sgn * exp( 1 - 2 * fabs(radm));
+
         *(noise + i) = lap;
     }
     
@@ -59,6 +60,7 @@ float * laplace (const float *grad, long D, double scale)
 
 // Add Gaussian noise
 float * gaussian (const float *grad, long D, double scale)
+
 {
     float *noise = (float *) malloc(D * sizeof(float));
     double radm;
@@ -71,12 +73,14 @@ float * gaussian (const float *grad, long D, double scale)
         double x1 = arc4random_uniform(INT_MAX) / (INT_MAX *1.0f);
         double x2 = arc4random_uniform(INT_MAX) / (INT_MAX *1.0f);
         while(log(x1) == INFINITY || log(x1) == -INFINITY ){
+
             x1 = arc4random_uniform(INT_MAX) / (INT_MAX *1.0f);
         }
         
         radm = sqrt(-2 * log(x1)) * cos(2* M_PI * x2);
         
         *(noise + i) = radm * (scale/sqrt(2)) + u;
+
     }
     
     return noise;
@@ -172,6 +176,7 @@ float * computeSoftMax (const float *trainingFeature, const float *trainingLabel
     double denom = 0.0;
     double max = -DBL_MAX;
     float *ai = (float *) malloc(classes * sizeof(float));
+
     
     //Store x dot w, and find the max dot product
     
