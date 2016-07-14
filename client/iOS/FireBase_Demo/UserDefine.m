@@ -305,14 +305,23 @@
     
     if([self.lossFunction isEqualToString:@"LogReg"]){
         // opt 1 will call "computeLossLog" method
+        NSLog(@"Loss function: LogReg");
         return 1;
     }else if([self.lossFunction isEqualToString:@"Hinge"]){
         //opt 2 will call "computeLossSVM" method (hinge loss)
+        NSLog(@"Loss function: Hinge loss");
         return 2;
     }else if([self.lossFunction isEqualToString: @"Softmax"]){
         //opt 3 will call "computeSoftMax" method
         //Note: it can work for more than 2 classes;
+        NSLog(@"Loss function: Softmax");
+
         return 3;
+    }else if([self.lossFunction isEqualToString: @"SoftmaxNN"]){
+        //opt 3 will call "computeSoftMax" method
+        //Note: it can work for more than 2 classes;
+        NSLog(@"Loss function: SoftmaxNN");
+        return 4;
     }else{
         NSLog(@"Please define the correct loss function.");
         exit(EXIT_SUCCESS);

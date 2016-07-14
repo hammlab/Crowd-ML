@@ -114,7 +114,7 @@
     NSLog(@"View Appeared");
     
     [self login];
-   
+    
 }
 
 - (void) login{
@@ -140,7 +140,7 @@
                        action:@selector(alertTextFieldDidChange:)
              forControlEvents:UIControlEventEditingChanged];
      }];
-
+    
     
     UIAlertAction *okAction = [UIAlertAction
                                actionWithTitle:NSLocalizedString(@"OK", @"OK action")
@@ -170,9 +170,9 @@
     
     [LoginController addAction:okAction];
     [self presentViewController:LoginController animated:YES completion:nil];
-
-
-
+    
+    
+    
 }
 
 //Check valid login information
@@ -204,9 +204,9 @@
         {
             NSLog(@"Error: %@", [error debugDescription]);
             UIAlertController *errorControl = [UIAlertController
-                                                alertControllerWithTitle:@"Error"
-                                                message:[error debugDescription]
-                                                preferredStyle:UIAlertControllerStyleAlert];
+                                               alertControllerWithTitle:@"Error"
+                                               message:[error debugDescription]
+                                               preferredStyle:UIAlertControllerStyleAlert];
             UIAlertAction *acceptAction = [UIAlertAction actionWithTitle:@"Start again" style:UIAlertActionStyleDefault handler:^(UIAlertAction * _Nonnull action) {
             }];
             
@@ -240,20 +240,29 @@
     }
     
 }
-
-/**
- *  Download the current weight from firebase. Calculate the error rate based on this weight.
+/*
+  Manually clear entries under "users".
  */
 - (IBAction)calculateTrainErrorTapped:(UIButton *)sender
 {
-    [self loadWeightFromFireBaseAndCalculateTrainError];
     
+    FIRDatabaseReference *userInfo = [self.rootRef child:@"users"];
+    [userInfo removeValue];
+    [self.trainErrorLabel setText:@"User infomation is cleared."];
+    
+    /**
+     *  Download the current weight from firebase. Calculate the error rate based on this weight.
+     */
+    //[self loadWeightFromFireBaseAndCalculateTrainError];
+
+
 }
 
 - (void)loadWeightFromFireBaseAndCalculateTrainError {
+    
     FIRDatabaseReference *weightRef1 = [self.rootRef child:@"trainingWeights"];
     FIRDatabaseReference *weightRef = [weightRef1 child:@"weights"];
-
+    
     
     [weightRef observeSingleEventOfType:FIRDataEventTypeValue withBlock:^(FIRDataSnapshot *snapshot) {
         
@@ -284,8 +293,9 @@
             NSString *featureName = [self.userParam featureSourceName];
             NSString *fileType = [self.userParam sourceType];
             int DFeatureSize = [self.userParam D];
+            int classes = [self.userParam K];
             
-            float accuracy = [self.trainModel calculateTrainAccuracyWithWeight:w :labelName :featureName :fileType :DFeatureSize];
+            double accuracy = [self.trainModel calculateTrainAccuracyWithWeight:w :labelName :featureName :fileType :DFeatureSize :classes];
             
             [self.trainErrorLabel setText:[NSString stringWithFormat:@"%.3f", accuracy]];
             
@@ -363,7 +373,7 @@
 
 - (void) loadReadByServerFromFirebase
 {
-   
+
     [[[[self.rootRef child:@"users"]  child:self.logginUID] child:@"gradientProcessed"] observeSingleEventOfType:FIRDataEventTypeValue withBlock:^(FIRDataSnapshot *snapshot) {
         
         
@@ -385,18 +395,18 @@
             FIRDatabaseReference *infoRef = [[[self.rootRef child:@"users" ] child:self.logginUID] child:@"gradientProcessed"];
             
             FIRDatabaseReference *gradIterRef = [[[self.rootRef child:@"users" ] child:self.logginUID] child:@"gradIter"];
-           
+            
             NSString *graditer = @"1";FIRDatabaseReference *paraIterRef = [[[self.rootRef child:@"users" ] child:self.logginUID] child:@"paramIter"];
             NSNumber *paramNum = [NSNumber numberWithInt:[self.userParam paramIter] ];
-
+            
             
             [gradIterRef setValue:graditer];
             [gradlossRef setValue:gradlossDict];
             [infoRef setValue:infoDict];
             [paraIterRef setValue:paramNum];
             [self UpdateWeightIter];
-
-
+            
+            
             UIAlertController *checkedAlert = [UIAlertController alertControllerWithTitle:@"Warning" message:@"No user info exists in Firebase. New user info set up. Please tap this button again and begin to train your model." preferredStyle:UIAlertControllerStyleAlert];
             
             UIAlertAction *deaultAction = [UIAlertAction actionWithTitle:@"OK" style:UIAlertActionStyleDefault handler:^(UIAlertAction * _Nonnull action) {
@@ -404,7 +414,7 @@
             
             [checkedAlert addAction:deaultAction];
             [self presentViewController:checkedAlert animated:YES completion:nil];
-
+            
             
         } else {
             [self GetWeightIterUnderUserAndTrainingWeights];
@@ -413,7 +423,7 @@
             if([response integerValue]== 0){
                 
                 if(![self.wIterU isEqualToString:self.wIterTW]){
-                   
+                    
                     [self UpdateWeightIter];
                     [self loadReadByServerFromFirebase];
                 }
@@ -431,16 +441,16 @@
                     [checkedAlert addAction:deaultAction];
                     [self presentViewController:checkedAlert animated:YES completion:nil];
                 }
-
+                
             }else{
                 
                 [self loadWeightFromFireBaseAndTrain];
-
+                
             }
-        
+            
         }
     }];
-   [self UpdateWeightIter];
+    [self UpdateWeightIter];
 }
 
 - (void) tryTrainingAgain
@@ -456,7 +466,7 @@
     
     FIRDatabaseReference *weightRef1 = [self.rootRef child:@"trainingWeights"];
     FIRDatabaseReference *weightRef = [weightRef1 child:@"weights"];
-
+    
     
     NSLog(@"Start Block");
     
@@ -494,7 +504,7 @@
         free(w);
     }];
     [self UpdateWeightIter];
-  
+    
 }
 
 - (void)trainModelAndUploadGradLossWithWeight: (float *) w {
@@ -505,24 +515,28 @@
     int noiseType = (int)[self.userParam noiseOpt];
     int class = [self.userParam K];
     int batchsize= [self.userParam clientBatchSize];
-    float regConstant = [self.userParam L];
-    float variance = [self.userParam noiseScale];
+    double regConstant = [self.userParam L];
+    double variance = [self.userParam noiseScale];
     NSString *labelName = [self.userParam labelSourceName];
     NSString *featureName = [self.userParam featureSourceName];
     NSString *fileType = [self.userParam sourceType];
     int DFeatureSize = [self.userParam D];
+    int N = [self.userParam N];
+    float L = [self.userParam L];
+    int nh = 80;
     
-    
-    gradloss = [self.trainModel trainModelWithWeight:w :lossType :noiseType :class :batchsize :regConstant :variance :labelName :featureName :fileType :DFeatureSize];
+    gradloss = [self.trainModel trainModelWithWeight:w :lossType :noiseType :class :batchsize :regConstant :variance :labelName :featureName :fileType :DFeatureSize :N :L :nh];
     
     self.trainFeatureSize = self.trainModel.featureSize;
-    if(class > 2){
+    if(lossType == 3){
         self.trainFeatureSize = self.trainModel.featureSize * class;
+    }else if(lossType == 4){
+        self.trainFeatureSize = (self.trainModel.featureSize + 1) * nh + (nh + 1) * nh + (nh + 1) * class;
     }
     
     NSLog(@"Get gradient");
-   
-   
+    
+    
     if(w == NULL) {
         [self uploadNewWeightToFireBase];
     }else {
@@ -532,7 +546,7 @@
         }
         [self uploadGradLossToFireBase:gradloss];
     }
-   
+    
     
     free(gradloss);
     
@@ -548,7 +562,7 @@
 
 - (void) uploadGradLossToFireBase: (float *)gradloss
 {
-  
+    
     //Update gradloss
     NSDictionary *gradlossDict = [[NSMutableDictionary alloc] initWithCapacity:self.trainFeatureSize];
     for(int i = 0; i < self.trainFeatureSize; i++) {
@@ -587,14 +601,14 @@
         NSLog(@"Complete update gradIter. ");
         
     }];
-
+    
     NSLog(@"Uploaded gradients");
     
     [infoRef setValue:infoDict];
     
     [self.disabledButton setEnabled:true];
     [self UpdateWeightIter];
-        
+    
 }
 
 - (void) uploadNewWeightToFireBase
@@ -637,7 +651,7 @@
         
         [sender setEnabled:true];
     }
-
+    
     
 }
 

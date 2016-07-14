@@ -48,7 +48,7 @@
                                 <color key="backgroundColor" red="1" green="0.84982482110000002" blue="0.83866459100000001" alpha="1" colorSpace="calibratedRGB"/>
                                 <fontDescription key="fontDescription" type="system" pointSize="23"/>
                                 <color key="tintColor" red="0.97904679289999996" green="1" blue="0.97021807989999997" alpha="1" colorSpace="calibratedRGB"/>
-                                <state key="normal" title="Get Train Accuracy"/>
+                                <state key="normal" title="Clear user info"/>
                                 <connections>
                                     <action selector="calculateTrainErrorTapped:" destination="BYZ-38-t0r" eventType="touchUpInside" id="FVj-tm-hfz"/>
                                 </connections>

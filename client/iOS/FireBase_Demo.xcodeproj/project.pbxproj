@@ -21,8 +21,10 @@
 		B7B3027A1C970A3700B4555B /* trainingLabel.dat in Resources */ = {isa = PBXBuildFile; fileRef = B7B302791C970A3700B4555B /* trainingLabel.dat */; };
 		B90E20BD1D02682B005A8E1C /* UserDefine.m in Sources */ = {isa = PBXBuildFile; fileRef = B90E20BC1D02682B005A8E1C /* UserDefine.m */; };
 		B90E20BE1D026B2E005A8E1C /* TrainingAlgo.m in Sources */ = {isa = PBXBuildFile; fileRef = B7B302751C96193500B4555B /* TrainingAlgo.m */; };
-		B9167BF91D090E8500465BD1 /* MNISTTrainImages.dat in Resources */ = {isa = PBXBuildFile; fileRef = B9167BF71D090E8500465BD1 /* MNISTTrainImages.dat */; };
-		B9167BFA1D090E8500465BD1 /* MNISTTrainLabels.dat in Resources */ = {isa = PBXBuildFile; fileRef = B9167BF81D090E8500465BD1 /* MNISTTrainLabels.dat */; };
+		B920C7631D2B03AF006C9B68 /* MNISTTestImages.dat in Resources */ = {isa = PBXBuildFile; fileRef = B920C7611D2B03AF006C9B68 /* MNISTTestImages.dat */; };
+		B920C7641D2B03AF006C9B68 /* MNISTTestLabels.dat in Resources */ = {isa = PBXBuildFile; fileRef = B920C7621D2B03AF006C9B68 /* MNISTTestLabels.dat */; };
+		B971C5D51D13B06700E19D08 /* MNISTTrainLabels.dat in Resources */ = {isa = PBXBuildFile; fileRef = B971C5D31D13B06700E19D08 /* MNISTTrainLabels.dat */; };
+		B971C5D71D13B16700E19D08 /* MNISTTrainImages.dat in Resources */ = {isa = PBXBuildFile; fileRef = B971C5D61D13B16700E19D08 /* MNISTTrainImages.dat */; };
 		B9740FEC1CFA8CFE00B4505F /* GoogleService-Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = B9740FEB1CFA8CFE00B4505F /* GoogleService-Info.plist */; };
 		C9807197770CBC9269B73E2C /* libPods-FireBase_DemoUITests.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 5A87D5E0AA8F07156D619A49 /* libPods-FireBase_DemoUITests.a */; };
 /* End PBXBuildFile section */
@@ -75,8 +77,10 @@
 		B7B302791C970A3700B4555B /* trainingLabel.dat */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = trainingLabel.dat; sourceTree = "<group>"; };
 		B90E20BB1D02682B005A8E1C /* UserDefine.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = UserDefine.h; sourceTree = "<group>"; };
 		B90E20BC1D02682B005A8E1C /* UserDefine.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = UserDefine.m; sourceTree = "<group>"; };
-		B9167BF71D090E8500465BD1 /* MNISTTrainImages.dat */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = MNISTTrainImages.dat; sourceTree = "<group>"; };
-		B9167BF81D090E8500465BD1 /* MNISTTrainLabels.dat */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = MNISTTrainLabels.dat; sourceTree = "<group>"; };
+		B920C7611D2B03AF006C9B68 /* MNISTTestImages.dat */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = MNISTTestImages.dat; sourceTree = "<group>"; };
+		B920C7621D2B03AF006C9B68 /* MNISTTestLabels.dat */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = MNISTTestLabels.dat; sourceTree = "<group>"; };
+		B971C5D31D13B06700E19D08 /* MNISTTrainLabels.dat */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = MNISTTrainLabels.dat; sourceTree = "<group>"; };
+		B971C5D61D13B16700E19D08 /* MNISTTrainImages.dat */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = MNISTTrainImages.dat; sourceTree = "<group>"; };
 		B9740FEB1CFA8CFE00B4505F /* GoogleService-Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; path = "GoogleService-Info.plist"; sourceTree = "<group>"; };
 		D626DF3CF0DFF00234B4D296 /* libPods-FireBase_DemoTests.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = "libPods-FireBase_DemoTests.a"; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
@@ -172,8 +176,10 @@
 				B7B302521C8DD99F00B4555B /* Info.plist */,
 				B7B302791C970A3700B4555B /* trainingLabel.dat */,
 				B7B302771C970A1B00B4555B /* trainingFeature.dat */,
-				B9167BF71D090E8500465BD1 /* MNISTTrainImages.dat */,
-				B9167BF81D090E8500465BD1 /* MNISTTrainLabels.dat */,
+				B971C5D61D13B16700E19D08 /* MNISTTrainImages.dat */,
+				B971C5D31D13B06700E19D08 /* MNISTTrainLabels.dat */,
+				B920C7611D2B03AF006C9B68 /* MNISTTestImages.dat */,
+				B920C7621D2B03AF006C9B68 /* MNISTTestLabels.dat */,
 				B7B302411C8DD99F00B4555B /* Supporting Files */,
 			);
 			path = FireBase_Demo;
@@ -317,14 +323,16 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				B9167BFA1D090E8500465BD1 /* MNISTTrainLabels.dat in Resources */,
+				B920C7631D2B03AF006C9B68 /* MNISTTestImages.dat in Resources */,
 				B7B302511C8DD99F00B4555B /* LaunchScreen.storyboard in Resources */,
-				B9167BF91D090E8500465BD1 /* MNISTTrainImages.dat in Resources */,
 				B7B3024E1C8DD99F00B4555B /* Assets.xcassets in Resources */,
+				B971C5D71D13B16700E19D08 /* MNISTTrainImages.dat in Resources */,
 				B7B302781C970A1B00B4555B /* trainingFeature.dat in Resources */,
 				B7B3024C1C8DD99F00B4555B /* Main.storyboard in Resources */,
 				B7B3027A1C970A3700B4555B /* trainingLabel.dat in Resources */,
 				B9740FEC1CFA8CFE00B4505F /* GoogleService-Info.plist in Resources */,
+				B920C7641D2B03AF006C9B68 /* MNISTTestLabels.dat in Resources */,
+				B971C5D51D13B06700E19D08 /* MNISTTrainLabels.dat in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -618,6 +626,7 @@
 			baseConfigurationReference = 09BDF5B568D2F0417CDBD5C0 /* Pods-FireBase_Demo.debug.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CLANG_ENABLE_OBJC_ARC = YES;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "iPhone Developer";
 				INFOPLIST_FILE = FireBase_Demo/Info.plist;
@@ -634,6 +643,7 @@
 			baseConfigurationReference = 8BFCD5EF1D97ABD352B2B9B2 /* Pods-FireBase_Demo.release.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CLANG_ENABLE_OBJC_ARC = YES;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "iPhone Developer";
 				INFOPLIST_FILE = FireBase_Demo/Info.plist;
