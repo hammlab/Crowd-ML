@@ -34,11 +34,9 @@
  */
 @property (nonatomic, readonly) NSInteger featureSize;
 
-- (float *) trainModelWithWeight:(float *)w :(int)lossFunction :(int)noiseFunction :(int)class :(int)sbatch :(float)regConstant :(float)variance :(NSString *)labelName :(NSString *)featureName :(NSString *)fileType :(int) DFeatureSize;
-
-//- (float *) trainModelWithWeight:(float *)w;
+- (float *) trainModelWithWeight:(float *)w :(int)lossFunction :(int)noiseFunction :(int)class :(int)sbatch :(double)regConstant :(double)variance :(NSString *)labelName :(NSString *)featureName :(NSString *)fileType :(int) DFeatureSize :(int)getN :(float)L :(int)nh;
 
 
-- (float) calculateTrainAccuracyWithWeight: (float *)w : (NSString *)labelName : (NSString *)featureName : (NSString *)fileType : (int) DFeatureSize;
+- (float) calculateTrainAccuracyWithWeight: (float *)w :(NSString *)labelName :(NSString *)featureName :(NSString *)fileType :(int) DFeatureSize :(int)classes;
 
 @end
