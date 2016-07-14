@@ -22,11 +22,11 @@ limitations under the License
 
 public class Hinge implements LossFunction{
 
-    public boolean binary(){
-        return true;
+    public String lossType() {
+        return "binary";
     }
 
-    public List<Double> gradient(List<Double> weights, double[] X, int Y, int D, int K, double L){
+    public List<Double> gradient(List<Double> weights, double[] X, int Y, int D, int K, double L, int nh){
         List<Double>  grad = new ArrayList<Double>(D);
         for (int i = 0; i < D; i++) {
             grad.add(0.0);

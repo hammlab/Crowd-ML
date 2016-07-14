@@ -28,6 +28,7 @@ public class Parameters {
     private String featureSource;
     private int D;
     private int N;
+    private int nh;
 
     private int clientBatchSize;
 
@@ -93,6 +94,9 @@ public class Parameters {
         else if(lossFunction.equals("MultiSVM")){
             loss = new MultiSVM();
         }
+        else if(lossFunction.equals("SoftmaxNN")){
+            loss = new SoftmaxNN();
+        }
         return loss;
     }
     public void setLossFunction(String loss){
@@ -125,6 +129,13 @@ public class Parameters {
     }
     public void setN(int nVal){
         N = nVal;
+    }
+
+    public int getNH(){
+        return nh;
+    }
+    public void setNH(int nhVar){
+        nh = nhVar;
     }
 
     public int getClientBatchSize(){

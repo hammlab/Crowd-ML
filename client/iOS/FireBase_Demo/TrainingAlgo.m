@@ -33,12 +33,21 @@
 @end
 
 // Add Laplace noise
+<<<<<<< HEAD
 float * laplace (const float *grad, long D, double scale)
 {
     double u;
     double sgn = 1;
     double radm;
     double lap;
+=======
+float * laplace (const float *grad, long D, float scale)
+{
+    float u;
+    float sgn = 1;
+    float radm;
+    float lap;
+>>>>>>> master
     
     float *noise = (float *) malloc(D * sizeof(float));
     
@@ -50,7 +59,11 @@ float * laplace (const float *grad, long D, double scale)
         }else{
             sgn = 1;
         }
+<<<<<<< HEAD
         lap = u - (scale/sqrt(2)) * sgn * exp( 1 - 2 * fabs(radm));
+=======
+        lap = u - (scale/sqrt(2)) * sgn * exp( 1 - 2 * fabsf(radm));
+>>>>>>> master
         *(noise + i) = lap;
     }
     
@@ -58,7 +71,11 @@ float * laplace (const float *grad, long D, double scale)
 }
 
 // Add Gaussian noise
+<<<<<<< HEAD
 float * gaussian (const float *grad, long D, double scale)
+=======
+float * gaussian (const float *grad, long D, float scale)
+>>>>>>> master
 {
     float *noise = (float *) malloc(D * sizeof(float));
     double radm;
@@ -68,15 +85,25 @@ float * gaussian (const float *grad, long D, double scale)
         u = *(grad + i);
         
         //Box-Muller Transformation:
+<<<<<<< HEAD
         double x1 = arc4random_uniform(INT_MAX) / (INT_MAX *1.0f);
         double x2 = arc4random_uniform(INT_MAX) / (INT_MAX *1.0f);
         while(log(x1) == INFINITY || log(x1) == -INFINITY ){
+=======
+        float x1 = arc4random_uniform(INT_MAX) / (INT_MAX *1.0f);
+        float x2 = arc4random_uniform(INT_MAX) / (INT_MAX *1.0f);
+        while(logf(x1) == INFINITY || logf(x1) == -INFINITY ){
+>>>>>>> master
             x1 = arc4random_uniform(INT_MAX) / (INT_MAX *1.0f);
         }
         
+<<<<<<< HEAD
         radm = sqrt(-2 * log(x1)) * cos(2* M_PI * x2);
         
         *(noise + i) = radm * (scale/sqrt(2)) + u;
+=======
+        *(noise + i) =  radm * (scale/sqrt(2)) + u;
+>>>>>>> master
     }
     
     return noise;
@@ -168,10 +195,17 @@ float * computeSoftMax (const float *trainingFeature, const float *trainingLabel
         *(gradloss + i) = 0.0;
     }
     
+<<<<<<< HEAD
     double dot = 0.0;
     double denom = 0.0;
     double max = -DBL_MAX;
     float *ai = (float *) malloc(classes * sizeof(float));
+=======
+    float dot = 0;
+    double denom = 0;
+    double max= -DBL_MAX;
+    double *ai = (double *) malloc(classes * sizeof(double));
+>>>>>>> master
     
     //Store x dot w, and find the max dot product
     

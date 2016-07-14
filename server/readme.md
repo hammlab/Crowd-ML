@@ -17,7 +17,7 @@
 7. Run command
 
   ```
-  $nodejs crowdML-server.js
+  $nodejs crowdML-server.js [Constants file name you wish to use]
   ```
 
 #### What the server-side app does

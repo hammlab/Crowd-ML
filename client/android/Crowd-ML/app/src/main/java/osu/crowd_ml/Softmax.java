@@ -22,11 +22,11 @@ limitations under the License
 
 public class Softmax implements LossFunction{
 
-    public boolean binary(){
-        return false;
+    public String lossType() {
+        return "multi";
     }
 
-    public List<Double> gradient(List<Double> weights, double[] X, int Y, int D, int K, double L){
+    public List<Double> gradient(List<Double> weights, double[] X, int Y, int D, int K, double L, int nh){
 
         List<Double> grad = new ArrayList<Double>(D*K);
         for(int i = 0; i < D*K; i++){

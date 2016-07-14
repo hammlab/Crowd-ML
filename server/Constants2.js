@@ -1,8 +1,7 @@
-
-	var paramIter = 0;
+var paramIter = 0;
 	
-	var serviceAccount = 'GD-Prototype-credentials.json';	
-	var databaseURL = 'https://gd-prototype.firebaseio.com';
+	var serviceAccount = <insert service account file name>;	
+	var databaseURL = <insert database URL>;
 	var D = 784;
 	//var maxWeightBatchSize = 1;
 	var maxGradBatchSize = 1;
@@ -13,25 +12,25 @@
 	var testFeatures = 'MNISTTestImages.dat';
 	var testLabels = 'MNISTTestLabels.dat';
 	var testN = 1000;
-	var testType = 'NNTest'; //none, binary, multitest
+	var testType = 'multiTest'; //none, binary, multitest
 	var testFrequency = 1;
 
 	var L = 1e-6;
     	var noiseScale = 1;
     	var noiseDistribution = 'NoNoise';
-    	var lossFunction = 'SoftmaxNN';
+    	var lossFunction = 'Softmax';
     	var labelSource = 'MNISTTrainLabels.dat';
     	var featureSource = 'MNISTTrainImages.dat';
 	var N = 60000;
-	var clientBatchSize = 50;
-	var nh = 75;
+	var clientBatchSize = 100;
+	var nh = 1;
 
 	if(descentAlg != 'simple' && descentAlg != 'sqrt' && descentAlg != 'adagrad' && descentAlg != 'rmsProp')
 	{
 		throw new Error("Invalid descent Algorithm");
 		}
 
-	if(testType != 'None' && testType != 'binary' && testType != 'multiTest' && testType != 'NNTest')
+	if(testType != 'None' && testType != 'binary' && testType != 'multiTest')
 	{
 		throw new Error("Invalid test Type");
 		}
@@ -41,7 +40,7 @@
 		throw new Error("Invalid Noise Type");
 		}
 
-	if(lossFunction != 'LogReg' && lossFunction != 'Hinge' && lossFunction != 'Softmax' && lossFunction != 'SoftmaxNN')
+	if(lossFunction != 'LogReg' && lossFunction != 'Hinge' && lossFunction != 'Softmax')
 	{
 		throw new Error("Invalid Loss Type");
 		}

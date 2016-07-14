@@ -1,37 +1,36 @@
-
-	var paramIter = 0;
+var paramIter = 0;
 	
-	var serviceAccount = 'GD-Prototype-credentials.json';	
-	var databaseURL = 'https://gd-prototype.firebaseio.com';
-	var D = 784;
+	var serviceAccount = <insert service account file name>;	
+	var databaseURL = <insert database URL>;
+	var D = 785;
 	//var maxWeightBatchSize = 1;
 	var maxGradBatchSize = 1;
-	var naughtRate = 10;
+	var naughtRate = 0.00001;
 	var eps = 0.00000001;
-	var K = 10;
-	var descentAlg = 'adagrad'; //simple, sqrt, adagrad, rmsProp
-	var testFeatures = 'MNISTTestImages.dat';
-	var testLabels = 'MNISTTestLabels.dat';
-	var testN = 1000;
-	var testType = 'NNTest'; //none, binary, multitest
+	var K = 2;
+	var descentAlg = 'simple'; //simple, sqrt, adagrad, rmsProp
+	var testFeatures = 'binaryTestImages.dat';
+	var testLabels = 'binaryTestLabels.dat';
+	var testN = 220;
+	var testType = 'binary'; //none, binary, multitest
 	var testFrequency = 1;
 
 	var L = 1e-6;
     	var noiseScale = 1;
     	var noiseDistribution = 'NoNoise';
-    	var lossFunction = 'SoftmaxNN';
-    	var labelSource = 'MNISTTrainLabels.dat';
-    	var featureSource = 'MNISTTrainImages.dat';
-	var N = 60000;
-	var clientBatchSize = 50;
-	var nh = 75;
+    	var lossFunction = 'Hinge';
+    	var labelSource = 'binaryTrainLabels.dat';
+    	var featureSource = 'binaryTrainImages.dat';
+	var N = 12445;
+	var clientBatchSize = 1;
+	var nh = 1;
 
 	if(descentAlg != 'simple' && descentAlg != 'sqrt' && descentAlg != 'adagrad' && descentAlg != 'rmsProp')
 	{
 		throw new Error("Invalid descent Algorithm");
 		}
 
-	if(testType != 'None' && testType != 'binary' && testType != 'multiTest' && testType != 'NNTest')
+	if(testType != 'None' && testType != 'binary' && testType != 'multiTest')
 	{
 		throw new Error("Invalid test Type");
 		}
@@ -41,7 +40,7 @@
 		throw new Error("Invalid Noise Type");
 		}
 
-	if(lossFunction != 'LogReg' && lossFunction != 'Hinge' && lossFunction != 'Softmax' && lossFunction != 'SoftmaxNN')
+	if(lossFunction != 'LogReg' && lossFunction != 'Hinge' && lossFunction != 'Softmax')
 	{
 		throw new Error("Invalid Loss Type");
 		}
