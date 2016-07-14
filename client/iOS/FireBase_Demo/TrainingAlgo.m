@@ -39,6 +39,7 @@ float * laplace (const float *grad, long D, double scale)
     double sgn = 1;
     double radm;
     double lap;
+
     
     float *noise = (float *) malloc(D * sizeof(float));
     
@@ -50,6 +51,7 @@ float * laplace (const float *grad, long D, double scale)
         }else{
             sgn = 1;
         }
+        
         lap = u - (scale/sqrt(2)) * sgn * exp( 1 - 2 * fabs(radm));
 
         *(noise + i) = lap;
@@ -81,6 +83,7 @@ float * gaussian (const float *grad, long D, double scale)
         
         *(noise + i) = radm * (scale/sqrt(2)) + u;
 
+        
     }
     
     return noise;
