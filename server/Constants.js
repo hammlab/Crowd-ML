@@ -4,7 +4,8 @@
 	var serviceAccount = 'GD-Prototype-credentials.json';	
 	var databaseURL = 'https://gd-prototype.firebaseio.com';
 	var D = 784;
-	//var maxWeightBatchSize = 1;
+	var maxWeightBatchSize = 1;
+	var clientWeightBatchSize = 0;
 	var maxGradBatchSize = 1;
 	var naughtRate = 10;
 	var eps = 0.00000001;
@@ -49,7 +50,8 @@
 	exports.serviceAccount = serviceAccount;
 	exports.databaseURL = databaseURL;
 	exports.D = D;
-	//exports.maxWeightBatchSize = maxWeightBatchSize;
+	exports.maxWeightBatchSize = maxWeightBatchSize;
+	exports.clientWeightBatchSize = clientWeightBatchSize;
 	exports.maxGradBatchSize = maxGradBatchSize;
 	exports.naughtRate = naughtRate;
 	exports.eps = eps;

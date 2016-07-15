@@ -17,7 +17,8 @@
 	var users = ref.child('users');
 
 	var D = constants.D;
-	var maxWeightBatchSize = 1;
+	var maxWeightBatchSize = constants.maxWeightBatchSize;
+	var clientWeightBatchSize = constants.clientWeightBatchSize
 	var maxGradBatchSize = constants.maxGradBatchSize;
 	var c = constants.naughtRate;
 	var eps = constants.eps;
@@ -76,7 +77,12 @@
 		D: D,
 		N: constants.N,
 		clientBatchSize: constants.clientBatchSize,
-		nh: nh
+		nh: nh,
+		//necessary for client-side weight calculation
+		clientWeightBatchSize: clientWeightBatchSize,
+		c: c,
+		eps: eps,
+		descentAlg: descentAlg,
 		})
 	console.log('parameters set');
 
@@ -103,7 +109,12 @@
 		var userID = users.child(uid);		
 		if(uid && !processed){
 			if(userWeightIter == iter && userParamIter == constants.paramIter){
-				addToGradBatch(grad);
+				if(clientWeightBatchSize == 0){
+					addToGradBatch(grad);
+				}
+				else{
+					addToWeightBatch(grad);
+				}
 			}
 			
 			userID.update({
@@ -195,7 +206,10 @@ function addToWeightBatch(weightArray){
 			console.log('Weight iteration ',iter)
 			test.accuracy(newWeight, constStr);}
 
-		iter++;
+		if(clientWeightBatchSize > 0)
+			{iter += clientWeightBatchSize;}
+		else
+			{iter++;}
 		weight.update({
 			iteration: iter
 			});
