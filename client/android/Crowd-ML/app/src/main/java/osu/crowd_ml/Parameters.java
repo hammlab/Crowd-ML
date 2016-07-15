@@ -29,6 +29,10 @@ public class Parameters {
     private int D;
     private int N;
     private int nh;
+    private int clientWeightBatchSize;
+    private double c;
+    private double eps;
+    private String descentAlg;
 
     private int clientBatchSize;
 
@@ -143,5 +147,22 @@ public class Parameters {
     }
     public void setClientBatchSize(int bSize){
         clientBatchSize = bSize;
+    }
+
+    public int getClientWeightBatchSize() { return clientWeightBatchSize;}
+    public void setClientWeightBatchSize(int size){ clientWeightBatchSize = size;}
+
+    public double getC() {return c;}
+    public void setC ( double cVal){ c = cVal;}
+
+    public double getEps() {return eps;}
+    public void setEps(double epsVal){eps = epsVal;}
+
+    public String getDescentAlg() {
+        return descentAlg;
+    }
+
+    public void setDescentAlg(String descentAlgVal) {
+        descentAlg = descentAlgVal;
     }
 }
