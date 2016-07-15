@@ -223,8 +223,7 @@ float * computeSoftMax (const float *trainingFeature, const float *trainingLabel
 }
 
 
-float * computeNN (const float *trainingFeature, const float *trainingLabel, const float *w, long D, int classes, double regConstant, float L){
-    int nh = 80;
+float * computeNN (const float *trainingFeature, const float *trainingLabel, const float *w, long D, int classes, double regConstant, float L, int nh){
     int length = ((int)D + 1) * nh + (nh + 1) * nh + (nh + 1) *classes;
     float *gradloss = (float *) malloc(length * sizeof(float));
     
@@ -476,7 +475,7 @@ float * computeNN (const float *trainingFeature, const float *trainingLabel, con
 }
 
 //Use one of loss funtions
-float * computeLoss (const float *trainingFeature, const float *trainingLabel, const float *w, long D, int lossopt, double regConstant, int classes, float L)
+float * computeLoss (const float *trainingFeature, const float *trainingLabel, const float *w, long D, int lossopt, double regConstant, int classes, float L, int nh)
 {
     
     //the choice of loss functions and noise functions depends on a user's definition in "UserDefine.m".
@@ -487,7 +486,7 @@ float * computeLoss (const float *trainingFeature, const float *trainingLabel, c
     else if(lossopt == 3)
         return computeSoftMax(trainingFeature, trainingLabel, w, D, classes, regConstant);
     else
-        return computeNN(trainingFeature, trainingLabel, w, D, classes, regConstant, L);
+        return computeNN(trainingFeature, trainingLabel, w, D, classes, regConstant, L, nh);
 
 
     
@@ -567,7 +566,7 @@ float * noiseLoss(float *loss, int noiseFunction, int length, double variance){
             
             [modelInd addObject:@(data)];
             
-            loss = computeLoss(*(featureVector + data), labelVector + data, w, self.featureSize,lossFunction,regConstant,classes, L);
+            loss = computeLoss(*(featureVector + data), labelVector + data, w, self.featureSize,lossFunction,regConstant,classes, L, nh);
          
             for(int k = 0; k <length;k++){
                 *(addGrad + k) = *(addGrad + k) + *(loss + k);
