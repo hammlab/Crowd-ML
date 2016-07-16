@@ -29,7 +29,7 @@ public class Parameters {
     private int D;
     private int N;
     private int nh;
-    private int clientWeightBatchSize;
+    private int localUpdateNum;
     private double c;
     private double eps;
     private String descentAlg;
@@ -149,8 +149,8 @@ public class Parameters {
         clientBatchSize = bSize;
     }
 
-    public int getClientWeightBatchSize() { return clientWeightBatchSize;}
-    public void setClientWeightBatchSize(int size){ clientWeightBatchSize = size;}
+    public int getLocalUpdateNum() { return localUpdateNum;}
+    public void setLocalUpdateNum(int size){ localUpdateNum = size;}
 
     public double getC() {return c;}
     public void setC ( double cVal){ c = cVal;}

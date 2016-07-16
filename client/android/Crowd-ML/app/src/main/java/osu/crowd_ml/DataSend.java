@@ -75,10 +75,11 @@ public class DataSend extends AppCompatActivity {
     private double noiseScale;
     private double L;
     private int nh;
-    private int clientWeightBatchSize;
+    private int localUpdateNum;
     private double c;
     private double eps;
     private String descentAlg;
+    private int t = 0;
     private List<Double> learningRateFactor;
 
     //private List<List<Double>> batch = new ArrayList<List<Double>>();
@@ -133,7 +134,7 @@ public class DataSend extends AppCompatActivity {
                 noiseScale = params.getNoiseScale();
                 L = params.getL();
                 nh = params.getNH();
-                clientWeightBatchSize = params.getClientWeightBatchSize();
+                localUpdateNum = params.getLocalUpdateNum();
                 c = params.getC();
                 eps = params.getEps();
                 descentAlg = params.getDescentAlg();
@@ -201,23 +202,23 @@ public class DataSend extends AppCompatActivity {
                     message.setText("Input count too high");
                 }
 
-                if (ready && dataCount > 0 && dataCount <= N/batchSize && clientWeightBatchSize > 0) {
+                if (ready && dataCount > 0 && dataCount <= N/batchSize && localUpdateNum == 0) {
                     message.setText("Sending Data");
                     ready = false;
                     sendGradient();
                 }
 
-                if (ready && dataCount > 0 && dataCount <= N/batchSize && clientWeightBatchSize == 0) {
+                if (ready && dataCount > 0 && dataCount <= N/batchSize && localUpdateNum > 0) {
                     message.setText("Sending Data");
                     ready = false;
+
 
                     userData = new UserData();
                     List<Double> oldWeight = weightVals.getWeights();
                     List<Double> newWeight = new ArrayList<Double>(length);
-                    int t = weightVals.getCurrentIteration();
                     userData.setParamIter(paramIter);
                     userData.setWeightIter(t);
-                    for(int i = 0; i < clientWeightBatchSize; i++){
+                    for(int i = 0; i < localUpdateNum; i++){
                         newWeight = internalWeightCalc(oldWeight, t);
                         t++;
                         oldWeight = newWeight;
@@ -227,6 +228,9 @@ public class DataSend extends AppCompatActivity {
                     userData.setGradientProcessed(false);
                     userData.setGradients(newWeight);
                     userValues.setValue(userData);
+
+                    ready = true;
+
                 }
 
 
@@ -253,7 +257,7 @@ public class DataSend extends AppCompatActivity {
             @Override
             public void onDataChange(DataSnapshot dataSnapshot) {
                 userCheck = dataSnapshot.getValue(UserData.class);
-                if (dataCount > 0 && userCheck.getGradientProcessed() && userCheck.getGradIter()== gradientIteration) {
+                if (dataCount > 0 && userCheck.getGradientProcessed() && userCheck.getGradIter()== gradientIteration && localUpdateNum == 0) {
                     sendGradient();
                 }
                 if (dataCount == 0) {
