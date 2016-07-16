@@ -18,7 +18,7 @@
 
 	var D = constants.D;
 	var maxWeightBatchSize = constants.maxWeightBatchSize;
-	var clientWeightBatchSize = constants.clientWeightBatchSize
+	var localUpdateNum = constants.localUpdateNum
 	var maxGradBatchSize = constants.maxGradBatchSize;
 	var c = constants.naughtRate;
 	var eps = constants.eps;
@@ -79,7 +79,7 @@
 		clientBatchSize: constants.clientBatchSize,
 		nh: nh,
 		//necessary for client-side weight calculation
-		clientWeightBatchSize: clientWeightBatchSize,
+		localUpdateNum: localUpdateNum,
 		c: c,
 		eps: eps,
 		descentAlg: descentAlg,
@@ -109,7 +109,7 @@
 		var userID = users.child(uid);		
 		if(uid && !processed){
 			if(userWeightIter == iter && userParamIter == constants.paramIter){
-				if(clientWeightBatchSize == 0){
+				if(localUpdateNum == 0){
 					addToGradBatch(grad);
 				}
 				else{
@@ -206,8 +206,8 @@ function addToWeightBatch(weightArray){
 			console.log('Weight iteration ',iter)
 			test.accuracy(newWeight, constStr);}
 
-		if(clientWeightBatchSize > 0)
-			{iter += clientWeightBatchSize;}
+		if(localUpdateNum > 0)
+			{iter += localUpdateNum;}
 		else
 			{iter++;}
 		weight.update({
