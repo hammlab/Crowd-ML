@@ -46,7 +46,6 @@ Dtest = 50#784
 Ktest = 10
 
 ## For local training
-#naught = 10.
 localTraining = True # Set this true for faster, local training.
 
 params = {}
@@ -56,7 +55,7 @@ if localTraining: # local version for testing purposes.
     params['K'] = 10
     params['L']= 1e-6
     params['N'] = 60000
-    params['naught'] = 10.
+    params['naughtRate'] = 10.
     params['clientBatchSize'] = 100
     params['localUpdateNum'] = 10
     params['featureSource'] = 'MNISTTrainImages.50.l2.dat'
@@ -116,7 +115,7 @@ def trainModel():
             params['K'] = np.int(ref.get('/parameters/K', None, params = {"auth":token}))
             params['L'] = np.double(ref.get('/parameters/L', None, params = {"auth":token}))
             params['N'] = np.int(ref.get('/parameters/N', None, params = {"auth":token}))
-            params['naught'] = np.int(ref.get('/parameters/naught', None, params = {"auth":token}))
+            params['naughtRate'] = np.int(ref.get('/parameters/naughtRate', None, params = {"auth":token}))
             params['clientBatchSize'] = np.int(ref.get('/parameters/clientBatchSize', None, params = {"auth":token}))
             params['featureSource'] = ref.get('/parameters/featureSource', None, params = {"auth":token})
             params['labelSource'] = ref.get('/parameters/labelSource', None, params = {"auth":token})
@@ -192,8 +191,8 @@ def trainModel():
                     g,l = computeNoisyGradient(w,tX,ty,params)
 
                     # Simple learning rate
-                    #w -= naught/gradIter*g 
-                    w -= params['naught']/np.sqrt(gradIter*params['localUpdateNum'])*g # keep gradIter fixed?
+                    #w -= naughtRate/gradIter*g 
+                    w -= params['naughtRate']/np.sqrt(gradIter*params['localUpdateNum'])*g # keep gradIter fixed?
 
             print 'loss = ',str(l)
 
@@ -201,8 +200,8 @@ def trainModel():
             if localTraining:
                 if params['localUpdateNum']<=0:
                     # Simple learning rate
-                    #w -= naught/gradIter*g 
-                    w -= params['naught']/np.sqrt(gradIter)*g
+                    #w -= naughtRate/gradIter*g 
+                    w -= params['naughtRate']/np.sqrt(gradIter)*g
                 else:
                     pass # Do nothing
             
