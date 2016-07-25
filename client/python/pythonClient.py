@@ -46,10 +46,11 @@ Dtest = 50#784
 Ktest = 10
 
 ## For local training
-localTraining = True # Set this true for faster, local training.
+
+standalone = True # Set this true for faster, local training.
 
 params = {}
-if localTraining: # local version for testing purposes.
+if standalone: # local version for testing purposes.
     params = {}
     params['D'] = 50#784
     params['K'] = 10
@@ -93,7 +94,7 @@ def GenerateLaplaceNoise(scale=1.,tsize=None):
 def trainModel():
 
     print 'Setting up firebase'
-    if not localTraining:
+    if not standalone:
         ref = firebase.FirebaseApplication(url, None)
         users = firebase.FirebaseApplication(url+'/users', None)
         auth_payload = {"uid": uid}
@@ -107,7 +108,7 @@ def trainModel():
     while True:
         paramIter = -1
         weightIter = -1
-        if not localTraining: # Read all params from server
+        if not standalone: # Read all params from server
             print ' '
             print 'Downloading parameters from server'
             paramIter = np.int(ref.get('/parameters/paramIter', None, params = {"auth":token}))
@@ -152,7 +153,7 @@ def trainModel():
             # Ready to send weights?
             reset = False
             print 'Checking server status'
-            while not localTraining:
+            while not standalone:
                 if (gradIter==1): # beginning
                     break;
                 print '.',
@@ -173,7 +174,7 @@ def trainModel():
                 break;
 
             # Fetch iteration number and weight 
-            if localTraining:
+            if standalone:
                 weightIter = gradIter
             else:
                 #print 'Fetching weights'
@@ -191,13 +192,13 @@ def trainModel():
                     g,l = computeNoisyGradient(w,tX,ty,params)
 
                     # Simple learning rate
-                    #w -= naughtRate/gradIter*g 
+                    #w -= naught/gradIter*g 
                     w -= params['naughtRate']/np.sqrt(gradIter*params['localUpdateNum'])*g # keep gradIter fixed?
 
             print 'loss = ',str(l)
 
 
-            if localTraining:
+            if standalone:
                 if params['localUpdateNum']<=0:
                     # Simple learning rate
                     #w -= naughtRate/gradIter*g 
@@ -207,7 +208,11 @@ def trainModel():
             
             else:
                 print 'Uploading gradients'
-                gradJson = g.tolist()
+                if params['localUpdateNum']<=0:
+                    gradJson = g.tolist()
+                else:
+                    gradJson = w.tolist()
+                    
                 ref.put(user, 'paramIter', paramIter, params = {"auth":token})                 
                 ref.put(user, 'weightIter', weightIter, params = {"auth":token})          
                 ref.put(user, 'gradIter', gradIter, params = {"auth":token})
@@ -219,7 +224,7 @@ def trainModel():
             testModel(w,Xtest,ytest,params['K'],params['lossFunction'])
 
 
-        if localTraining:
+        if standalone:
             break
 
 
