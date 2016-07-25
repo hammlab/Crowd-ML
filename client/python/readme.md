@@ -3,9 +3,9 @@ The pythonClient.py implements all basic functionalities of a client-side app si
 WARNING: the client uses the secret key from the firebase db, and should NOT be distributed in public.
 The client is best used as a test for developing purposes.  
 
-The client can also run locally (i.e., off-line) without firebase by setting
+The client can also run standalone (i.e., offline) without firebase by setting
 ```
-localTraining = True
+standalone = True
 ```
 inside the script. 
 Local training is much faster than using firebase, and is useful for testing.
