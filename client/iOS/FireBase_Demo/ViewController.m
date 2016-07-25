@@ -86,6 +86,17 @@
  */
 @property (nonatomic) NSString *wIterTW;
 
+/**
+ *  For local update.
+ */
+@property (nonatomic) BOOL localTraining;
+
+
+/**
+ *  For local update, counting the number of times of training
+ */
+@property (nonatomic) int numOfTraining;
+
 
 @end
 
@@ -101,6 +112,7 @@
     [self.userParam Initialize:self.paramRef];
     self.countTrainingTime = 0;
     self.isTrainOnce = true;
+    self.localTraining = false;
     
     
     
@@ -498,8 +510,11 @@
         NSLog(@"Complete load Weight. ");
         
         
-        
-        [self trainModelAndUploadGradLossWithWeight:w];
+        if(self.localTraining){
+            [self localTrainModelWithWeight:w];
+        }else{
+            [self trainModelAndUploadGradLossWithWeight:w];
+        }
         
         free(w);
     }];
@@ -566,6 +581,7 @@
     //Update gradloss
     NSDictionary *gradlossDict = [[NSMutableDictionary alloc] initWithCapacity:self.trainFeatureSize];
     for(int i = 0; i < self.trainFeatureSize; i++) {
+        
         [gradlossDict setValue: [NSNumber numberWithFloat: *(gradloss + i)] forKey:[NSString stringWithFormat:@"%d", i]];
     }
     
@@ -636,22 +652,26 @@
     
     NSString *tempTimes = self.trainTimesField.text;
     
+    if(self.localTraining){
+        [self BeginLocalTrain:(int)[tempTimes integerValue]];
+        
+    }else{
     
-    int totalTrainTimes = 0;
-    if([tempTimes length] > 0)
-    {
-        totalTrainTimes = (int)[tempTimes integerValue];
+        int totalTrainTimes = 0;
+        if([tempTimes length] > 0)
+        {
+            totalTrainTimes = (int)[tempTimes integerValue];
         
-        self.countTrainingTime = totalTrainTimes;
-        self.isTrainOnce= false;
+            self.countTrainingTime = totalTrainTimes;
+            self.isTrainOnce= false;
         
-        [self UpdateWeightIter];
-        //Begin to train multiple times.
-        [self loadReadByServerFromFirebase];
+            [self UpdateWeightIter];
+            //Begin to train multiple times.
+            [self loadReadByServerFromFirebase];
         
-        [sender setEnabled:true];
+            [sender setEnabled:true];
+        }
     }
-    
     
 }
 
@@ -693,6 +713,66 @@
         self.wIterTW = [NSString stringWithFormat:@"%@", snapshot.value];
     }];
 }
+
+
+-(void) BeginLocalTrain :(int)numOfTraining
+{
+    //set up param and load initial weight
+    self.numOfTraining = numOfTraining;
+    [self loadWeightFromFireBaseAndTrain];
+}
+
+-(void)localTrainModelWithWeight:(float*) w{
+    //set up param
+    int lossType = (int)[self.userParam lossOpt];
+    int noiseType = (int)[self.userParam noiseOpt];
+    int class = [self.userParam K];
+    int batchsize= [self.userParam clientBatchSize];
+    double regConstant = [self.userParam L];
+    double noiseScale = [self.userParam noiseScale];
+    NSString *labelName = [self.userParam labelSourceName];
+    NSString *featureName = [self.userParam featureSourceName];
+    NSString *fileType = [self.userParam sourceType];
+    int DFeatureSize = [self.userParam D];
+    int N = [self.userParam N];
+    float L = [self.userParam L];
+    int nh = 80;
+    int naughtRate = 10;
+    int localUpdateNum = 10;
+    
+    int length = DFeatureSize;
+    if(lossType == 3){
+        length = DFeatureSize * class;
+    }else if(lossType == 4){
+        length = (DFeatureSize + 1) * nh + (nh + 1) * nh + (nh + 1) * class;
+    }
+    
+    float *gradloss = NULL;
+    
+    for(int i = 0; i < self.numOfTraining; i++){
+        if(localUpdateNum<=0){
+             gradloss = [self.trainModel trainModelWithWeight:w :lossType :noiseType :class :batchsize :regConstant :noiseScale :labelName :featureName :fileType :DFeatureSize :N :L :nh];
+        }else{
+            for(int cnt = 0; cnt < localUpdateNum; cnt++){
+                gradloss = [self.trainModel trainModelWithWeight:w :lossType :noiseType :class :batchsize :regConstant :noiseScale :labelName :featureName :fileType :DFeatureSize :N :L :nh];
+
+                for(int k = 0; k < length; k++){
+                    *(w + k) = *(w + k) - naughtRate/sqrtf(i*localUpdateNum)* *(gradloss + k);
+                }
+            }
+        }
+       
+        if(localUpdateNum <= 0){
+            for(int k = 0; k < length; k++){
+                *(w + k) = *(w + k) - naughtRate/sqrtf(i)* *(gradloss + k);
+            }
+        }
+    }
+
+    
+
+}
+
 
 
 
