@@ -54,9 +54,10 @@ def predict(w, X, K):
     h1 = np.maximum(0, np.dot(X, W01) + np.tile(b1,(N,1))) # N x nh, ReLU
     h2 = np.maximum(0, np.dot(h1, W12) + np.tile(b2,(N,1))) # N x nh, ReLU
     scores = np.dot(h2, W23) + np.tile(b3,(N,1)) # N x K
-    exp_scores = np.exp(scores-np.tile(np.max(scores,axis=1,keepdims=True),(1,K)))
-    probs = exp_scores / np.tile(exp_scores.sum(axis=1,keepdims=True),(1,K)) # N x K
-    ypred = np.argmax(probs,axis=1) 
+    #exp_scores = np.exp(scores-np.tile(np.max(scores,axis=1,keepdims=True),(1,K)))
+    #probs = exp_scores / np.tile(exp_scores.sum(axis=1,keepdims=True),(1,K)) # N x K
+    #ypred = np.argmax(probs,axis=1)
+    ypred = np.argmax(scores,axis=1) 
 
     return ypred
     
