@@ -526,7 +526,7 @@
 
 - (void)trainModelAndUploadGradLossWithWeight: (float *) w {
     
-    float *gradloss;
+    float *gradloss = NULL;
     
     int lossType = (int)[self.userParam lossOpt];
     int noiseType = (int)[self.userParam noiseOpt];
@@ -541,8 +541,29 @@
     int N = [self.userParam N];
     float L = [self.userParam L];
     int nh = [self.userParam nh];
+    int localUpdateNum = 0;
+    int naughtRate = 10;
     
-    gradloss = [self.trainModel trainModelWithWeight:w :lossType :noiseType :class :batchsize :regConstant :variance :labelName :featureName :fileType :DFeatureSize :N :L :nh];
+    int length = DFeatureSize;
+    if(lossType == 3){
+        length = DFeatureSize * class;
+    }else if(lossType == 4){
+        length = (DFeatureSize + 1) * nh + (nh + 1) * nh + (nh + 1) * class;
+    }
+    
+    if(localUpdateNum <= 0){
+        gradloss = [self.trainModel trainModelWithWeight:w :lossType :noiseType :class :batchsize :regConstant :variance :labelName :featureName :fileType :DFeatureSize :N :L :nh];
+
+    }else{
+        for(int i = 0; i < localUpdateNum; i++){
+            gradloss = [self.trainModel trainModelWithWeight:w :lossType :noiseType :class :batchsize :regConstant :variance :labelName :featureName :fileType :DFeatureSize :N :L :nh];
+            
+            for(int k = 0; k < length; k++){
+                *(w + k) = *(w + k) - naughtRate/sqrtf(i*localUpdateNum) * *(gradloss + k);
+            }
+            gradloss = NULL;
+        }
+    }
     
     self.trainFeatureSize = self.trainModel.featureSize;
     if(lossType == 3){
@@ -556,12 +577,14 @@
     
     if(w == NULL) {
         [self uploadNewWeightToFireBase];
-    }else {
+    }else if(localUpdateNum <= 0) {
         [self GetWeightIterUnderUserAndTrainingWeights];
         if(![self.wIterU isEqualToString: self.wIterTW]){
             [self UpdateWeightIter];
         }
         [self uploadGradLossToFireBase:gradloss];
+    }else if(localUpdateNum > 0){
+        
     }
     
     
@@ -628,6 +651,59 @@
     [self UpdateWeightIter];
     
 }
+
+- (void) uploadLocalWeightToFireBase: (float *)w
+{
+    
+    //Update gradloss
+    NSDictionary *wDict = [[NSMutableDictionary alloc] initWithCapacity:self.trainFeatureSize];
+    for(int i = 0; i < self.trainFeatureSize; i++) {
+        
+        [wDict setValue: [NSNumber numberWithFloat: *(w + i)] forKey:[NSString stringWithFormat:@"%d", i]];
+    }
+    
+    FIRDatabaseReference *wRef = [[self.rootRef child:@"trainingWeights"] child:@"weights"];
+    
+    //Change readyByServer to false.
+    NSNumber *infoDict  = [NSNumber numberWithBool:NO];
+    
+    FIRDatabaseReference *infoRef = [[[self.rootRef child:@"users" ] child:self.logginUID] child:@"gradientProcessed"];
+    
+    FIRDatabaseReference *gradIterRef = [[[self.rootRef child:@"users" ] child:self.logginUID] child:@"gradIter"];
+    
+    
+    NSLog(@"Uploading local weights..");
+    [wRef setValue:wDict];
+    
+    [gradIterRef observeSingleEventOfType:FIRDataEventTypeValue withBlock:^(FIRDataSnapshot *snapshot) {
+        
+        
+        if(snapshot.value == [NSNull null]) {
+            
+            NSLog(@"Warning: gradIter is null object. ");
+            
+        } else {
+            
+            //Update gradIter on firebase database.
+            NSString *iternum = snapshot.value;
+            int graditrnum = [iternum intValue] + 1;
+            NSString *graditr = [NSString stringWithFormat:@"%i", graditrnum];
+            [gradIterRef setValue:graditr];
+        }
+        
+        NSLog(@"Complete update gradIter. ");
+        
+    }];
+    
+    NSLog(@"Uploaded local weights.");
+    
+    [infoRef setValue:infoDict];
+    
+    [self.disabledButton setEnabled:true];
+    [self UpdateWeightIter];
+    
+}
+
 
 - (void) uploadNewWeightToFireBase
 {
@@ -772,7 +848,7 @@
         if(localUpdateNum <= 0){
             for(int k = 0; k < length; k++){
                 *(w + k) = *(w + k) - naughtRate/sqrtf(i)* *(gradloss + k);
-                NSLog(@"%d: %f, grad: %f, sqrt: %f",k, *(w+k), *(gradloss + k),sqrtf(i));
+                //NSLog(@"%d: %f, grad: %f, sqrt: %f",k, *(w+k), *(gradloss + k),sqrtf(i));
             }
             NSLog(@"Complete update weights locally.");
 
