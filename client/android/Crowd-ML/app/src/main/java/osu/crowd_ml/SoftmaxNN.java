@@ -77,7 +77,7 @@ public class SoftmaxNN implements LossFunction {
         for(int i = 0; i < nh; i++){
             dot = 0;
             for(int j = 0; j < D; j++){
-                dot += X[j]*W01.get(j + i*(D));
+                dot += X[j]*W01.get(i + j*(nh));
             }
             if(dot + b1.get(i) > 0) {
                 h1.add(dot + b1.get(i));
@@ -91,7 +91,7 @@ public class SoftmaxNN implements LossFunction {
         for(int i = 0; i < nh; i++){
             dot = 0;
             for(int j = 0; j < nh; j++){
-                dot += h1.get(j)*W12.get(j + i*(nh));
+                dot += h1.get(j)*W12.get(i + j*(nh));
             }
             if(dot + b2.get(i) > 0) {
                 h2.add(dot + b2.get(i));
@@ -105,7 +105,7 @@ public class SoftmaxNN implements LossFunction {
         for(int i = 0; i < K; i++){
             dot = 0;
             for(int j = 0; j < nh; j++){
-                dot += h2.get(j)*W23.get(j + i*(nh));
+                dot += h2.get(j)*W23.get(i + j*(K));
             }
             scores.add(dot + b3.get(i));
         }
@@ -115,7 +115,7 @@ public class SoftmaxNN implements LossFunction {
         double scoreMax = 0;
         double score = 0;
         for(int i = 0; i < K; i++){
-            score = 0;
+            score = scores.get(i);
             if(score > scoreMax){
                 scoreMax = score;
             }
@@ -127,7 +127,7 @@ public class SoftmaxNN implements LossFunction {
             //dot product w_i·x
             dot = 0;
             for(int j = 0; j < nh; j++){
-                dot += h2.get(j) * W23.get(j + (nh*i));
+                dot += h2.get(j) * W23.get(i + (K*j));
             }
 
             denom += Math.exp(dot - scoreMax);
@@ -141,7 +141,7 @@ public class SoftmaxNN implements LossFunction {
             //prob_i = exp(Θ_i · X)/denom
             dot = 0;
             for (int j = 0; j < nh; j++) {
-                dot += h2.get(j) * W23.get(j + (nh * i));
+                dot += h2.get(j) * W23.get(i + (K * j));
             }
 
             probs.add(Math.exp(dot - scoreMax) / denom);
@@ -169,9 +169,9 @@ public class SoftmaxNN implements LossFunction {
         List<Double> dW23 = new ArrayList<Double>(nh*K);
         List<Double> db3 = new ArrayList<Double>(K);
 
-        for(int i = 0; i < K; i++){
-            for(int j = 0; j < nh; j++){
-                dW23.add(dProbs.get(i)*h2.get(j) + L*W23.get(i*nh + j));
+        for(int i = 0; i < nh; i++){
+            for(int j = 0; j < K; j++){
+                dW23.add(dProbs.get(j)*h2.get(i) + L*W23.get(j*nh + i));
             }
         }
         for(int i = 0; i < K; i++){
@@ -180,7 +180,7 @@ public class SoftmaxNN implements LossFunction {
         for(int i = 0; i < nh; i++){
             dot = 0;
             for(int j = 0; j < K; j++){
-                dot += dProbs.get(j) * W23.get(i + j*(nh));
+                dot += dProbs.get(j) * W23.get(j + i*K);
             }
             if(dot > 0){
                 dh2.add(dot);
@@ -192,7 +192,7 @@ public class SoftmaxNN implements LossFunction {
 
         for(int i = 0; i < nh; i++){
             for(int j = 0; j < nh; j++){
-                dW12.add(dh2.get(i)*h1.get(j) + L*W12.get(i*nh + j));
+                dW12.add(dh2.get(j)*h1.get(i) + L*W12.get(i + j*nh));
             }
         }
         for(int i = 0; i < nh; i++){
@@ -201,7 +201,7 @@ public class SoftmaxNN implements LossFunction {
         for(int i = 0; i < nh; i++){
             dot = 0;
             for(int j = 0; j < nh; j++){
-                dot += dh2.get(j) * W12.get(i + j*(nh));
+                dot += dh2.get(j) * W12.get(j + i*(nh));
             }
             if(dot > 0){
                 dh1.add(dot);
@@ -213,7 +213,7 @@ public class SoftmaxNN implements LossFunction {
 
         for(int i = 0; i < nh; i++){
             for(int j = 0; j < D; j++){
-                dW01.add(dh1.get(i)*X[j] + L*W01.get(i*D + j));
+                dW01.add(dh1.get(i)*X[j] + L*W01.get(i + j*nh));
             }
         }
         for(int i = 0; i < nh; i++){
