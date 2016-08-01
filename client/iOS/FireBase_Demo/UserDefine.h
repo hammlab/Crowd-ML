@@ -38,9 +38,16 @@
 @property (nonatomic, readonly) NSString *noiseType;
 @property (nonatomic, readonly) float noiseVariance;
 @property (nonatomic, readonly) int paramIterator;
+@property (nonatomic, readonly) int nhNumber;
 
 
 -(void)Initialize:(FIRDatabaseReference*) paramRef;
+
+/**
+ Define nh for NN
+ */
+- (int)nh;
+
 /**
  Define feature size
  */

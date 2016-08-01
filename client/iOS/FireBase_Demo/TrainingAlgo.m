@@ -22,12 +22,19 @@
 
 #import "TrainingAlgo.h"
 #import "UserDefine.h"
+#import "LogReg.h"
+
 @import Accelerate;
 
 @interface TrainingAlgo()
 
 @property (nonatomic, readwrite) NSInteger trainingModelSize;
 @property (nonatomic, readwrite) NSInteger featureSize;
+@property (nonatomic, strong) LogReg *LogRegAlgo;
+@property (nonatomic, strong) HingeLoss *HingeLossAlgo;
+@property (nonatomic, strong) SoftMax *SoftMaxAlgo;
+@property (nonatomic, strong) NeuralNetwork *NNAlgo;
+
 
 
 @end
@@ -214,307 +221,6 @@ float * computeSoftMax (const float *trainingFeature, const float *trainingLabel
     return gradloss;
 }
 
-
-float * computeNN (const float *trainingFeature, const float *trainingLabel, const float *w, long D, int classes, double regConstant, float L, int nh){
-    
-    int length = ((int)D + 1) * nh + (nh + 1) * nh + (nh + 1) *classes;
-    float *gradloss = (float *) malloc(length * sizeof(float));
-    
-    int lengthw01 = (int)D * nh;
-    int lengthw12 = nh*nh;
-    int lengthw23 = nh*classes;
-    int lengthb1 = nh;
-    int lengthb2 = nh;
-    int lengthb3 = classes;
-    
-    
-    NSMutableArray *w01 = [NSMutableArray array];
-    NSMutableArray *b1 = [NSMutableArray array];
-    NSMutableArray *w12 = [NSMutableArray array];
-    NSMutableArray *b2 = [NSMutableArray array];
-    NSMutableArray *w23 = [NSMutableArray array];
-    NSMutableArray *b3 = [NSMutableArray array];
-
-    //parseParams
-    //W01:
-    int cnt = 0;
-    for(int i = 0; i < lengthw01; i++){
-        [w01 addObject:[NSNumber numberWithFloat:*(w+cnt)]];
-        cnt++;
-    }
-    
-    //b1
-    for(int i = 0; i < lengthb1; i++){
-        [b1 addObject:[NSNumber numberWithFloat:*(w+cnt)]];
-        cnt++;
-    }
-    
-    //W12
-    for(int i = 0; i < lengthw12; i++){
-        [w12 addObject:[NSNumber numberWithFloat:*(w+cnt)]];
-        cnt++;
-    }
-
-    
-    //b2
-    for(int i = 0; i < lengthb2; i++){
-        [b2 addObject:[NSNumber numberWithFloat:*(w+cnt)]];
-        cnt++;
-    }
-
-    
-    //W23
-    for(int i = 0; i< lengthw23; i++){
-        [w23 addObject:[NSNumber numberWithFloat:*(w+cnt)]];
-        cnt++;
-    }
-
-    //b3
-    for(int i = 0; i < lengthb3; i++){
-        [b3 addObject:[NSNumber numberWithFloat:*(w+cnt)]];
-        cnt++;
-    }
-
-
-    //getAvgGradient:
-    //Forward pass
-    float *h1 = (float *) malloc(nh * sizeof(float));
-    float *h2 = (float *) malloc(nh * sizeof(float));
-
-    //h1
-    float dot = 0;
-    for(int i = 0; i < nh; i++){
-        dot = 0;
-        for(int j = 0; j < D; j++){
-            dot += *(trainingFeature + j) * [[w01 objectAtIndex:(i + j*nh)] floatValue];
-        }
-        float sum = dot + [[b1 objectAtIndex:i] floatValue];
-        *(h1 + i) = MAX(sum, 0.0);
-    }
-
-    //h2
-    for(int i = 0; i < nh; i++){
-        dot = 0;
-        for(int j = 0; j < nh; j++){
-            dot += *(h1 + j) * [[w12 objectAtIndex:(i + j*nh)]floatValue];
-        }
-        float sum = dot + [[b2 objectAtIndex:i] floatValue];
-        *(h2 + i) = MAX(sum, 0.0);
-        
-    }
-    
-    float max = -FLT_MAX;
-    float *ai = (float *) malloc(classes * sizeof(float));
-    float *scores = (float *) malloc(classes * sizeof(float));
-    for(int i = 0; i < classes; i++){
-        dot = 0;
-        for(int j = 0; j < nh; j++){
-            dot += *(h2 + j) * [[w23 objectAtIndex:(i + classes*j)]floatValue];
-
-        }
-        *(ai + i) = dot;
-        max = MAX(dot, max);
-        *(scores + i) = dot + [[b3 objectAtIndex: i]floatValue];
-    }
-    
-    float denom = 0;
-    float *prob = (float *) malloc(classes * sizeof(float));
-    for(int i =0; i < classes; i++){
-        dot = *(ai + i);
-        denom += expf(dot - max);
-        
-    }
-    for(int i = 0; i < classes; i++){
-        dot = *(ai + i);
-        *(prob + i) = expf(dot - max)/denom;
-    }
-    
-    //Backward pass
-    NSMutableArray *dw01 = [NSMutableArray array];
-    NSMutableArray *db1 = [NSMutableArray array];
-    NSMutableArray *dw12 = [NSMutableArray array];
-    NSMutableArray *db2 = [NSMutableArray array];
-    NSMutableArray *dw23 = [NSMutableArray array];
-    NSMutableArray *db3 = [NSMutableArray array];
-    NSMutableArray *dh1 = [NSMutableArray array];
-    NSMutableArray *dh2 = [NSMutableArray array];
-
-
-    float *dscores = (float *) malloc(classes * sizeof(float));
-    for(int i = 0; i < classes; i++){
-        if( i == (int)*trainingLabel){
-            *(dscores + i) = *(prob + i) - 1;
-        }else{
-            *(dscores + i) = *(prob + i);
-        }
-    }
-
-    //dw23
-    for(int i = 0; i < nh; i++){
-        for(int j = 0; j < classes; j++){
-            float value = *(h2 + i) * *(dscores + j) + L * [[w23 objectAtIndex:(j*nh + i)]floatValue];
-            [dw23 addObject: [NSNumber numberWithFloat:value]];
-            
-            if(isnan(value)){
-                NSLog(@"value: %d%d: %f",i,j,value);
-            }
-        }
-    }
-    
-    //db3
-    for(int i = 0; i < classes; i++){
-        [db3 addObject: [NSNumber numberWithFloat:*(dscores + i)]];
-        if(isnan(*(dscores + i))){
-            NSLog(@"db3: %d: %f",i,*(dscores + i));
-        }
-
-
-    }
-    
-    //dh2
-    for(int i =0; i < nh; i++){
-        dot = 0;
-        for(int j = 0; j < classes; j++){
-            dot += *(dscores + j) * [[w23 objectAtIndex:(i*classes + j)]floatValue];
-        }
-        if(*(h2 + i) <= 0){
-            [dh2 addObject: [NSNumber numberWithFloat:0.0]];
-        }else{
-            [dh2 addObject: [NSNumber numberWithFloat:dot]];
-
-        }
-        if(isnan(dot)){
-            NSLog(@"dh2 dot: %d: %f",i,dot);
-        }
-        
-    }
-    
-    //dw12
-    for(int i = 0; i < nh; i++){
-        for(int j = 0; j < nh; j++){
-            float value = *(h1 + i) * [[dh2 objectAtIndex:j] floatValue] + L * [[w12 objectAtIndex:(i + nh * j)]floatValue];
-            [dw12 addObject: [NSNumber numberWithFloat:value]];
-            
-            if(isnan(value)){
-                NSLog(@"dw12 value: %d%d: %f",i,j,value);
-            }
-
-        }
-    }
-
-    //db2
-    for(int i = 0; i < nh; i++){
-        [db2 addObject: [dh2 objectAtIndex:i]];
-       
-
-    }
-    
-    //dh1
-    for(int i = 0; i < nh; i++){
-        dot = 0;
-        for(int j = 0; j < nh; j++){
-            dot += [[dh2 objectAtIndex: j] floatValue] * [[w12 objectAtIndex:(j + i * nh)]floatValue];
-        }
-        if(*(h1 + i) <= 0){
-            [dh1 addObject: [NSNumber numberWithFloat:0.0f]];
-
-        }else{
-            [dh1 addObject: [NSNumber numberWithFloat:dot]];
-
-        }
-        if(isnan(dot)){
-            NSLog(@"dh1 dot: %d: %f",i,dot);
-        }
-        
-    }
-    
-    //dw01
-    for(int i = 0; i < nh; i++){
-        for(int j = 0; j < D; j++){
-            float value = *(trainingFeature + j) * [[dh1 objectAtIndex:i] floatValue] + L * [[w01 objectAtIndex: ((j * nh) + i)]floatValue];
-
-            [dw01 addObject: [NSNumber numberWithFloat:value]];
-            if(isnan(value)){
-                NSLog(@"dw01 value: %d%d: %f",i,j,value);
-            }
-        }
-    }
-
-    
-    //db1
-    for(int i = 0; i < nh; i++){
-        [db1 addObject: [dh1 objectAtIndex: i]];
-
-    }
-    
-    //add dw01
-    int ind= 0;
-    for(int i = 0; i < lengthw01; i++){
-        *(gradloss + ind) = [[dw01 objectAtIndex: i] floatValue];
-        //NSLog(@"dw01: %d: %f",i, *(gradloss + ind));
-        ind++;
-        
-    }
-    
-     //add db1
-    for(int i = 0; i < lengthb1; i++){
-        *(gradloss + ind) = [[db1 objectAtIndex: i] floatValue];
-            //NSLog(@"db1: %d: %f",i, *(gradloss + ind));
-        ind++;
-        
-    }
-    
-    //add dw12
-    for(int i = 0; i < lengthw12; i++){
-        *(gradloss + ind) = [[dw12 objectAtIndex: i] floatValue];
-            //NSLog(@"dw12: %d: %f",i, *(gradloss + ind));
-        ind++;
-        
-    }
-
-    //add db2
-    for(int i = 0; i < lengthb2; i++){
-        
-        *(gradloss + ind) = [[db2 objectAtIndex: i] floatValue];
-            //NSLog(@"db2: %d: %f",i, *(gradloss + ind));
-        ind++;
-        
-
-    }
-
-    //add dw23
-    for(int i = 0; i < lengthw23; i++){
-        *(gradloss + ind) = [[dw23 objectAtIndex: i] floatValue];
-            //NSLog(@"dw23: %d: %f",i, *(gradloss + ind));
-        ind++;
-        
-    }
-    
-    //add db3
-    for(int i = 0; i < lengthb3; i++){
-        *(gradloss + ind) = [[db3 objectAtIndex: i] floatValue];
-            //NSLog(@"db3: %d: %f",i, *(gradloss + ind));
-        ind++;
-        
-
-    }
-    
-
-    for(int i = 0; i < length; i++){
-        //NSLog(@"gradient: %d: %f",i, *(gradloss + i));
-        
-        
-    }
-
-    free(prob);
-    free(scores);
-    free(h1);
-    free(h2);
-    free(ai);
-
-    return gradloss;
-}
-
 //Use one of loss funtions
 float * computeLoss (const float *trainingFeature, const float *trainingLabel, const float *w, long D, int lossopt, double regConstant, int classes, float L, int nh)
 {
@@ -527,7 +233,8 @@ float * computeLoss (const float *trainingFeature, const float *trainingLabel, c
     else if(lossopt == 3)
         return computeSoftMax(trainingFeature, trainingLabel, w, D, classes, regConstant);
     else
-        return computeNN(trainingFeature, trainingLabel, w, D, classes, regConstant, L, nh);
+        return 0;
+        //return computeNN(trainingFeature, trainingLabel, w, D, classes, regConstant, L, nh);
 
 
     
@@ -558,6 +265,11 @@ float * noiseLoss(float *loss, int noiseFunction, int length, double variance){
  **/
 - (float *) trainModelWithWeight:(float *)w :(int)lossFunction :(int)noiseFunction :(int)classes :(int)sbatch :(double)regConstant :(double)variance :(NSString *)labelName :(NSString *)featureName :(NSString *)fileType :(int) DFeatureSize :(int)getN :(float)L :(int)nh
 {
+    self.NNAlgo = [[NeuralNetwork alloc]init];
+    self.LogRegAlgo = [[LogReg alloc]init];
+    self.HingeLossAlgo = [[HingeLoss alloc]init];
+    self.SoftMaxAlgo = [[SoftMax alloc]init];
+
     float *labelVector;
     labelVector = [self readTrainingLabelFile:labelName : fileType];
     
@@ -589,6 +301,7 @@ float * noiseLoss(float *loss, int noiseFunction, int length, double variance){
         *(avgloss + i) = 0;
     }
     float *noiseloss=NULL;
+    float *lableBatch = NULL;
 
     //compute gradients with batchSize
     if(w != NULL) {
@@ -607,8 +320,31 @@ float * noiseLoss(float *loss, int noiseFunction, int length, double variance){
             
             [modelInd addObject:@(data)];
             
-            loss = computeLoss(*(featureVector + data), labelVector + data, w, self.featureSize,lossFunction,regConstant,classes, L, nh);
-         
+            
+            //loss = computeLoss(*(featureVector + data), labelVector + data, w, self.featureSize,lossFunction,regConstant,classes, L, nh);
+            
+            if(lossFunction == 1){
+                loss = [self.LogRegAlgo computeLossLog :*(featureVector + data):(labelVector + data) :w :self.featureSize :regConstant];
+            }else if(lossFunction == 2){
+                loss = [self.HingeLossAlgo computeLossSVM:*(featureVector + data) :(labelVector + data) :w :self.featureSize :regConstant :classes];
+            }else if(lossFunction == 3){
+                loss = [self.SoftMaxAlgo computeSoftMax:*(featureVector + data) :(labelVector + data) :w :self.featureSize :classes :regConstant];
+            }else if(lossFunction == 4){
+                
+                for(int a = 0; a < sbatch; a++){
+                    lableBatch = (float *) malloc(sbatch * sizeof(float));
+                    long rad = arc4random_uniform((UInt32)getN);
+                    *(lableBatch + a) = *(labelVector + rad);
+                    
+                }
+                 
+
+                loss = [self.NNAlgo computeNN:*(featureVector + data) :lableBatch :w :self.featureSize :classes :regConstant :L :nh :sbatch];
+                free(lableBatch);
+               
+            }
+            
+            
             for(int k = 0; k <length;k++){
                 *(addGrad + k) = *(addGrad + k) + *(loss + k);
 
@@ -642,218 +378,26 @@ float * noiseLoss(float *loss, int noiseFunction, int length, double variance){
 /**
  Calculate accuracy for binary/Multi class
  **/
-- (float)calculateTrainAccuracyWithWeight:(float *)w :(NSString *)labelName :(NSString *)featureName :(NSString *)fileType :(int) DFeatureSize :(int)classes
+- (float)calculateTrainAccuracyWithWeight:(float *)w :(NSString *)labelName :(NSString *)featureName :(NSString *)fileType :(int) DFeatureSize :(int)classes :(int)lossFunction :(int)nh
 
 {
-    
-    long truePositive = 0;
-    
-    if(classes == 2){
-        float *labelVector;
-        labelVector = [self readTrainingLabelFile:labelName : fileType];
-        
-        float **featureVector;
-        featureVector = [self readTrainingFeatureFile:featureName : fileType : DFeatureSize];
-    
-        for(int i = 0; i < self.trainingModelSize; i++) {
-            double h = 0;
-            for(int j = 0; j < self.featureSize; j++) {
-                h += *(*(featureVector + i) + j) * *(w + j);
-            }
-        
-            if(h > 0 && *(labelVector + i) > 0) {
-                truePositive += 1;
-            }
-        
-            if(h < 0 && *(labelVector + i) < 1) {
-                truePositive += 1;
-            }
-        
-        }
-    
-        free(labelVector);
-    
-        for(int i = 0; i < self.trainingModelSize; i++) {
-            free(*(featureVector + i));
-        }
-    
-        free(featureVector);
-    
-        return 1.0 * truePositive / self.trainingModelSize;
+    int Ntest = 1000;
+
+    if(lossFunction == 1){
+        return [self.LogRegAlgo calculateTrainAccuracyWithWeightBinary:w :labelName :featureName :fileType :DFeatureSize :classes :self.trainingModelSize :self.featureSize];
+    }else if(lossFunction == 2){
+        return [self.HingeLossAlgo calculateTrainAccuracyWithWeightBinary:w :labelName :featureName :fileType :DFeatureSize :classes :self.trainingModelSize :self.featureSize];
+    }else if(lossFunction == 3){
+        return [self.SoftMaxAlgo calculateTrainAccuracyWithWeightSoftMax:w :labelName :featureName :fileType :DFeatureSize :classes :self.trainingModelSize :self.featureSize];
+    }else if(lossFunction == 4){
+        return [self.NNAlgo calculateTrainAccuracyWithWeightNN:w :labelName :featureName :fileType :DFeatureSize :classes :Ntest :self.featureSize :nh];
         
     }else{
-        
-        float *labelVector;
-        labelName = @"MNISTTestLabels";
-        labelVector = [self readTrainingLabelFile:labelName : fileType];
-        
-        float **featureVector;
-        labelName = @"MNISTTestImages";
-        featureVector = [self readTrainingFeatureFile:featureName : fileType : DFeatureSize];
-        
-        for(int i = 0; i < 1000; i++){
-            float *ai=(float *) malloc(classes * sizeof(float));
-        
-            for(int h = 0; h < classes; h++){
-                double dot = 0;
-                for(int j = 0; j < self.featureSize; j++){
-                    dot += *(*(featureVector + h) + j) * *(w + (j + h * self.featureSize));
-                }
-                *(ai + h) = dot;
-            }
-            int bestGuess = 0;
-            for(int h = 0; h < classes; h++){
-                if(*(ai + h) > *(ai + bestGuess)){
-                    bestGuess = h;
-                }
-            }
-            int label = (int)*(labelVector + i);
-            if(bestGuess == label){
-                truePositive++;
-            }
-        }
-        
-        free(labelVector);
-        
-        for(int i = 0; i < self.trainingModelSize; i++) {
-            free(*(featureVector + i));
-        }
-        
-        free(featureVector);
-        
-        
-        return 100*truePositive/1000;
-        
+        NSLog(@"Accuracy error!! Check your loss function");
+        return 0.0;
     }
 }
 
-/**
- Calculate accuracy for NN
- **/
-- (float)calculateTrainAccuracyWithWeightForNN:(float *)w :(int) DFeatureSize :(int)classes :(int)lossFunction :(int)nh
-{
-    NSString *labelName = @"MNISTTestImages";
-    NSString *featureName = @"MNISTTestLabels";
-    NSString *fileType = @"dat";
-    
-    float *labelVector;
-    labelVector = [self readTrainingLabelFile:labelName : fileType];
-    
-    float **featureVector;
-    featureVector = [self readTrainingFeatureFile:featureName : fileType : DFeatureSize];
-    
-    
-    int lengthw01 = (int)DFeatureSize * nh;
-    int lengthw12 = nh*nh;
-    int lengthw23 = nh*classes;
-    int lengthb1 = nh;
-    int lengthb2 = nh;
-    int lengthb3 = classes;
-    
-    
-    NSMutableArray *w01 = [NSMutableArray array];
-    NSMutableArray *b1 = [NSMutableArray array];
-    NSMutableArray *w12 = [NSMutableArray array];
-    NSMutableArray *b2 = [NSMutableArray array];
-    NSMutableArray *w23 = [NSMutableArray array];
-    NSMutableArray *b3 = [NSMutableArray array];
-    
-    //parseParams
-    //W01:
-    int cnt = 0;
-    for(int i = 0; i < lengthw01; i++){
-        [w01 addObject:[NSNumber numberWithFloat:*(w+cnt)]];
-        cnt++;
-    }
-    
-    //b1
-    for(int i = 0; i < lengthb1; i++){
-        [b1 addObject:[NSNumber numberWithFloat:*(w+cnt)]];
-        cnt++;
-    }
-    
-    //W12
-    for(int i = 0; i < lengthw12; i++){
-        [w12 addObject:[NSNumber numberWithFloat:*(w+cnt)]];
-        cnt++;
-    }
-    
-    
-    //b2
-    for(int i = 0; i < lengthb2; i++){
-        [b2 addObject:[NSNumber numberWithFloat:*(w+cnt)]];
-        cnt++;
-    }
-    
-    
-    //W23
-    for(int i = 0; i< lengthw23; i++){
-        [w23 addObject:[NSNumber numberWithFloat:*(w+cnt)]];
-        cnt++;
-    }
-    
-    //b3
-    for(int i = 0; i < lengthb3; i++){
-        [b3 addObject:[NSNumber numberWithFloat:*(w+cnt)]];
-        cnt++;
-    }
-    
-    
-
-    //Forward pass
-    float *h1 = (float *) malloc(nh * sizeof(float));
-    float *h2 = (float *) malloc(nh * sizeof(float));
-    
-    //h1
-    float dot = 0;
-    for(int i = 0; i < nh; i++){
-        dot = 0;
-        for(int j = 0; j < DFeatureSize; j++){
-            //dot += *(featureVector + j) * [[w01 objectAtIndex:(i + j*nh)] floatValue];
-        }
-        float sum = dot + [[b1 objectAtIndex:i] floatValue];
-        *(h1 + i) = MAX(sum, 0.0);
-    }
-    
-    //h2
-    for(int i = 0; i < nh; i++){
-        dot = 0;
-        for(int j = 0; j < nh; j++){
-            dot += *(h1 + j) * [[w12 objectAtIndex:(i + j*nh)]floatValue];
-        }
-        float sum = dot + [[b2 objectAtIndex:i] floatValue];
-        *(h2 + i) = MAX(sum, 0.0);
-        
-    }
-    
-    float max = -FLT_MAX;
-    float *ai = (float *) malloc(classes * sizeof(float));
-    float *scores = (float *) malloc(classes * sizeof(float));
-    for(int i = 0; i < classes; i++){
-        dot = 0;
-        for(int j = 0; j < nh; j++){
-            dot += *(h2 + j) * [[w23 objectAtIndex:(i + classes*j)]floatValue];
-            
-        }
-        *(ai + i) = dot;
-        max = MAX(dot, max);
-        *(scores + i) = dot + [[b3 objectAtIndex: i]floatValue];
-    }
-    
-    float denom = 0;
-    float *prob = (float *) malloc(classes * sizeof(float));
-    for(int i =0; i < classes; i++){
-        dot = *(ai + i);
-        denom += expf(dot - max);
-        
-    }
-    for(int i = 0; i < classes; i++){
-        dot = *(ai + i);
-        *(prob + i) = expf(dot - max)/denom;
-    }
-    
-    return 0;
-}
 
 /**
  Read label file
@@ -869,6 +413,7 @@ float * noiseLoss(float *loss, int noiseFunction, int length, double variance){
         labelSize -= 1;
     
     self.trainingModelSize = labelSize;
+    
     
     float *labelVector = (float *) malloc(self.trainingModelSize * sizeof(float));
     

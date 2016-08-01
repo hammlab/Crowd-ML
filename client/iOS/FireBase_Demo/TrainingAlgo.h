@@ -21,6 +21,10 @@
 
 
 #import <Foundation/Foundation.h>
+#import "LogReg.h"
+#import "HingeLoss.h"
+#import "SoftMax.h"
+#import "NeuralNetwork.h"
 
 @interface TrainingAlgo : NSObject
 
@@ -34,9 +38,15 @@
  */
 @property (nonatomic, readonly) NSInteger featureSize;
 
+@property (nonatomic, readonly) LogReg *LogRegAlgo;
+
+
 - (float *) trainModelWithWeight:(float *)w :(int)lossFunction :(int)noiseFunction :(int)class :(int)sbatch :(double)regConstant :(double)variance :(NSString *)labelName :(NSString *)featureName :(NSString *)fileType :(int) DFeatureSize :(int)getN :(float)L :(int)nh;
 
 
-- (float) calculateTrainAccuracyWithWeight: (float *)w :(NSString *)labelName :(NSString *)featureName :(NSString *)fileType :(int) DFeatureSize :(int)classes;
+/**
+ Calculate accuracy for binary/Multi class
+ **/
+- (float)calculateTrainAccuracyWithWeight:(float *)w :(NSString *)labelName :(NSString *)featureName :(NSString *)fileType :(int) DFeatureSize :(int)classes :(int)lossFunction :(int)nh;
 
 @end

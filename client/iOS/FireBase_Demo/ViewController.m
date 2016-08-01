@@ -112,7 +112,7 @@
     [self.userParam Initialize:self.paramRef];
     self.countTrainingTime = 0;
     self.isTrainOnce = true;
-    self.localTraining = false;
+    self.localTraining = true;
     
     
     
@@ -306,8 +306,10 @@
             NSString *fileType = [self.userParam sourceType];
             int DFeatureSize = [self.userParam D];
             int classes = [self.userParam K];
+            int lossFunction = (int)[self.userParam lossOpt];
+            int nh = [self.userParam nh];
             
-            double accuracy = [self.trainModel calculateTrainAccuracyWithWeight:w :labelName :featureName :fileType :DFeatureSize :classes];
+            double accuracy = [self.trainModel calculateTrainAccuracyWithWeight:w :labelName :featureName :fileType :DFeatureSize :classes :lossFunction :nh];
             
             [self.trainErrorLabel setText:[NSString stringWithFormat:@"%.3f", accuracy]];
             
@@ -538,7 +540,7 @@
     int DFeatureSize = [self.userParam D];
     int N = [self.userParam N];
     float L = [self.userParam L];
-    int nh = 80;
+    int nh = [self.userParam nh];
     
     gradloss = [self.trainModel trainModelWithWeight:w :lossType :noiseType :class :batchsize :regConstant :variance :labelName :featureName :fileType :DFeatureSize :N :L :nh];
     
@@ -738,7 +740,7 @@
     float L = [self.userParam L];
     int nh = 80;
     int naughtRate = 10;
-    int localUpdateNum = 10;
+    int localUpdateNum = 0;
     
     int length = DFeatureSize;
     if(lossType == 3){
@@ -749,27 +751,40 @@
     
     float *gradloss = NULL;
     
-    for(int i = 0; i < self.numOfTraining; i++){
+    for(int i = 1; i <= self.numOfTraining; i++){
         if(localUpdateNum<=0){
              gradloss = [self.trainModel trainModelWithWeight:w :lossType :noiseType :class :batchsize :regConstant :noiseScale :labelName :featureName :fileType :DFeatureSize :N :L :nh];
+            NSLog(@"Complete calculate graidents locally.");
+
         }else{
             for(int cnt = 0; cnt < localUpdateNum; cnt++){
                 gradloss = [self.trainModel trainModelWithWeight:w :lossType :noiseType :class :batchsize :regConstant :noiseScale :labelName :featureName :fileType :DFeatureSize :N :L :nh];
+                NSLog(@"Complete calculate graidents locally.");
+                
 
                 for(int k = 0; k < length; k++){
-                    *(w + k) = *(w + k) - naughtRate/sqrtf(i*localUpdateNum)* *(gradloss + k);
+                    *(w + k) = *(w + k) - naughtRate/sqrtf(i*localUpdateNum) * *(gradloss + k);
                 }
+                NSLog(@"Complete update weights locally for localUpdateNum >0.");
             }
         }
        
         if(localUpdateNum <= 0){
             for(int k = 0; k < length; k++){
                 *(w + k) = *(w + k) - naughtRate/sqrtf(i)* *(gradloss + k);
+                NSLog(@"%d: %f, grad: %f, sqrt: %f",k, *(w+k), *(gradloss + k),sqrtf(i));
             }
+            NSLog(@"Complete update weights locally.");
+
         }
+        NSLog(@"Iteration: %d",i);
+        [self.trainModel calculateTrainAccuracyWithWeight:w :labelName :featureName :fileType :DFeatureSize :class :lossType :nh];
+        
+        //Reset gradients
+        gradloss = NULL;
     }
 
-    
+    free(gradloss);
 
 }
 

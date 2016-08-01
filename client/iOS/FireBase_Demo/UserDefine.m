@@ -40,6 +40,8 @@
 @property (nonatomic, readwrite) NSString *noiseType;
 @property (nonatomic, readwrite) float noiseVariance;
 @property (nonatomic, readwrite) int paramIterator;
+@property (nonatomic, readwrite) int nhNumber;
+
 
 @end
 
@@ -186,8 +188,27 @@
             self.paramIterator = [paramIterator intValue];
         }
     }];
+    
+    //nh
+    FIRDatabaseReference *nhRef = [paramRef child:@"nh"];
+    [nhRef observeSingleEventOfType:FIRDataEventTypeValue withBlock:^(FIRDataSnapshot *snapshot) {
+        if(snapshot.value == [NSNull null]){
+            NSLog(@"Warning: nh is null object. ");
+            exit(EXIT_SUCCESS);
+        }else{
+            NSNumber *nh = snapshot.value;
+            self.nhNumber = [nh intValue];
+        }
+    }];
 }
 
+/**
+ Define nh for nn
+ */
+- (int)nh{
+    
+    return self.nhNumber;
+}
 
 /**
  Define feature size
