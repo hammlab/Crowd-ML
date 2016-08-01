@@ -182,15 +182,15 @@
 
 			if(bestGuess == label){
 				correct++;}
-			//if(lessGuess == label){
-			//	lessCorrect++;}	
+			if(lessGuess == label){
+				lessCorrect++;}	
 			//console.log('scores: ', scores);
 		}
 
 		var accuracy = 100*correct/N;
 		console.log('Accuracy: ', accuracy, '%')
-		//var lessaccuracy = 100*lessCorrect/N;
-		//console.log('Less Accuracy: ', lessaccuracy, '%')
+		var lessaccuracy = 100*lessCorrect/N;
+		console.log('Less Accuracy: ', lessaccuracy, '%')
 		
 	}
 
