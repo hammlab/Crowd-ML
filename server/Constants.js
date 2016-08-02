@@ -1,17 +1,17 @@
 
 	var paramIter = 0;
 	
-	var serviceAccount = 'GD-Prototype-credentials.json';	
-	var databaseURL = 'https://gd-prototype.firebaseio.com';
-	var D = 784;
+	var serviceAccount = <Insert json filename here>;	
+	var databaseURL = <insert firebase database url here>;
+	var D = 50;
 	var maxWeightBatchSize = 1;
 	var localUpdateNum = 0;
 	var maxGradBatchSize = 1;
 	var naughtRate = 10;
 	var eps = 0.00000001;
 	var K = 10;
-	var descentAlg = 'adagrad'; //simple, sqrt, adagrad, rmsProp
-	var testFeatures = 'MNISTTestImages.dat';
+	var descentAlg = 'sqrt'; //simple, sqrt, adagrad, rmsProp
+	var testFeatures = 'MNISTTestImages-small.dat';
 	var testLabels = 'MNISTTestLabels.dat';
 	var testN = 1000;
 	var testType = 'NNTest'; //none, binary, multitest
@@ -22,7 +22,7 @@
     	var noiseDistribution = 'NoNoise';
     	var lossFunction = 'SoftmaxNN';
     	var labelSource = 'MNISTTrainLabels.dat';
-    	var featureSource = 'MNISTTrainImages.dat';
+    	var featureSource = 'MNISTTrainImages-small.dat';
 	var N = 60000;
 	var clientBatchSize = 50;
 	var nh = 75;
