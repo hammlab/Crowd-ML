@@ -306,13 +306,9 @@ public class DataSend extends AppCompatActivity {
             }
             System.out.println(tot);
 
-            List<Double> noisyGrad = new ArrayList<Double>(length);
-            for (int j = 0; j < length; j++){
-                noisyGrad.add(dist.noise(grad.get(j), noiseScale));
-            }
             double sum;
             for(int j = 0; j < length; j++) {
-                sum = avgGrad.get(j) + noisyGrad.get(j);
+                sum = avgGrad.get(j) + grad.get(j);
                 avgGrad.set(j,sum);
             }
         }
@@ -323,9 +319,14 @@ public class DataSend extends AppCompatActivity {
             sum = avgGrad.get(i);
             avgGrad.set(i, sum/batchSize);
         }
+        
+        List<Double> noisyGrad = new ArrayList<Double>(length);
+        for (int j = 0; j < length; j++){
+                noisyGrad.add(dist.noise(avgGrad.get(j), noiseScale));
+            }
 
         userData.setGradientProcessed(false);
-        userData.setGradients(avgGrad);
+        userData.setGradients(noisyGrad);
         gradientIteration++;
         userData.setGradIter(gradientIteration);
         userValues.setValue(userData);
