@@ -185,16 +185,18 @@ def trainModel():
             if params['localUpdateNum']<=0 : 
                 # SGD mode: compute and send the gradient
                 tX,ty = sampleData(X,y,params)
-                g, l = computeNoisyGradient(w,tX,ty,params)
+                g, l = computeLossGradient(w,tX,ty,params)
+                xi = sampleNoise(w,params)   
+                g += xi             
             else: # Parameter averaging mode: compute and send the parameters
-                for cnt in range(params['localUpdateNum']):
+                for s in range(params['localUpdateNum']):
                     tX,ty = sampleData(X,y,params)
-                    g,l = computeNoisyGradient(w,tX,ty,params)
-
+                    g,l = computeLossGradient(w,tX,ty,params)
                     # Simple learning rate
                     #w -= naught/gradIter*g 
-                    w -= params['naughtRate']/np.sqrt(gradIter*params['localUpdateNum'])*g # keep gradIter fixed?
-
+                    w -= params['naughtRate']/np.sqrt(params['localUpdateNum']*gradIter+s)*g 
+                xi = sampleNoise(w,params)   
+                w += xi             
             print 'loss = ',str(l)
 
 
@@ -237,7 +239,7 @@ def sampleData(X,y,params):
     return (tX,ty)
 
 
-def computeNoisyGradient(w,tX,ty,params):
+def computeLossGradient(w,tX,ty,params):
 
     # Use one of loss functions.
     # The output is the averaged gradient
@@ -252,23 +254,27 @@ def computeNoisyGradient(w,tX,ty,params):
     else:
         print 'Unknown loss type'
         exit()
+
+    if np.isnan(g).any():
+        print 'Nan in gradient'
+        exit()
+ 
+    return (g,l)
+    
+ 
+def sampleNoise(w,params):
     
     if (params['noiseDistribution']=='NoNoise'):
-        noise = np.zeros(w.shape)
+        xi = np.zeros(w.shape)
     elif (params['noiseDistribution']=='Gauss'):
-        noise = GenerateGaussianNoise(params['noiseScale'], w.shape)
+        xi = GenerateGaussianNoise(params['noiseScale'], w.shape)
     elif (params['noiseDistribution']=='Laplace'):
-        noise = GenerateLaplaceNoise(params['noiseScale'], w.shape)
+        xi = GenerateLaplaceNoise(params['noiseScale'], w.shape)
     else:
         print 'Unknown noise type'
         exit()
             
-    g += noise
-    
-    if np.isnan(g).any():
-        print 'Nan in gradient'
-        exit()
-    return (g,l)
+    return xi
     
             
 ## Test
