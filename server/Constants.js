@@ -11,7 +11,7 @@
 	var eps = 0.00000001;
 	var K = 10;
 	var descentAlg = 'sqrt'; //simple, sqrt, adagrad, rmsProp
-	var testFeatures = 'MNISTTestImages.50.12.dat';
+	var testFeatures = 'MNISTTestImages.50.l2.dat';
 	var testLabels = 'MNISTTestLabels.dat';
 	var testN = 1000;
 	var testType = 'NNTest'; //none, binary, multitest
@@ -22,7 +22,7 @@
     	var noiseDistribution = 'NoNoise';
     	var lossFunction = 'SoftmaxNN';
     	var labelSource = 'MNISTTrainLabels.dat';
-    	var featureSource = 'MNISTTrainImages.50.12.dat';
+    	var featureSource = 'MNISTTrainImages.50.l2.dat';
 	var N = 60000;
 	var clientBatchSize = 50;
 	var nh = 75;
