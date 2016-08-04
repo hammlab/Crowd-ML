@@ -280,7 +280,7 @@ float * noiseLoss(float *loss, int noiseFunction, int length, double variance){
     NSLog(@"The feature vector size: %ld", self.featureSize);
     
 
-    int length = (int)self.featureSize;
+    int length = DFeatureSize;
     if(lossFunction == 3){
         length = length * classes;
     }else if(lossFunction == 4) {
@@ -291,17 +291,17 @@ float * noiseLoss(float *loss, int noiseFunction, int length, double variance){
     //Array that is used to store randomized numbers which are indices of labelVector
     NSMutableArray *modelInd = [NSMutableArray array];
     
-    float *loss = NULL;
+    float *grad = NULL;
     float *addGrad=(float *) malloc(length * sizeof(float));
     for(int i = 0; i < length; i++) {
         *(addGrad + i) = 0;
     }
-    float *avgloss=(float *) malloc(length * sizeof(float));
+    float *avgGrad=(float *) malloc(length * sizeof(float));
     for(int i = 0; i < length; i++) {
-        *(avgloss + i) = 0;
+        *(avgGrad + i) = 0;
     }
-    float *noiseloss=NULL;
-    float *lableBatch = NULL;
+    float *noiseGrad=NULL;
+    //float *lableBatch = NULL;
 
     //compute gradients with batchSize
     if(w != NULL) {
@@ -318,19 +318,19 @@ float * noiseLoss(float *loss, int noiseFunction, int length, double variance){
                 [modelInd removeAllObjects];
             }
             
-            [modelInd addObject:@(data)];
-            
+            [modelInd addObject:@(data)];            
             
             //loss = computeLoss(*(featureVector + data), labelVector + data, w, self.featureSize,lossFunction,regConstant,classes, L, nh);
             
             if(lossFunction == 1){
-                loss = [self.LogRegAlgo computeLossLog :*(featureVector + data):(labelVector + data) :w :self.featureSize :regConstant];
+                grad = [self.LogRegAlgo computeLossLog :*(featureVector + data):(labelVector + data) :w :self.featureSize :regConstant];
             }else if(lossFunction == 2){
-                loss = [self.HingeLossAlgo computeLossSVM:*(featureVector + data) :(labelVector + data) :w :self.featureSize :regConstant :classes];
+                grad = [self.HingeLossAlgo computeLossSVM:*(featureVector + data) :(labelVector + data) :w :self.featureSize :regConstant :classes];
             }else if(lossFunction == 3){
-                loss = [self.SoftMaxAlgo computeSoftMax:*(featureVector + data) :(labelVector + data) :w :self.featureSize :classes :regConstant];
+                grad = [self.SoftMaxAlgo computeSoftMax:*(featureVector + data) :(labelVector + data) :w :self.featureSize :classes :regConstant];
             }else if(lossFunction == 4){
                 
+                /*
                 for(int a = 0; a < sbatch; a++){
                     lableBatch = (float *) malloc(sbatch * sizeof(float));
                     long rad = arc4random_uniform((UInt32)getN);
@@ -341,23 +341,26 @@ float * noiseLoss(float *loss, int noiseFunction, int length, double variance){
 
                 loss = [self.NNAlgo computeNN:*(featureVector + data) :lableBatch :w :self.featureSize :classes :regConstant :L :nh :sbatch];
                 free(lableBatch);
+                 */
+                grad = [self.NNAlgo computeNN:*(featureVector + data) :(labelVector + data) :w :self.featureSize :classes :regConstant :L :nh :sbatch];
                
             }
             
             
             for(int k = 0; k <length;k++){
-                *(addGrad + k) = *(addGrad + k) + *(loss + k);
+                *(addGrad + k) = *(addGrad + k) + *(grad + k);
 
             }
-            loss = NULL;
+            grad = NULL;
         }
     }
 
     for(int k = 0; k <length;k++){
-        *(avgloss + k) = *(addGrad + k)/ sbatch;
+        *(avgGrad + k) = *(addGrad + k)/ sbatch;
+
     }
     NSLog(@"Gradient length: %d",length);
-    noiseloss = noiseLoss(avgloss, noiseFunction, length, variance);
+    noiseGrad = noiseLoss(avgGrad, noiseFunction, length, variance);
     
     
     free(labelVector);
@@ -367,12 +370,12 @@ float * noiseLoss(float *loss, int noiseFunction, int length, double variance){
     }
     
     free(featureVector);
-    free(loss);
+    free(grad);
     free(addGrad);
-    free(avgloss);
+    free(avgGrad);
     
     
-    return noiseloss;
+    return noiseGrad;
 }
 
 /**
@@ -388,9 +391,9 @@ float * noiseLoss(float *loss, int noiseFunction, int length, double variance){
     }else if(lossFunction == 2){
         return [self.HingeLossAlgo calculateTrainAccuracyWithWeightBinary:w :labelName :featureName :fileType :DFeatureSize :classes :self.trainingModelSize :self.featureSize];
     }else if(lossFunction == 3){
-        return [self.SoftMaxAlgo calculateTrainAccuracyWithWeightSoftMax:w :labelName :featureName :fileType :DFeatureSize :classes :self.trainingModelSize :self.featureSize];
+        return [self.SoftMaxAlgo calculateTrainAccuracyWithWeightSoftMax:w :labelName :featureName :fileType :DFeatureSize :classes :Ntest];
     }else if(lossFunction == 4){
-        return [self.NNAlgo calculateTrainAccuracyWithWeightNN:w :labelName :featureName :fileType :DFeatureSize :classes :Ntest :self.featureSize :nh];
+        return [self.NNAlgo calculateTrainAccuracyWithWeightNN:w :labelName :featureName :fileType :DFeatureSize :classes :Ntest :nh];
         
     }else{
         NSLog(@"Accuracy error!! Check your loss function");

@@ -29,7 +29,7 @@
 /**
  Calculate accuracy for multi classes
  **/
-- (float)calculateTrainAccuracyWithWeightSoftMax:(float *)w :(NSString *)labelName :(NSString *)featureName :(NSString *)fileType :(int) DFeatureSize :(int)classes :(long)trainingModelSize :(long)featureSize;
+- (float)calculateTrainAccuracyWithWeightSoftMax:(float *)w :(NSString *)labelName :(NSString *)featureName :(NSString *)fileType :(int) DFeatureSize :(int)classes :(int)Ntest;
 
 /**
  Read label file

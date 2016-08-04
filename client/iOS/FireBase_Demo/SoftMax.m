@@ -88,24 +88,23 @@
 /**
  Calculate accuracy for multi(10) classes
  **/
-- (float)calculateTrainAccuracyWithWeightSoftMax:(float *)w :(NSString *)labelName :(NSString *)featureName :(NSString *)fileType :(int)DFeatureSize :(int)classes :(long)trainingModelSize :(long)featureSize
+- (float)calculateTrainAccuracyWithWeightSoftMax:(float *)w :(NSString *)labelName :(NSString *)featureName :(NSString *)fileType :(int)DFeatureSize :(int)classes :(int)Ntest
 
 {
     
     long truePositive = 0;
     
     if(classes == 2){
-        long truePositive = 0;
         
         float *labelVector;
-        labelVector = [self readTrainingLabelFile:labelName :fileType :trainingModelSize];
+        labelVector = [self readTrainingLabelFile:labelName :fileType :Ntest];
         
         float **featureVector;
-        featureVector = [self readTrainingFeatureFile:featureName :fileType : DFeatureSize :trainingModelSize];
+        featureVector = [self readTrainingFeatureFile:featureName :fileType : DFeatureSize :Ntest];
         
-        for(int i = 0; i < trainingModelSize; i++) {
+        for(int i = 0; i < Ntest; i++) {
             double h = 0;
-            for(int j = 0; j <featureSize; j++) {
+            for(int j = 0; j <DFeatureSize; j++) {
                 h += *(*(featureVector + i) + j) * *(w + j);
             }
             
@@ -121,55 +120,65 @@
         
         free(labelVector);
         
-        for(int i = 0; i < trainingModelSize; i++) {
+        for(int i = 0; i < Ntest; i++) {
             free(*(featureVector + i));
         }
         
         free(featureVector);
         
-        return 1.0 * truePositive / trainingModelSize;
+        return 1.0 * truePositive / Ntest;
     }else{
         
         float *labelVector;
         labelName = @"MNISTTestLabels";
-        labelVector = [self readTrainingLabelFile:labelName :fileType :trainingModelSize];
+        labelVector = [self readTrainingLabelFile:labelName :fileType :Ntest];
         
         float **featureVector;
-        labelName = @"MNISTTestImages";
-        featureVector = [self readTrainingFeatureFile:featureName :fileType : DFeatureSize :trainingModelSize];
+        featureName = @"MNISTTestImages";
+        featureVector = [self readTrainingFeatureFile:featureName :fileType : DFeatureSize :Ntest];
         
-        for(int i = 0; i < 1000; i++){
+        for(int i = 0; i < Ntest; i++){
             float *ai=(float *) malloc(classes * sizeof(float));
+            int label = (int)*(labelVector + i);
+
+            float *featureArray=(float *) malloc(DFeatureSize * sizeof(float));
+            for(int a = 0; a < DFeatureSize; a++){
+                *(featureArray + a) = *(*(featureVector + i) + a);
+            }
+
             
             for(int h = 0; h < classes; h++){
                 double dot = 0;
-                for(int j = 0; j < featureSize; j++){
-                    dot += *(*(featureVector + h) + j) * *(w + (j + h * featureSize));
+                for(int j = 0; j < DFeatureSize; j++){
+                    dot += *(featureArray + j) * *(w + (j + h * DFeatureSize));
                 }
                 *(ai + h) = dot;
             }
+            
             int bestGuess = 0;
             for(int h = 0; h < classes; h++){
                 if(*(ai + h) > *(ai + bestGuess)){
                     bestGuess = h;
                 }
             }
-            int label = (int)*(labelVector + i);
+
             if(bestGuess == label){
                 truePositive++;
             }
+            free(ai);
+            free(featureArray);
         }
         
         free(labelVector);
         
-        for(int i = 0; i < trainingModelSize; i++) {
+        for(int i = 0; i < Ntest; i++) {
             free(*(featureVector + i));
         }
         
         free(featureVector);
+        NSLog(@"Correct: %ld",truePositive);
         
-        
-        return 100*truePositive/1000;
+        return 100.0*truePositive/Ntest;
         
     }
 }

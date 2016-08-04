@@ -41,6 +41,8 @@
 @property (nonatomic, readwrite) float noiseVariance;
 @property (nonatomic, readwrite) int paramIterator;
 @property (nonatomic, readwrite) int nhNumber;
+@property (nonatomic, readwrite) int naught;
+@property (nonatomic, readwrite) int localUpdate;
 
 
 @end
@@ -200,6 +202,30 @@
             self.nhNumber = [nh intValue];
         }
     }];
+    
+    //c (naught rate)
+    FIRDatabaseReference *cRef = [paramRef child:@"c"];
+    [cRef observeSingleEventOfType:FIRDataEventTypeValue withBlock:^(FIRDataSnapshot *snapshot) {
+        if(snapshot.value == [NSNull null]){
+            NSLog(@"Warning: nh is null object. ");
+            exit(EXIT_SUCCESS);
+        }else{
+            NSNumber *c = snapshot.value;
+            self.naught = [c intValue];
+        }
+    }];
+    
+    //localUpdateNum
+    FIRDatabaseReference *localUNRef = [paramRef child:@"localUpdateNum"];
+    [localUNRef observeSingleEventOfType:FIRDataEventTypeValue withBlock:^(FIRDataSnapshot *snapshot) {
+        if(snapshot.value == [NSNull null]){
+            NSLog(@"Warning: nh is null object. ");
+            exit(EXIT_SUCCESS);
+        }else{
+            NSNumber *localUN = snapshot.value;
+            self.localUpdate = [localUN intValue];
+        }
+    }];
 }
 
 /**
@@ -264,6 +290,23 @@
 - (int)paramIter{
     
     return self.paramIterator;
+}
+
+/**
+ Define naughRate
+ */
+- (int)naughtRate{
+    
+    return self.naught;
+}
+
+
+/**
+ Define localUpdateNum
+ */
+- (int)localUpdateNum{
+    
+    return self.localUpdate;
 }
 
 

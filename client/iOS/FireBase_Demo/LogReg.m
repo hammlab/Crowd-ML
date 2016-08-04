@@ -32,33 +32,42 @@
 //This function is used for log regression
 - (float *) computeLossLog :(const float *)trainingFeature :(const float *)trainingLabel :(const float *)w :(long) D :(double) regConstant
 {
+    
     //Dot product
-    double h = 0;
+    float h = 0;
     
     //Categorize
-    double y = -1;
+    float y = -1;
     if (*trainingLabel > 0)
         y = 1;
     
     //Compute dot product
-    for(int i = 0; i < D; i++)
+    for(int i = 0; i < D; i++){
         h += *(trainingFeature + i) * *(w + i);
+       // NSLog(@"method: %d, %f, feature: %f",i, *(w+i),*(trainingFeature + i));
+    }
     
-    float temp = exp( y * -1 * h);
-    temp = y * temp / (1 + temp) * -1;
     
-    float lambda = regConstant;
+    double temp = exp( y * -1 * h);
+    //NSLog(@"exp: %f", y * -1 * h);
+    //NSLog(@"temp = %f",temp);
+
+    temp = y * exp( y * -1 * h) / (1 + exp( y * -1 * h)) * -1;
+    //NSLog(@"y*temp = %f, 1+temp = %f",y * temp,(1 + temp));
     
-    float *loss = (float *) malloc(D * sizeof(float));
+    float lambda = (float)regConstant;
     
-    vDSP_vsmul(trainingFeature, 1, &temp, loss, 1, D);
+    float *grad = (float *) malloc(D * sizeof(float));
+    float doubleTemp = (float)temp;
+    
+    vDSP_vsmul(trainingFeature, 1, &doubleTemp, grad, 1, D);
     
     //Regularization
-    vDSP_vsma(w, 1, &lambda, loss, 1, loss, 1, D);
+    vDSP_vsma(w, 1, &lambda, grad, 1, grad, 1, D);
     
     
     
-    return loss;
+    return grad;
 }
 
 /**

@@ -39,6 +39,8 @@
 @property (nonatomic, readonly) float noiseVariance;
 @property (nonatomic, readonly) int paramIterator;
 @property (nonatomic, readonly) int nhNumber;
+@property (nonatomic, readonly) int naught;
+@property (nonatomic, readonly) int localUpdate;
 
 
 -(void)Initialize:(FIRDatabaseReference*) paramRef;
@@ -84,6 +86,16 @@
  Define paramIter
  */
 - (int)paramIter;
+
+/**
+ Define naughRate
+ */
+- (int)naughtRate;
+
+/**
+ Define localUpdateNum
+ */
+- (int)localUpdateNum;
 
 
 /**

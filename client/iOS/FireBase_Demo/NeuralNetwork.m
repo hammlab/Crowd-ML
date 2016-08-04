@@ -152,7 +152,7 @@
     NSMutableArray *dh1 = [NSMutableArray array];
     NSMutableArray *dh2 = [NSMutableArray array];
     
-    /*
+    
     float *dscores = (float *) malloc(classes * sizeof(float));
     for(int i = 0; i < classes; i++){
         if( i == (int)*trainingLabel){
@@ -161,8 +161,8 @@
             *(dscores + i) = *(prob + i);
         }
     }
-     */
     
+    /*
     float *dscores = (float *) malloc(classes * sizeof(float));
     for(int i = 0; i < classes; i++){
         for(int k = 0; k < clientBatchSize; k++){
@@ -173,6 +173,7 @@
             }
         }
     }
+     */
     
     
     //dw23
@@ -318,12 +319,11 @@
 /**
  Calculate accuracy for multi(10) classes
  **/
-- (float)calculateTrainAccuracyWithWeightNN:(float *)w :(NSString *)labelName :(NSString *)featureName :(NSString *)fileType :(int)DFeatureSize :(int)classes :(long)Ntest :(long)featureSize :(int)nh
+- (float)calculateTrainAccuracyWithWeightNN:(float *)w :(NSString *)labelName :(NSString *)featureName :(NSString *)fileType :(int)DFeatureSize :(int)classes :(long)Ntest :(int)nh
 
 {
-    
-    featureName = @"MNISTTestImages";
     labelName = @"MNISTTestLabels";
+    featureName = @"MNISTTestImages";
     fileType = @"dat";
  
     float *labelVector;
@@ -336,63 +336,69 @@
     int correct = 0;
     int lesscorrect = 0;
 
+    int lengthw01 = (int)DFeatureSize * nh;
+    int lengthw12 = nh*nh;
+    int lengthw23 = nh*classes;
+    int lengthb1 = nh;
+    int lengthb2 = nh;
+    int lengthb3 = classes;
+    
+    
+    NSMutableArray *w01 = [NSMutableArray array];
+    NSMutableArray *b1 = [NSMutableArray array];
+    NSMutableArray *w12 = [NSMutableArray array];
+    NSMutableArray *b2 = [NSMutableArray array];
+    NSMutableArray *w23 = [NSMutableArray array];
+    NSMutableArray *b3 = [NSMutableArray array];
+    
+    //parseParams
+    //W01:
+    int cnt = 0;
+    for(int i = 0; i < lengthw01; i++){
+        [w01 addObject:[NSNumber numberWithFloat:*(w+cnt)]];
+        cnt++;
+    }
+    
+    //b1
+    for(int i = 0; i < lengthb1; i++){
+        [b1 addObject:[NSNumber numberWithFloat:*(w+cnt)]];
+        cnt++;
+    }
+    
+    //W12
+    for(int i = 0; i < lengthw12; i++){
+        [w12 addObject:[NSNumber numberWithFloat:*(w+cnt)]];
+        cnt++;
+    }
+    
+    
+    //b2
+    for(int i = 0; i < lengthb2; i++){
+        [b2 addObject:[NSNumber numberWithFloat:*(w+cnt)]];
+        cnt++;
+    }
+    
+    
+    //W23
+    for(int i = 0; i< lengthw23; i++){
+        [w23 addObject:[NSNumber numberWithFloat:*(w+cnt)]];
+        cnt++;
+    }
+    
+    //b3
+    for(int i = 0; i < lengthb3; i++){
+        [b3 addObject:[NSNumber numberWithFloat:*(w+cnt)]];
+        cnt++;
+    }
+    
+
     for(int a = 0; a < Ntest; a++){
-        int lengthw01 = (int)DFeatureSize * nh;
-        int lengthw12 = nh*nh;
-        int lengthw23 = nh*classes;
-        int lengthb1 = nh;
-        int lengthb2 = nh;
-        int lengthb3 = classes;
-        
-        
-        NSMutableArray *w01 = [NSMutableArray array];
-        NSMutableArray *b1 = [NSMutableArray array];
-        NSMutableArray *w12 = [NSMutableArray array];
-        NSMutableArray *b2 = [NSMutableArray array];
-        NSMutableArray *w23 = [NSMutableArray array];
-        NSMutableArray *b3 = [NSMutableArray array];
-        
-        //parseParams
-        //W01:
-        int cnt = 0;
-        for(int i = 0; i < lengthw01; i++){
-            [w01 addObject:[NSNumber numberWithFloat:*(w+cnt)]];
-            cnt++;
+        float *featureArray=(float *) malloc(DFeatureSize * sizeof(float));
+        for(int k = 0; k < DFeatureSize; k++){
+            *(featureArray + k) = *(*(featureVector + a) + k);
         }
-        
-        //b1
-        for(int i = 0; i < lengthb1; i++){
-            [b1 addObject:[NSNumber numberWithFloat:*(w+cnt)]];
-            cnt++;
-        }
-        
-        //W12
-        for(int i = 0; i < lengthw12; i++){
-            [w12 addObject:[NSNumber numberWithFloat:*(w+cnt)]];
-            cnt++;
-        }
-        
-        
-        //b2
-        for(int i = 0; i < lengthb2; i++){
-            [b2 addObject:[NSNumber numberWithFloat:*(w+cnt)]];
-            cnt++;
-        }
-        
-        
-        //W23
-        for(int i = 0; i< lengthw23; i++){
-            [w23 addObject:[NSNumber numberWithFloat:*(w+cnt)]];
-            cnt++;
-        }
-        
-        //b3
-        for(int i = 0; i < lengthb3; i++){
-            [b3 addObject:[NSNumber numberWithFloat:*(w+cnt)]];
-            cnt++;
-        }
-        
-     
+        int label = (int)*(labelVector + a);
+
     
         //Forward pass
         float *h1 = (float *) malloc(nh * sizeof(float));
@@ -403,10 +409,15 @@
         for(int i = 0; i < nh; i++){
             dot = 0;
             for(int j = 0; j < DFeatureSize; j++){
-                dot += *(*(featureVector + a) + j) * [[w01 objectAtIndex:(i + j*nh)] floatValue];
+                dot += *(featureArray+ j) * [[w01 objectAtIndex:(i + j*nh)] floatValue];
             }
             float sum = dot + [[b1 objectAtIndex:i] floatValue];
-            *(h1 + i) = MAX(sum, 0.0);
+            //*(h1 + i) = MAX(sum, 0.0);
+            if(sum > 0){
+                *(h1 + i) = sum;
+            }else{
+                *(h1 + i) = 0.0;
+            }
         }
         
         //h2
@@ -416,7 +427,12 @@
                 dot += *(h1 + j) * [[w12 objectAtIndex:(i + j*nh)]floatValue];
             }
             float sum = dot + [[b2 objectAtIndex:i] floatValue];
-            *(h2 + i) = MAX(sum, 0.0);
+            //*(h2 + i) = MAX(sum, 0.0);
+            if(sum > 0){
+                *(h2 + i) = sum;
+            }else{
+                *(h2 + i) = 0.0;
+            }
             
         }
         
@@ -448,22 +464,21 @@
             }
         }
         
-        if(bestGuess == *(labelVector + a)){
+        if(bestGuess == label){
             correct++;
         }
-        if(lessGuess == *(labelVector + a)){
+        if(lessGuess == label){
             lesscorrect++;
         }
         
         free(h1);
         free(h2);
         free(scores);
+        free(featureArray);
     }
     
     float accuracy = 100.0 * correct/Ntest;
-    NSLog(@"Accuracy: %f, Correct: %d",accuracy, correct);
     float lessaccuracy = 100.0 * lesscorrect/Ntest;
-    NSLog(@"lessAccuracy: %f, lessCorrect: %d",lessaccuracy, lesscorrect);
     
     free(labelVector);
     

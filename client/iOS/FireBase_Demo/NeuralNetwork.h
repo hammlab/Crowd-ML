@@ -31,7 +31,7 @@
 /**
  Calculate accuracy for multi(10) class
  **/
-- (float)calculateTrainAccuracyWithWeightNN:(float *)w :(NSString *)labelName :(NSString *)featureName :(NSString *)fileType :(int) DFeatureSize :(int)classes :(long)Ntest :(long)featureSize :(int)nh;
+- (float)calculateTrainAccuracyWithWeightNN:(float *)w :(NSString *)labelName :(NSString *)featureName :(NSString *)fileType :(int) DFeatureSize :(int)classes :(long)Ntest :(int)nh;
 
 /**
  Read label file
