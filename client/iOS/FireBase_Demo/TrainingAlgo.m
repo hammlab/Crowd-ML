@@ -331,17 +331,24 @@ float * noiseLoss(float *loss, int noiseFunction, int length, double variance){
             }else if(lossFunction == 4){
                 
                 /*
+                float **featureBatch = (float **) malloc(sbatch * sizeof(float));
+
                 for(int a = 0; a < sbatch; a++){
                     lableBatch = (float *) malloc(sbatch * sizeof(float));
                     long rad = arc4random_uniform((UInt32)getN);
                     *(lableBatch + a) = *(labelVector + rad);
-                    
+                    *(featureBatch + a) = *(featureVector + rad);
                 }
                  
 
-                loss = [self.NNAlgo computeNN:*(featureVector + data) :lableBatch :w :self.featureSize :classes :regConstant :L :nh :sbatch];
+                grad = [self.NNAlgo computeNN:featureBatch:lableBatch :w :self.featureSize :classes :regConstant :L :nh :sbatch];
                 free(lableBatch);
+                for(int i = 0; i < sbatch; i++) {
+                    free(*(featureBatch + i));
+                }
+                free(featureBatch);
                  */
+                 
                 grad = [self.NNAlgo computeNN:*(featureVector + data) :(labelVector + data) :w :self.featureSize :classes :regConstant :L :nh :sbatch];
                
             }

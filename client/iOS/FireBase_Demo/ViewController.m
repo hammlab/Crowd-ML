@@ -39,7 +39,7 @@
 
 /**
  *  The user name of that user who has already signed in.
- *  For locating and accessing the place in firebase to upload GradLoss.
+ *  For locating and accessing the place in firebase to upload Grad.
  */
 @property (nonatomic, strong) NSString *logginUID;
 
@@ -61,7 +61,7 @@
 
 /**
  *  The disabled button.
- *  After tap the training button, before this viewcontroller upload GradLoss, disabled training button.
+ *  After tap the training button, before this viewcontroller upload Grad, disabled training button.
  */
 @property (nonatomic, strong) UIButton *disabledButton;
 
@@ -338,13 +338,13 @@
              *  set up account's info.
              */
             
-            NSDictionary *gradlossDict = [NSDictionary dictionary];
+            NSDictionary *gradDict = [NSDictionary dictionary];
             for(int i = 0; i < self.trainFeatureSize; i++) {
-                [gradlossDict setValue: [NSNumber numberWithFloat:0.0] forKey:[NSString stringWithFormat:@"%d", i]];
+                [gradDict setValue: [NSNumber numberWithFloat:0.0] forKey:[NSString stringWithFormat:@"%d", i]];
             }
             
             
-            FIRDatabaseReference *gradlossRef = [[[self.rootRef child:@"users" ] child:self.logginUID] child:@"gradients"];
+            FIRDatabaseReference *gradRef = [[[self.rootRef child:@"users" ] child:self.logginUID] child:@"gradients"];
             
             
             NSNumber *infoDict  = [NSNumber numberWithBool:YES];
@@ -359,7 +359,7 @@
             NSNumber *paramNum = [NSNumber numberWithInt:[self.userParam paramIter] ];
             
             [gradIterRef setValue:graditer];
-            [gradlossRef setValue:gradlossDict];
+            [gradRef setValue:gradDict];
             [infoRef setValue:infoDict];
             [paraIterRef setValue: paramNum];
             [self UpdateWeightIter];
@@ -404,12 +404,12 @@
              *  set up account's info.
              */
             
-            NSDictionary *gradlossDict = [NSDictionary dictionary];
+            NSDictionary *gradDict = [NSDictionary dictionary];
             for(int i = 0; i < self.trainFeatureSize; i++) {
-                [gradlossDict setValue: [NSNumber numberWithFloat:0.0] forKey:[NSString stringWithFormat:@"%d", i]];
+                [gradDict setValue: [NSNumber numberWithFloat:0.0] forKey:[NSString stringWithFormat:@"%d", i]];
             }
             
-            FIRDatabaseReference *gradlossRef = [[[self.rootRef child:@"users" ] child:self.logginUID] child:@"gradients"];
+            FIRDatabaseReference *gradRef = [[[self.rootRef child:@"users" ] child:self.logginUID] child:@"gradients"];
             
             
             NSNumber *infoDict  = [NSNumber numberWithBool:YES];
@@ -427,7 +427,7 @@
             
             
             [gradIterRef setValue:graditer];
-            [gradlossRef setValue:gradlossDict];
+            [gradRef setValue:gradDict];
             [infoRef setValue:infoDict];
             [paraIterRef setValue:paramNum];
             [self UpdateWeightIter];
@@ -455,13 +455,13 @@
                          *  Reset account's info.
                          */
                         
-                        NSDictionary *gradlossDict = [NSDictionary dictionary];
+                        NSDictionary *gradDict = [NSDictionary dictionary];
                         for(int i = 0; i < self.trainFeatureSize; i++) {
-                            [gradlossDict setValue: [NSNumber numberWithFloat:0.0] forKey:[NSString stringWithFormat:@"%d", i]];
+                            [gradDict setValue: [NSNumber numberWithFloat:0.0] forKey:[NSString stringWithFormat:@"%d", i]];
                         }
                         
                         
-                        FIRDatabaseReference *gradlossRef = [[[self.rootRef child:@"users" ] child:self.logginUID] child:@"gradients"];
+                        FIRDatabaseReference *gradRef = [[[self.rootRef child:@"users" ] child:self.logginUID] child:@"gradients"];
                         
                         
                         NSNumber *infoDict  = [NSNumber numberWithBool:YES];
@@ -477,7 +477,7 @@
                         NSNumber *paramNum = [NSNumber numberWithInt:server_paramIter ];
                         
                         [gradIterRef setValue:graditer];
-                        [gradlossRef setValue:gradlossDict];
+                        [gradRef setValue:gradDict];
                         [infoRef setValue:infoDict];
                         [paraIterRef setValue: paramNum];
                         [self UpdateWeightIter];
@@ -494,6 +494,11 @@
                     }
                 
             
+            }];
+            
+            [[[[self.rootRef child:@"users"]  child:self.logginUID] child:@"gradIter"] observeSingleEventOfType:FIRDataEventTypeValue withBlock:^(FIRDataSnapshot *snapshot) {
+                self.gradIter = [snapshot.value intValue];
+                
             }];
 
             // Begin training.
@@ -581,7 +586,7 @@
         if(self.localTraining){
             [self localTrainModelWithWeight:w];
         }else{
-            [self trainModelAndUploadGradLossWithWeight:w];
+            [self trainModelAndUploadGradWithWeight:w];
         }
         
         free(w);
@@ -590,7 +595,7 @@
     
 }
 
-- (void)trainModelAndUploadGradLossWithWeight: (float *) w {
+- (void)trainModelAndUploadGradWithWeight: (float *) w {
     
     float *grad = NULL;
     
@@ -627,6 +632,7 @@
             
             for(int k = 0; k < length; k++){
                 *(w + k) = *(w + k) - naughtRate/sqrtf(self.gradIter*localUpdateNum) * *(grad + k);
+                //NSLog(@"%d: grad: %f, w: %f, nau: %d, sqr: %f",k, *(grad+k),*(w + k),naughtRate,sqrtf(self.gradIter*localUpdateNum));
             }
             
             if(i < localUpdateNum-1){
@@ -653,10 +659,10 @@
         if(![self.wIterU isEqualToString: self.wIterTW]){
             [self UpdateWeightIter];
         }
-        [self uploadGradLossToFireBase:grad];
+        [self uploadGradToFireBase:grad];
     }else if(localUpdateNum > 0){
         //Send local weights as gradients to firebase
-        [self uploadGradLossToFireBase:w];
+        [self uploadGradToFireBase:w];
     }
     
     
@@ -672,17 +678,17 @@
     
 }
 
-- (void) uploadGradLossToFireBase: (float *)gradloss
+- (void) uploadGradToFireBase: (float *)grad
 {
     
-    //Update gradloss
-    NSDictionary *gradlossDict = [[NSMutableDictionary alloc] initWithCapacity:self.trainFeatureSize];
+    //Update grad
+    NSDictionary *gradDict = [[NSMutableDictionary alloc] initWithCapacity:self.trainFeatureSize];
     for(int i = 0; i < self.trainFeatureSize; i++) {
         
-        [gradlossDict setValue: [NSNumber numberWithFloat: *(gradloss + i)] forKey:[NSString stringWithFormat:@"%d", i]];
+        [gradDict setValue: [NSNumber numberWithFloat: *(grad + i)] forKey:[NSString stringWithFormat:@"%d", i]];
     }
     
-    FIRDatabaseReference *gradlossRef = [[[self.rootRef child:@"users" ] child:self.logginUID] child:@"gradients"];
+    FIRDatabaseReference *gradRef = [[[self.rootRef child:@"users" ] child:self.logginUID] child:@"gradients"];
     
     //Change readyByServer to false.
     NSNumber *infoDict  = [NSNumber numberWithBool:NO];
@@ -693,7 +699,7 @@
     
     
     NSLog(@"Uploading gradients..");
-    [gradlossRef setValue:gradlossDict];
+    [gradRef setValue:gradDict];
     
     [gradIterRef observeSingleEventOfType:FIRDataEventTypeValue withBlock:^(FIRDataSnapshot *snapshot) {
         
@@ -709,7 +715,7 @@
             int graditrnum = [iternum intValue] + 1;
             NSString *graditr = [NSString stringWithFormat:@"%i", graditrnum];
             [gradIterRef setValue:graditr];
-            self.gradIter++;
+            self.gradIter = graditrnum;
             NSLog(@"update: %@, self: %d", graditr, self.gradIter);
         }
         
