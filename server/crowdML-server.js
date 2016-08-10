@@ -48,7 +48,7 @@
 	var length = D;
 	if (K > 2){
 		length = D*K;}
-	if (constants.lossFunction = 'SoftmaxNN'){
+	if (constants.lossFunction == 'SoftmaxNN'){
 		length = D*nh + nh + nh*nh + nh + nh*K + K;}
 	var adaG = new Array(length);
 	var rms = new Array(length);
