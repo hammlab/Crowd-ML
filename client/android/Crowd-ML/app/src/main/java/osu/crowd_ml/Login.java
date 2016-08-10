@@ -78,6 +78,7 @@ public class Login extends AppCompatActivity{
 
         Button mLogin = (Button) findViewById(R.id.loginButton);
         Button mCreateNew = (Button) findViewById(R.id.createNewButton);
+        Button mOffline = (Button) findViewById(R.id.offline);
         final TextView error = (TextView) findViewById(R.id.errorMessage);
 
         mAuth.addAuthStateListener(mAuthListener);
@@ -112,6 +113,7 @@ public class Login extends AppCompatActivity{
                                 // signed in user can be handled in the listener.
                                 if (!task.isSuccessful()) {
                                     Log.w(logStr, "signInWithEmail", task.getException());
+                                    System.out.println(task.getException());
                                     Toast.makeText(getApplicationContext(), "Authentication failed.",
                                             Toast.LENGTH_SHORT).show();
                                 }
@@ -125,6 +127,16 @@ public class Login extends AppCompatActivity{
             }
         });
 
+
+        mOffline.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+
+                Intent intent = new Intent(Login.this, OfflineDataSend.class);
+                startActivity(intent);
+
+            }
+        });
 
 
 

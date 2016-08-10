@@ -79,13 +79,10 @@ public class DataSend extends AppCompatActivity {
     private double c;
     private double eps;
     private String descentAlg;
-    private int t = 0;
-    private List<Double> learningRateFactor;
+    private int t = 1;
 
-    //private List<List<Double>> batch = new ArrayList<List<Double>>();
     private List<double[]> xBatch = new ArrayList<double[]>();
     private List<Integer> yBatch = new ArrayList<Integer>();
-    //int batchSlot = 0;
 
     private int length;
 
@@ -208,26 +205,29 @@ public class DataSend extends AppCompatActivity {
                     sendGradient();
                 }
 
-                if (ready && dataCount > 0 && dataCount <= N/batchSize && localUpdateNum > 0) {
+                if (ready && dataCount > 0 && dataCount <= N/(batchSize*localUpdateNum) && localUpdateNum > 0) {
                     message.setText("Sending Data");
                     ready = false;
-
 
                     userData = new UserData();
                     List<Double> oldWeight = weightVals.getWeights();
                     List<Double> newWeight = new ArrayList<Double>(length);
                     userData.setParamIter(paramIter);
                     userData.setWeightIter(t);
-                    for(int i = 0; i < localUpdateNum; i++){
-                        newWeight = internalWeightCalc(oldWeight, t);
+                    System.out.println("old weight "+oldWeight);
+                    for (int i = 0; i < localUpdateNum; i++) {
+                        newWeight = internalWeightCalc(oldWeight, t, i);
                         t++;
                         oldWeight = newWeight;
+                        System.out.println("weight update "+oldWeight);
                     }
+                    System.out.println("new weight "+newWeight);
                     gradientIteration++;
                     userData.setGradIter(gradientIteration);
                     userData.setGradientProcessed(false);
                     userData.setGradients(newWeight);
                     userValues.setValue(userData);
+                    dataCount--;
 
                     ready = true;
 
@@ -259,6 +259,27 @@ public class DataSend extends AppCompatActivity {
                 userCheck = dataSnapshot.getValue(UserData.class);
                 if (dataCount > 0 && userCheck.getGradientProcessed() && userCheck.getGradIter()== gradientIteration && localUpdateNum == 0) {
                     sendGradient();
+                }
+                else if(dataCount > 0 && userCheck.getGradientProcessed() && userCheck.getGradIter()== gradientIteration && localUpdateNum > 0){
+                    ready = false;
+                    userData = new UserData();
+                    List<Double> oldWeight = weightVals.getWeights();
+                    List<Double> newWeight = new ArrayList<Double>(length);
+                    userData.setParamIter(paramIter);
+                    userData.setWeightIter(t);
+                    for (int i = 0; i < localUpdateNum; i++) {
+                        newWeight = internalWeightCalc(oldWeight, t, i);
+                        t++;
+                        oldWeight = newWeight;
+                    }
+                    System.out.println("new weight "+newWeight);
+                    gradientIteration++;
+                    userData.setGradIter(gradientIteration);
+                    userData.setGradientProcessed(false);
+                    userData.setGradients(newWeight);
+                    userValues.setValue(userData);
+                    dataCount--;
+                    ready = true;
                 }
                 if (dataCount == 0) {
                     ready = true;
@@ -300,11 +321,55 @@ public class DataSend extends AppCompatActivity {
             double[] X = xBatch.get(i);
             int Y = yBatch.get(i);
             List<Double> grad = loss.gradient(currentWeights, X, Y, D, K, L, nh);
-            double tot = 0;
-            for(int j = 0; j < grad.size(); j++){
-                tot += grad.get(j);
+
+            double sum;
+            for(int j = 0; j < length; j++) {
+                sum = avgGrad.get(j) + grad.get(j);
+                avgGrad.set(j,sum);
             }
-            System.out.println(tot);
+        }
+
+        double total;
+        for(int i = 0; i < length; i++) {
+            total = avgGrad.get(i);
+            avgGrad.set(i, total/batchSize);
+        }
+
+        List<Double> noisyGrad = new ArrayList<Double>(length);
+        for (int j = 0; j < length; j++){
+            noisyGrad.add(dist.noise(avgGrad.get(j), noiseScale));
+        }
+
+        userData.setGradientProcessed(false);
+        userData.setGradients(noisyGrad);
+        gradientIteration++;
+        userData.setGradIter(gradientIteration);
+        userValues.setValue(userData);
+        avgGrad.clear();
+    }
+
+
+    public List<Double> internalWeightCalc(List<Double> weights, int weightIter, int localUpdateIter){
+
+        List<Integer> batchSamples = new ArrayList<Integer>();
+        List<Double> currentWeights = weights;
+        int batchSlot = 0;
+        while(dataCount > 0 && batchSlot < batchSize) {
+            batchSamples.add(order.get((batchSize*localUpdateNum*(dataCount-1) + batchSlot*(localUpdateIter+1))));
+            batchSlot++;
+        }
+        xBatch = readSample(batchSamples);
+        yBatch = readType(batchSamples);
+        List<Double> avgGrad = new ArrayList<Double>(length);
+        for(int i = 0; i < length; i ++){
+            avgGrad.add(0.0);
+        }
+
+        for(int i = 0; i < batchSize; i++){
+            double[] X = xBatch.get(i);
+            int Y = yBatch.get(i);
+            List<Double> grad = loss.gradient(currentWeights, X, Y, D, K, L, nh);
+
 
             double sum;
             for(int j = 0; j < length; j++) {
@@ -319,70 +384,14 @@ public class DataSend extends AppCompatActivity {
             sum = avgGrad.get(i);
             avgGrad.set(i, sum/batchSize);
         }
-        
+
         List<Double> noisyGrad = new ArrayList<Double>(length);
         for (int j = 0; j < length; j++){
-                noisyGrad.add(dist.noise(avgGrad.get(j), noiseScale));
-            }
-
-        userData.setGradientProcessed(false);
-        userData.setGradients(noisyGrad);
-        gradientIteration++;
-        userData.setGradIter(gradientIteration);
-        userValues.setValue(userData);
-        avgGrad.clear();
-    }
-
-
-    public List<Double> internalWeightCalc(List<Double> weights, int weightIter){
-        userData = new UserData();
-        userData.setParamIter(paramIter);
-
-        List<Integer> batchSamples = new ArrayList<Integer>();
-        List<Double> currentWeights = weights;
-        int batchSlot = 0;
-        while(dataCount > 0 && batchSlot < batchSize) {
-            batchSamples.add(order.get((batchSize*(dataCount-1) + batchSlot)));
-            batchSlot++;
-        }
-        dataCount--;
-        xBatch = readSample(batchSamples);
-        yBatch = readType(batchSamples);
-        List<Double> avgGrad = new ArrayList<Double>(length);
-        for(int i = 0; i < length; i ++){
-            avgGrad.add(0.0);
-        }
-
-        for(int i = 0; i < batchSize; i++){
-            double[] X = xBatch.get(i);
-            int Y = yBatch.get(i);
-            List<Double> grad = loss.gradient(currentWeights, X, Y, D, K, L, nh);
-            double tot = 0;
-            for(int j = 0; j < grad.size(); j++){
-                tot += grad.get(j);
-            }
-            System.out.println(tot);
-
-            List<Double> noisyGrad = new ArrayList<Double>(length);
-            for (int j = 0; j < length; j++){
-                noisyGrad.add(dist.noise(grad.get(j), noiseScale));
-            }
-            double sum;
-            for(int j = 0; j < length; j++) {
-                sum = avgGrad.get(j) + noisyGrad.get(j);
-                avgGrad.set(j,sum);
-            }
-        }
-
-
-        double sum;
-        for(int i = 0; i < length; i++) {
-            sum = avgGrad.get(i);
-            avgGrad.set(i, sum/batchSize);
+            noisyGrad.add(dist.noise(avgGrad.get(j), noiseScale));
         }
 
         InternalServer server = new InternalServer();
-        List<Double> newWeight = server.calcWeight(weights, avgGrad, weightIter, descentAlg, c, eps);
+        List<Double> newWeight = server.calcWeight(currentWeights, noisyGrad, weightIter, descentAlg, c, eps);
 
         return newWeight;
 

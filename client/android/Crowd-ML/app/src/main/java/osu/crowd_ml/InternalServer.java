@@ -38,6 +38,12 @@ public class InternalServer {
             }
         }
 
+        if(descentAlg.equals("sqrt")){
+            for(int i = 0; i < oldWeights.size(); i ++){
+                newWeight.add(oldWeights.get(i) - (c/Math.sqrt(t))*grad.get(i));
+            }
+        }
+
         return newWeight;
 
     }
