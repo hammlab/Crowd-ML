@@ -15,15 +15,17 @@
             android:label="@string/app_name">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
+
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
         <activity
             android:name=".DataSend"
-            android:label="@string/app_name">
-        </activity>
-
-
+            android:label="@string/app_name" />
+        <activity
+            android:name=".OfflineDataSend"
+            android:label="@string/title_activity_offline_data_send"
+            android:theme="@style/AppTheme.NoActionBar" />
     </application>
 
 </manifest>
