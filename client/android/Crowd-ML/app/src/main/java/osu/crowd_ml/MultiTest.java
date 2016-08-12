@@ -27,29 +27,39 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License
 */
-public class BinaryTest implements AccTest{
+public class MultiTest implements AccTest{
 
     public double accuracy(Context context, List<Double> weightVals, List<Integer> testLabels, List<double[]> testFeatures, int testN, int D, int K, int nh){
 
         int correct = 0;
+        double dot;
         for(int i = 0; i < testN; i++){
             double[] X = testFeatures.get(i);
             Integer Y = testLabels.get(i);
+            double[] classResults = new double[10];
+            for(int h = 0; h < K; h++){
+                dot = 0;
+                for(int j = 0; j < D; j++){
+                    dot += X[j]*weightVals.get(j + (h*D));}
+                classResults[h] = dot;
+            }
+            int bestGuess = 0;
+            for(int h = 0; h < K; h++){
+                if(classResults[h]>classResults[bestGuess]){
+                    bestGuess = h;}
+            }
 
-            double dot = 0;
-            for(int j = 0; j < D; j++){
-                dot += X[j]*weightVals.get(j);}
-
-            int predict = 0;
-            if(dot > 0){
-                predict = 1;}
-            if(predict == Y){
+            if(bestGuess == Y){
                 correct++;}
-
         }
+
+
+
+
 
         double accuracy = 100*correct/testN;
         return accuracy;
 
     }
+
 }

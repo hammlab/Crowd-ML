@@ -52,7 +52,7 @@ public class OfflineDataSend extends AppCompatActivity {
     private String testFeatureSource = "MNISTTestImages.dat";
     private int D = 784;
     private int N = 60000;
-    private int testN = 10000;
+    private int testN = 1000;
     private int batchSize = 50;
     private double noiseScale = 1;
     private double L = 1e-6;
@@ -64,6 +64,8 @@ public class OfflineDataSend extends AppCompatActivity {
 
     private List<double[]> xBatch = new ArrayList<double[]>();
     private List<Integer> yBatch = new ArrayList<Integer>();
+    List<double[]> testFeatures = new ArrayList<double[]>(testN);
+    List<Integer> testLabels = new ArrayList<Integer>(testN);
 
     private int length;
     private AccTest test;
@@ -98,6 +100,13 @@ public class OfflineDataSend extends AppCompatActivity {
         for (int i = 0; i < length; i++) {
             weightVals.add(Math.random() - 0.5);
         }
+
+        List<Integer> allTestSamples = new ArrayList<Integer>(testN);
+        for(int i = 0; i < testN; i++){
+            allTestSamples.add(i);
+        }
+        testFeatures = readSample(allTestSamples);
+        testLabels = readType(allTestSamples);
 
 
         Button mSendTrainingData = (Button) findViewById(R.id.sendTrainingData);
@@ -135,8 +144,9 @@ public class OfflineDataSend extends AppCompatActivity {
                         dataCount--;
                     }
                     System.out.println("new weight " + newWeight);
-
-                    test.accuracy(OfflineDataSend.this, weightVals, testLabelSource, testFeatureSource, testN, D, K, nh);
+                    Double acc = test.accuracy(OfflineDataSend.this, weightVals, testLabels, testFeatures, testN, D, K, nh);
+                    String results = "Accuracy: "+acc.toString().substring(0, 6);
+                    message.setText(results);
 
                     ready = true;
 

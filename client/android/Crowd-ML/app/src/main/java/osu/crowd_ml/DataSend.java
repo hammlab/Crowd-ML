@@ -1,5 +1,6 @@
 package osu.crowd_ml;
 
+import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
@@ -20,6 +21,8 @@ import java.io.BufferedReader;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.io.OutputStreamWriter;
+import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -214,14 +217,11 @@ public class DataSend extends AppCompatActivity {
                     List<Double> newWeight = new ArrayList<Double>(length);
                     userData.setParamIter(paramIter);
                     userData.setWeightIter(t);
-                    System.out.println("old weight "+oldWeight);
                     for (int i = 0; i < localUpdateNum; i++) {
                         newWeight = internalWeightCalc(oldWeight, t, i);
                         t++;
                         oldWeight = newWeight;
-                        System.out.println("weight update "+oldWeight);
                     }
-                    System.out.println("new weight "+newWeight);
                     gradientIteration++;
                     userData.setGradIter(gradientIteration);
                     userData.setGradientProcessed(false);

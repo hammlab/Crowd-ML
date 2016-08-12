@@ -23,5 +23,5 @@ import java.util.List;
 
 public interface AccTest {
 
-    public double accuracy(Context context, List<Double> weightVals, String testLabelSource, String testFeatureSource, int testN, int D, int K, int nh);
+    public double accuracy(Context context, List<Double> weightVals, List<Integer> testLabels, List<double[]> testFeatures, int testN, int D, int K, int nh);
 }
