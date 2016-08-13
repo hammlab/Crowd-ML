@@ -613,6 +613,7 @@
     float L = [self.userParam L];
     int nh = [self.userParam nh];
     int localUpdateNum = [self.userParam localUpdateNum];
+
     int naughtRate = [self.userParam naughtRate];
     
     int length = DFeatureSize;
@@ -628,6 +629,7 @@
 
     }else{
         for(int i = 0; i < localUpdateNum; i++){
+            NSLog(@"i: %d",i);
             grad = [self.trainModel trainModelWithWeight:w :lossType :noiseType :class :batchsize :regConstant :variance :labelName :featureName :fileType :DFeatureSize :N :L :nh];
             
             for(int k = 0; k < length; k++){
@@ -843,7 +845,8 @@
     float L = [self.userParam L];
     int nh = [self.userParam nh];
     int naughtRate = [self.userParam naughtRate];
-    int localUpdateNum = [self.userParam localUpdateNum];
+    //int localUpdateNum = [self.userParam localUpdateNum];
+    int localUpdateNum = 10;
     
     int length = DFeatureSize;
     if(lossType == 3){
@@ -864,6 +867,7 @@
 
         }else{
             for(int cnt = 0; cnt < localUpdateNum; cnt++){
+                NSLog(@"i: %d",cnt);
                 grad = [self.trainModel trainModelWithWeight:w :lossType :noiseType :class :batchsize :regConstant :noiseScale :labelName :featureName :fileType :DFeatureSize :N :L :nh];
                 
 

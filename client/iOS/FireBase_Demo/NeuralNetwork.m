@@ -49,9 +49,9 @@
     NSMutableArray *b3 = [NSMutableArray array];
     
     //parseParams
-    [self parsePara:w :lengthw01 :lengthw12 :lengthw23 :lengthb1 :lengthb2 :lengthb3 :w01 :b1 :w12 :b2 :w23 :b3];
+    [self parseParam:w :lengthw01 :lengthw12 :lengthw23 :lengthb1 :lengthb2 :lengthb3 :w01 :b1 :w12 :b2 :w23 :b3];
+
     
-    //getAvgGradient:
     //Forward pass
     float *h1 = (float *) malloc(nh * sizeof(float));
     float *h2 = (float *) malloc(nh * sizeof(float));
@@ -78,8 +78,8 @@
         
     }
     
+    //Scores
     float max = -FLT_MAX;
-    float *ai = (float *) malloc(classes * sizeof(float));
     float *scores = (float *) malloc(classes * sizeof(float));
     for(int i = 0; i < classes; i++){
         dot = 0;
@@ -87,21 +87,22 @@
             dot += *(h2 + j) * [[w23 objectAtIndex:(i + classes*j)]floatValue];
             
         }
-        *(ai + i) = dot;
-        max = MAX(dot, max);
         *(scores + i) = dot + [[b3 objectAtIndex: i]floatValue];
+        max = MAX(*(scores + i), max);
+
     }
     
     float denom = 0;
     float *prob = (float *) malloc(classes * sizeof(float));
     for(int i =0; i < classes; i++){
-        dot = *(ai + i);
-        denom += expf(dot - max);
-        
+        float exp_score = expf(*(scores + i) - max);
+        denom += exp_score;
     }
+    
+    //Probs
     for(int i = 0; i < classes; i++){
-        dot = *(ai + i);
-        *(prob + i) = expf(dot - max)/denom;
+        float exp_score = expf(*(scores + i) - max);
+        *(prob + i) = exp_score/denom;
     }
     
     //Backward pass
@@ -115,6 +116,7 @@
     NSMutableArray *dh2 = [NSMutableArray array];
     
     
+    //dscores
     float *dscores = (float *) malloc(classes * sizeof(float));
     for(int i = 0; i < classes; i++){
         if( i == (int)*trainingLabel){
@@ -124,22 +126,8 @@
         }
     }
     
-    /*
-    float *dscores = (float *) malloc(classes * sizeof(float));
-    for(int i = 0; i < classes; i++){
-        for(int k = 0; k < clientBatchSize; k++){
-            if( i == (int)*(trainingLabel + k)){
-                *(dscores + i) = *(prob + i) - 1;
-            }else{
-                *(dscores + i) = *(prob + i);
-            }
-        }
-    }
- */
-    
 
     //dw23
-    /////
     for(int i = 0; i < nh; i++){
         for(int j = 0; j < classes; j++){
             float value = *(h2 + i) * *(dscores + j) + L * [[w23 objectAtIndex:(j*nh + i)]floatValue];
@@ -170,7 +158,6 @@
     }
     
     //dw12
-    ////
     for(int i = 0; i < nh; i++){
         for(int j = 0; j < nh; j++){
             float value = *(h1 + i) * [[dh2 objectAtIndex:j] floatValue] + L * [[w12 objectAtIndex:(i + nh * j)]floatValue];
@@ -201,10 +188,9 @@
     }
     
     //dw01
-    ////////////
-    for(int i = 0; i < nh; i++){
-        for(int j = 0; j < D; j++){
-            float value = *(trainingFeature + j) * [[dh1 objectAtIndex:i] floatValue] + L * [[w01 objectAtIndex: ((j * nh) + i)]floatValue];
+    for(int i = 0; i < D; i++){
+        for(int j = 0; j < nh; j++){
+            float value = *(trainingFeature + i) * [[dh1 objectAtIndex:j] floatValue] + L * [[w01 objectAtIndex: ((i * nh) + j)]floatValue];
             
             [dw01 addObject: [NSNumber numberWithFloat:value]];
             
@@ -264,18 +250,11 @@
         
     }
     
-    /*
-    for(int i = 0; i < length; i++){
-        NSLog(@"gradient: %d: %f",i, *(gradloss + i));
-    }
-     */
- 
-    
+
     free(prob);
     free(scores);
     free(h1);
     free(h2);
-    free(ai);
     
     return grad;
 }
@@ -667,7 +646,7 @@
     NSMutableArray *b3 = [NSMutableArray array];
     
     //parseParams
-    [self parsePara:w :lengthw01 :lengthw12 :lengthw23 :lengthb1 :lengthb2 :lengthb3 :w01 :b1 :w12 :b2 :w23 :b3];
+    [self parseParam:w :lengthw01 :lengthw12 :lengthw23 :lengthb1 :lengthb2 :lengthb3 :w01 :b1 :w12 :b2 :w23 :b3];
 
     for(int a = 0; a < Ntest; a++){
         float *featureArray=(float *) malloc(DFeatureSize * sizeof(float));
@@ -689,12 +668,7 @@
                 dot += *(featureArray+ j) * [[w01 objectAtIndex:(i + j*nh)] floatValue];
             }
             float sum = dot + [[b1 objectAtIndex:i] floatValue];
-            //*(h1 + i) = MAX(sum, 0.0);
-            if(sum > 0){
-                *(h1 + i) = sum;
-            }else{
-                *(h1 + i) = 0.0;
-            }
+            *(h1 + i) = MAX(sum, 0.0);
         }
         
         //h2
@@ -704,17 +678,10 @@
                 dot += *(h1 + j) * [[w12 objectAtIndex:(i + j*nh)]floatValue];
             }
             float sum = dot + [[b2 objectAtIndex:i] floatValue];
-            //*(h2 + i) = MAX(sum, 0.0);
-            if(sum > 0){
-                *(h2 + i) = sum;
-            }else{
-                *(h2 + i) = 0.0;
-            }
+            *(h2 + i) = MAX(sum, 0.0);
             
         }
         
-        //float max = -FLT_MAX;
-        //float *ai = (float *) malloc(classes * sizeof(float));
         float *scores = (float *) malloc(classes * sizeof(float));
         for(int i = 0; i < classes; i++){
             dot = 0;
@@ -722,8 +689,6 @@
                 dot += *(h2 + j) * [[w23 objectAtIndex:(i + classes*j)]floatValue];
                 
             }
-            //*(ai + i) = dot;
-            //max = MAX(dot, max);
             *(scores + i) = dot + [[b3 objectAtIndex: i]floatValue];
         }
         
@@ -855,7 +820,7 @@
 }
 
 
-- (void)parsePara:(const float *)w :(int)lengthw01 :(int)lengthw12 :(int)lengthw23 :(int)lengthb1 :(int)lengthb2 :(int)lengthb3 :(NSMutableArray *)w01 :(NSMutableArray *)b1 :(NSMutableArray *)w12 :(NSMutableArray *)b2 :(NSMutableArray *)w23 :(NSMutableArray *)b3
+- (void)parseParam:(const float *)w :(int)lengthw01 :(int)lengthw12 :(int)lengthw23 :(int)lengthb1 :(int)lengthb2 :(int)lengthb3 :(NSMutableArray *)w01 :(NSMutableArray *)b1 :(NSMutableArray *)w12 :(NSMutableArray *)b2 :(NSMutableArray *)w23 :(NSMutableArray *)b3
 
 {
     //W01:
