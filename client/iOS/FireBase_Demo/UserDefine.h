@@ -38,9 +38,18 @@
 @property (nonatomic, readonly) NSString *noiseType;
 @property (nonatomic, readonly) float noiseVariance;
 @property (nonatomic, readonly) int paramIterator;
+@property (nonatomic, readonly) int nhNumber;
+@property (nonatomic, readonly) int naught;
+@property (nonatomic, readonly) int localUpdate;
 
 
 -(void)Initialize:(FIRDatabaseReference*) paramRef;
+
+/**
+ Define nh for NN
+ */
+- (int)nh;
+
 /**
  Define feature size
  */
@@ -48,7 +57,7 @@
 
 
 /**
- Define how many classes
+ Define the number of classes
  */
 - (int)K;
 
@@ -77,6 +86,16 @@
  Define paramIter
  */
 - (int)paramIter;
+
+/**
+ Define naughRate
+ */
+- (int)naughtRate;
+
+/**
+ Define localUpdateNum
+ */
+- (int)localUpdateNum;
 
 
 /**

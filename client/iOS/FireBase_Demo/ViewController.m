@@ -39,7 +39,7 @@
 
 /**
  *  The user name of that user who has already signed in.
- *  For locating and accessing the place in firebase to upload GradLoss.
+ *  For locating and accessing the place in firebase to upload Grad.
  */
 @property (nonatomic, strong) NSString *logginUID;
 
@@ -61,7 +61,7 @@
 
 /**
  *  The disabled button.
- *  After tap the training button, before this viewcontroller upload GradLoss, disabled training button.
+ *  After tap the training button, before this viewcontroller upload Grad, disabled training button.
  */
 @property (nonatomic, strong) UIButton *disabledButton;
 
@@ -82,15 +82,36 @@
 @property (nonatomic) NSString *wIterU;
 
 /**
- *  Record the iteration under "weight"
+ *  Record the iteration under "trainingweight"
  */
 @property (nonatomic) NSString *wIterTW;
+
+/**
+ *  For local update.
+ */
+@property (nonatomic) BOOL localTraining;
+
+
+/**
+ *  For local update, counting the number of times of training
+ */
+@property (nonatomic) int numOfTraining;
+
+
+/**
+ *  Record gradIter.
+ */
+@property (nonatomic) int gradIter;
 
 
 @end
 
 @implementation ViewController
 
+
+/**
+ Load view and initialize variables
+ **/
 - (void)viewDidLoad {
     [super viewDidLoad];
     
@@ -101,7 +122,8 @@
     [self.userParam Initialize:self.paramRef];
     self.countTrainingTime = 0;
     self.isTrainOnce = true;
-    
+    self.localTraining = true;
+    self.gradIter = 0;
     
     
     // Do any additional setup after loading the view, typically from a nib.
@@ -117,6 +139,9 @@
     
 }
 
+/**
+ Log in
+ **/
 - (void) login{
     UIAlertController *LoginController = [UIAlertController
                                           alertControllerWithTitle:@"Login/Sign up"
@@ -175,7 +200,9 @@
     
 }
 
-//Check valid login information
+/**
+ Check valid login information
+ **/
 - (void)alertTextFieldDidChange:(UITextField *)sender
 {
     UIAlertController *alertController = (UIAlertController *)self.presentedViewController;
@@ -194,6 +221,10 @@
     // Dispose of any resources that can be recreated.
 }
 
+
+/**
+ Create a new user
+ **/
 - (void) createUserInFireBaseWithUserName: (NSString *) userName
                                  Password: (NSString *) password
 {
@@ -240,12 +271,14 @@
     }
     
 }
+
+
 /*
   Manually clear entries under "users".
  */
 - (IBAction)calculateTrainErrorTapped:(UIButton *)sender
 {
-    
+    //Manually clear user's info
     FIRDatabaseReference *userInfo = [self.rootRef child:@"users"];
     [userInfo removeValue];
     [self.trainErrorLabel setText:@"User infomation is cleared."];
@@ -258,6 +291,11 @@
 
 }
 
+
+
+/**
+ Load weights from firebase and calculate accuracy
+ **/
 - (void)loadWeightFromFireBaseAndCalculateTrainError {
     
     FIRDatabaseReference *weightRef1 = [self.rootRef child:@"trainingWeights"];
@@ -294,8 +332,10 @@
             NSString *fileType = [self.userParam sourceType];
             int DFeatureSize = [self.userParam D];
             int classes = [self.userParam K];
+            int lossFunction = (int)[self.userParam lossOpt];
+            int nh = [self.userParam nh];
             
-            double accuracy = [self.trainModel calculateTrainAccuracyWithWeight:w :labelName :featureName :fileType :DFeatureSize :classes];
+            double accuracy = [self.trainModel calculateTrainAccuracyWithWeight:w :labelName :featureName :fileType :DFeatureSize :classes :lossFunction :nh];
             
             [self.trainErrorLabel setText:[NSString stringWithFormat:@"%.3f", accuracy]];
             
@@ -304,26 +344,26 @@
     }];
 }
 
+
 /**
  *  Set up user's information in firebase database.
  */
-- (IBAction)trainingOnceButtonTapped:(UIButton *)sender
+- (IBAction)SetUpButtonTapped:(UIButton *)sender
 {
     [[[[self.rootRef child:@"users"]  child:self.logginUID] child:@"gradientProcessed"] observeSingleEventOfType:FIRDataEventTypeValue withBlock:^(FIRDataSnapshot *snapshot) {
-        
         
         if(snapshot.value == [NSNull null]) {
             /**
              *  set up account's info.
              */
             
-            NSDictionary *gradlossDict = [NSDictionary dictionary];
+            NSDictionary *gradDict = [NSDictionary dictionary];
             for(int i = 0; i < self.trainFeatureSize; i++) {
-                [gradlossDict setValue: [NSNumber numberWithFloat:0.0] forKey:[NSString stringWithFormat:@"%d", i]];
+                [gradDict setValue: [NSNumber numberWithFloat:0.0] forKey:[NSString stringWithFormat:@"%d", i]];
             }
             
             
-            FIRDatabaseReference *gradlossRef = [[[self.rootRef child:@"users" ] child:self.logginUID] child:@"gradients"];
+            FIRDatabaseReference *gradRef = [[[self.rootRef child:@"users" ] child:self.logginUID] child:@"gradients"];
             
             
             NSNumber *infoDict  = [NSNumber numberWithBool:YES];
@@ -332,12 +372,13 @@
             
             FIRDatabaseReference *gradIterRef = [[[self.rootRef child:@"users" ] child:self.logginUID] child:@"gradIter"];
             NSString *graditer = @"1";
+            self.gradIter = 1;
             
             FIRDatabaseReference *paraIterRef = [[[self.rootRef child:@"users" ] child:self.logginUID] child:@"paramIter"];
             NSNumber *paramNum = [NSNumber numberWithInt:[self.userParam paramIter] ];
             
             [gradIterRef setValue:graditer];
-            [gradlossRef setValue:gradlossDict];
+            [gradRef setValue:gradDict];
             [infoRef setValue:infoDict];
             [paraIterRef setValue: paramNum];
             [self UpdateWeightIter];
@@ -371,23 +412,27 @@
     [self.trainErrorLabel setText:@"Hello"];
 }
 
+
+/**
+ Check gradientProcessed
+ **/
 - (void) loadReadByServerFromFirebase
 {
-
+    
     [[[[self.rootRef child:@"users"]  child:self.logginUID] child:@"gradientProcessed"] observeSingleEventOfType:FIRDataEventTypeValue withBlock:^(FIRDataSnapshot *snapshot) {
         
-        
+        //If there is no user info, set up new user info.
         if(snapshot.value == [NSNull null]) {
             /**
              *  set up account's info.
              */
             
-            NSDictionary *gradlossDict = [NSDictionary dictionary];
+            NSDictionary *gradDict = [NSDictionary dictionary];
             for(int i = 0; i < self.trainFeatureSize; i++) {
-                [gradlossDict setValue: [NSNumber numberWithFloat:0.0] forKey:[NSString stringWithFormat:@"%d", i]];
+                [gradDict setValue: [NSNumber numberWithFloat:0.0] forKey:[NSString stringWithFormat:@"%d", i]];
             }
             
-            FIRDatabaseReference *gradlossRef = [[[self.rootRef child:@"users" ] child:self.logginUID] child:@"gradients"];
+            FIRDatabaseReference *gradRef = [[[self.rootRef child:@"users" ] child:self.logginUID] child:@"gradients"];
             
             
             NSNumber *infoDict  = [NSNumber numberWithBool:YES];
@@ -396,12 +441,16 @@
             
             FIRDatabaseReference *gradIterRef = [[[self.rootRef child:@"users" ] child:self.logginUID] child:@"gradIter"];
             
-            NSString *graditer = @"1";FIRDatabaseReference *paraIterRef = [[[self.rootRef child:@"users" ] child:self.logginUID] child:@"paramIter"];
+            NSString *graditer = @"1";
+            self.gradIter = 1;
+
+            
+            FIRDatabaseReference *paraIterRef = [[[self.rootRef child:@"users" ] child:self.logginUID] child:@"paramIter"];
             NSNumber *paramNum = [NSNumber numberWithInt:[self.userParam paramIter] ];
             
             
             [gradIterRef setValue:graditer];
-            [gradlossRef setValue:gradlossDict];
+            [gradRef setValue:gradDict];
             [infoRef setValue:infoDict];
             [paraIterRef setValue:paramNum];
             [self UpdateWeightIter];
@@ -417,16 +466,80 @@
             
             
         } else {
+            //Check if paramIter is changed. If so, reset user info.
+            int server_paramIter = [self.userParam paramIter];
+            [[[[self.rootRef child:@"users"]  child:self.logginUID] child:@"paramIter"] observeSingleEventOfType:FIRDataEventTypeValue withBlock:^(FIRDataSnapshot *snapshot) {
+                    NSNumber *user_paramIter = snapshot.value;
+                    int user_paramIterInt = [user_paramIter intValue];
+                    if(user_paramIterInt != server_paramIter){
+                        NSLog(@"server: %d",server_paramIter);
+                        NSLog(@"Parameters change!");
+                        
+                        /**
+                         *  Reset account's info.
+                         */
+                        
+                        NSDictionary *gradDict = [NSDictionary dictionary];
+                        for(int i = 0; i < self.trainFeatureSize; i++) {
+                            [gradDict setValue: [NSNumber numberWithFloat:0.0] forKey:[NSString stringWithFormat:@"%d", i]];
+                        }
+                        
+                        
+                        FIRDatabaseReference *gradRef = [[[self.rootRef child:@"users" ] child:self.logginUID] child:@"gradients"];
+                        
+                        
+                        NSNumber *infoDict  = [NSNumber numberWithBool:YES];
+                        
+                        FIRDatabaseReference *infoRef = [[[self.rootRef child:@"users" ] child:self.logginUID] child:@"gradientProcessed"];
+                        
+                        FIRDatabaseReference *gradIterRef = [[[self.rootRef child:@"users" ] child:self.logginUID] child:@"gradIter"];
+                        NSString *graditer = @"1";
+                        self.gradIter = 1;
+
+                        
+                        FIRDatabaseReference *paraIterRef = [[[self.rootRef child:@"users" ] child:self.logginUID] child:@"paramIter"];
+                        NSNumber *paramNum = [NSNumber numberWithInt:server_paramIter ];
+                        
+                        [gradIterRef setValue:graditer];
+                        [gradRef setValue:gradDict];
+                        [infoRef setValue:infoDict];
+                        [paraIterRef setValue: paramNum];
+                        [self UpdateWeightIter];
+                        
+                        
+                        UIAlertController *checkedAlert = [UIAlertController alertControllerWithTitle:@"Message" message:@"Reset user info exists in Firebase." preferredStyle:UIAlertControllerStyleAlert];
+                        
+                        UIAlertAction *deaultAction = [UIAlertAction actionWithTitle:@"OK" style:UIAlertActionStyleDefault handler:^(UIAlertAction * _Nonnull action) {
+                        }];
+                        
+                        [checkedAlert addAction:deaultAction];
+                        [self presentViewController:checkedAlert animated:YES completion:nil];
+
+                    }
+                
+            
+            }];
+            
+            //Assign local self.gradIter to the value on firebase
+            [[[[self.rootRef child:@"users"]  child:self.logginUID] child:@"gradIter"] observeSingleEventOfType:FIRDataEventTypeValue withBlock:^(FIRDataSnapshot *snapshot) {
+                self.gradIter = [snapshot.value intValue];
+                
+            }];
+
+            // Begin training.
             [self GetWeightIterUnderUserAndTrainingWeights];
             NSNumber *response = snapshot.value;
             
+            //If gradProcessed is false, do not train
             if([response integerValue]== 0){
-                
+                //If weightIter under user is different from trainingWeight, update weightIter under user.
                 if(![self.wIterU isEqualToString:self.wIterTW]){
                     
                     [self UpdateWeightIter];
                     [self loadReadByServerFromFirebase];
                 }
+                
+                
                 //Multiple training
                 if(self.countTrainingTime > 0 && !self.isTrainOnce) {
                     
@@ -443,7 +556,7 @@
                 }
                 
             }else{
-                
+            //If gradProcessed is true, begin to train
                 [self loadWeightFromFireBaseAndTrain];
                 
             }
@@ -461,6 +574,9 @@
 
 
 
+/**
+ Load weights and begin to train
+ **/
 - (void)loadWeightFromFireBaseAndTrain
 {
     
@@ -497,9 +613,12 @@
         
         NSLog(@"Complete load Weight. ");
         
-        
-        
-        [self trainModelAndUploadGradLossWithWeight:w];
+        //Localtraining or not
+        if(self.localTraining){
+            [self localTrainModelWithWeight:w];
+        }else{
+            [self trainModelAndUploadGradWithWeight:w];
+        }
         
         free(w);
     }];
@@ -507,10 +626,15 @@
     
 }
 
-- (void)trainModelAndUploadGradLossWithWeight: (float *) w {
+
+/**
+ Retrieve params from server, and get gradients
+ **/
+- (void)trainModelAndUploadGradWithWeight: (float *) w {
     
-    float *gradloss;
+    float *grad = NULL;
     
+    //Set up params
     int lossType = (int)[self.userParam lossOpt];
     int noiseType = (int)[self.userParam noiseOpt];
     int class = [self.userParam K];
@@ -523,10 +647,41 @@
     int DFeatureSize = [self.userParam D];
     int N = [self.userParam N];
     float L = [self.userParam L];
-    int nh = 80;
+    int nh = [self.userParam nh];
+    int localUpdateNum = [self.userParam localUpdateNum];
+    int naughtRate = [self.userParam naughtRate];
     
-    gradloss = [self.trainModel trainModelWithWeight:w :lossType :noiseType :class :batchsize :regConstant :variance :labelName :featureName :fileType :DFeatureSize :N :L :nh];
+    //define the length of gradients array according to different loss functions
+    int length = DFeatureSize;
+    if(lossType == 3){
+        length = DFeatureSize * class;
+    }else if(lossType == 4){
+        length = (DFeatureSize + 1) * nh + (nh + 1) * nh + (nh + 1) * class;
+    }
     
+    
+    if(localUpdateNum <= 0){
+        //Compute gradients
+        grad= [self.trainModel trainModelWithWeight:w :lossType :noiseType :class :batchsize :regConstant :variance :labelName :featureName :fileType :DFeatureSize :N :L :nh];
+
+    }else{
+        //Compute gradients for localUpdateNum of times
+        for(int i = 0; i < localUpdateNum; i++){
+            NSLog(@"iteration: %d",i);
+            grad = [self.trainModel trainModelWithWeight:w :lossType :noiseType :class :batchsize :regConstant :variance :labelName :featureName :fileType :DFeatureSize :N :L :nh];
+            
+            //Update weights locally
+            for(int k = 0; k < length; k++){
+                *(w + k) = *(w + k) - naughtRate/sqrtf(self.gradIter*localUpdateNum) * *(grad + k);
+            }
+            
+            if(i < localUpdateNum-1){
+                grad = NULL;
+            }
+        }
+    }
+    
+    //define self.trainFeatureSize according to different loss functions.
     self.trainFeatureSize = self.trainModel.featureSize;
     if(lossType == 3){
         self.trainFeatureSize = self.trainModel.featureSize * class;
@@ -536,23 +691,27 @@
     
     NSLog(@"Get gradient");
     
-    
+    //Check the value of localUpdateNum
     if(w == NULL) {
         [self uploadNewWeightToFireBase];
-    }else {
+    }else if(localUpdateNum <= 0) {
+        //Send gradients to firebase
         [self GetWeightIterUnderUserAndTrainingWeights];
         if(![self.wIterU isEqualToString: self.wIterTW]){
             [self UpdateWeightIter];
         }
-        [self uploadGradLossToFireBase:gradloss];
+        [self uploadGradToFireBase:grad];
+    }else if(localUpdateNum > 0){
+        //Send local weights as gradients to firebase
+        [self uploadGradToFireBase:w];
     }
     
-    
-    free(gradloss);
+    free(grad);
     
     self.countTrainingTime -= 1;
     
-    //Multiple training
+    //Multiple training.
+    //Begin to do next train
     if(self.countTrainingTime > 0) {
         [self loadReadByServerFromFirebase];
     }
@@ -560,16 +719,22 @@
     
 }
 
-- (void) uploadGradLossToFireBase: (float *)gradloss
+
+/**
+ Upload gradients to firebase if localUpdateNum <=0
+ Otherview, upload local weights to firebase
+ **/
+- (void) uploadGradToFireBase: (float *)grad
 {
     
-    //Update gradloss
-    NSDictionary *gradlossDict = [[NSMutableDictionary alloc] initWithCapacity:self.trainFeatureSize];
+    //Update grad/weights on firebase
+    NSDictionary *gradDict = [[NSMutableDictionary alloc] initWithCapacity:self.trainFeatureSize];
     for(int i = 0; i < self.trainFeatureSize; i++) {
-        [gradlossDict setValue: [NSNumber numberWithFloat: *(gradloss + i)] forKey:[NSString stringWithFormat:@"%d", i]];
+        
+        [gradDict setValue: [NSNumber numberWithFloat: *(grad + i)] forKey:[NSString stringWithFormat:@"%d", i]];
     }
     
-    FIRDatabaseReference *gradlossRef = [[[self.rootRef child:@"users" ] child:self.logginUID] child:@"gradients"];
+    FIRDatabaseReference *gradRef = [[[self.rootRef child:@"users" ] child:self.logginUID] child:@"gradients"];
     
     //Change readyByServer to false.
     NSNumber *infoDict  = [NSNumber numberWithBool:NO];
@@ -580,7 +745,7 @@
     
     
     NSLog(@"Uploading gradients..");
-    [gradlossRef setValue:gradlossDict];
+    [gradRef setValue:gradDict];
     
     [gradIterRef observeSingleEventOfType:FIRDataEventTypeValue withBlock:^(FIRDataSnapshot *snapshot) {
         
@@ -596,6 +761,8 @@
             int graditrnum = [iternum intValue] + 1;
             NSString *graditr = [NSString stringWithFormat:@"%i", graditrnum];
             [gradIterRef setValue:graditr];
+            self.gradIter = graditrnum;
+            NSLog(@"update: %@, self: %d", graditr, self.gradIter);
         }
         
         NSLog(@"Complete update gradIter. ");
@@ -611,13 +778,18 @@
     
 }
 
+
+/**
+ initialize weights
+ **/
 - (void) uploadNewWeightToFireBase
 {
-    //Set new weight to 0
+    //Set new weights to random numbers([-0.5, 0.5]).
     NSDictionary *wDict = [[NSMutableDictionary alloc] initWithCapacity:self.trainFeatureSize];
     
     for(int i = 0; i < self.trainFeatureSize; i++) {
-        [wDict setValue: [NSNumber numberWithFloat:0.0] forKey:[NSString stringWithFormat:@"%d", i]];
+        float num = (arc4random_uniform(INT_MAX) / (INT_MAX *1.0f)) - 0.5;
+        [wDict setValue: [NSNumber numberWithFloat:num] forKey:[NSString stringWithFormat:@"%d", i]];
     }
     
     FIRDatabaseReference *weightRef = [[self.rootRef child:@"trainingWeights"] child:@"weights"];
@@ -636,25 +808,33 @@
     
     NSString *tempTimes = self.trainTimesField.text;
     
-    
-    int totalTrainTimes = 0;
-    if([tempTimes length] > 0)
-    {
-        totalTrainTimes = (int)[tempTimes integerValue];
+    //local training
+    if(self.localTraining){
+        [self BeginLocalTrain:(int)[tempTimes integerValue]];
         
-        self.countTrainingTime = totalTrainTimes;
-        self.isTrainOnce= false;
+    }else{
+    //communicate with server
+        int totalTrainTimes = 0;
+        if([tempTimes length] > 0)
+        {
+            totalTrainTimes = (int)[tempTimes integerValue];
         
-        [self UpdateWeightIter];
-        //Begin to train multiple times.
-        [self loadReadByServerFromFirebase];
+            self.countTrainingTime = totalTrainTimes;
+            self.isTrainOnce= false;
         
-        [sender setEnabled:true];
+            [self UpdateWeightIter];
+            //Begin to train multiple times.
+            [self loadReadByServerFromFirebase];
+        
+            [sender setEnabled:true];
+        }
     }
-    
     
 }
 
+/**
+ Update "weightIter" number under "users"
+ **/
 -(void) UpdateWeightIter
 {
     //copy "iteration" under "Weight" to "weightIter" under "Users"
@@ -676,11 +856,11 @@
     }];
 }
 
+
 -(void) GetWeightIterUnderUserAndTrainingWeights
 {
     //copy "iteration" under "Weight" to "weightIter" under "Users"
-    //Note: when it finishes a round of training, "weightIter" is 1 less than "iteration". When you continue
-    // to do another round of training, it will update it.
+    //Note: when it finishes a round of training, "weightIter" is 1 less than "iteration". When you continue to do another round of training, it will update it.
     FIRDatabaseReference *weightIterRef = [[[self.rootRef child:@"users" ] child:self.logginUID] child:@"weightIter"];
     [weightIterRef observeSingleEventOfType:FIRDataEventTypeValue withBlock:^(FIRDataSnapshot *snapshot) {
         self.wIterU = [NSString stringWithFormat:@"%@",snapshot.value];
@@ -693,6 +873,93 @@
         self.wIterTW = [NSString stringWithFormat:@"%@", snapshot.value];
     }];
 }
+
+
+/**
+ Begin to train locally
+ **/
+-(void) BeginLocalTrain :(int)numOfTraining
+{
+    //set up param and load initial weight
+    self.numOfTraining = numOfTraining;
+    [self loadWeightFromFireBaseAndTrain];
+}
+
+
+/**
+ Train locally
+ **/
+-(void)localTrainModelWithWeight:(float*) w{
+    //set up params
+    int lossType = (int)[self.userParam lossOpt];
+    int noiseType = (int)[self.userParam noiseOpt];
+    int class = [self.userParam K];
+    int batchsize= [self.userParam clientBatchSize];
+    double regConstant = [self.userParam L];
+    double noiseScale = [self.userParam noiseScale];
+    NSString *labelName = [self.userParam labelSourceName];
+    NSString *featureName = [self.userParam featureSourceName];
+    NSString *fileType = [self.userParam sourceType];
+    int DFeatureSize = [self.userParam D];
+    int N = [self.userParam N];
+    float L = [self.userParam L];
+    int nh = [self.userParam nh];
+    int naughtRate = [self.userParam naughtRate];
+    int localUpdateNum = [self.userParam localUpdateNum];
+    
+    int length = DFeatureSize;
+    if(lossType == 3){
+        length = DFeatureSize * class;
+    }else if(lossType == 4){
+        length = (DFeatureSize + 1) * nh + (nh + 1) * nh + (nh + 1) * class;
+    }
+    
+    float *grad = NULL;
+    
+    for(int i = 1; i <= self.numOfTraining; i++){
+        if(localUpdateNum<=0){
+            //Compute gradients
+            grad = [self.trainModel trainModelWithWeight:w :lossType :noiseType :class :batchsize :regConstant :noiseScale :labelName :featureName :fileType :DFeatureSize :N :L :nh];
+            NSLog(@"Complete calculate graidents locally.");
+
+        }else{
+            //Compute gradients for localUpdateNum of times
+            for(int cnt = 0; cnt < localUpdateNum; cnt++){
+                NSLog(@"iteration: %d",cnt);
+                grad = [self.trainModel trainModelWithWeight:w :lossType :noiseType :class :batchsize :regConstant :noiseScale :labelName :featureName :fileType :DFeatureSize :N :L :nh];
+                
+                //Update weights
+                for(int k = 0; k < length; k++){
+                    *(w + k) = *(w + k) - naughtRate/sqrtf(i*localUpdateNum) * *(grad + k);
+                }
+            }
+            NSLog(@"Complete update weights locally for localUpdateNum >0.");
+
+        }
+       
+        //Update weights locally if localUpdateNum <= 0
+        if(localUpdateNum <= 0){
+            for(int k = 0; k < length; k++){
+                *(w + k) = *(w + k) - naughtRate/sqrtf(i)* *(grad + k);
+            }
+            NSLog(@"Complete update weights locally.");
+
+        }
+
+        //Get accuracy
+        float accuracy = [self.trainModel calculateTrainAccuracyWithWeight:w :labelName :featureName :fileType :DFeatureSize :class :lossType :nh];
+        
+        NSLog(@"Iteration: %d",i);
+        NSLog(@"Accuracy: %f",accuracy);
+
+        //Reset gradients
+        grad = NULL;
+    }
+
+    free(grad);
+
+}
+
 
 
 

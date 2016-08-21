@@ -27,7 +27,7 @@
 @property (nonatomic, strong) IBOutlet UILabel *trainErrorLabel;
 @property (nonatomic, strong) IBOutlet UITextField *trainTimesField;
 
-- (IBAction) trainingOnceButtonTapped:(UIButton *)sender;
+- (IBAction) SetUpButtonTapped:(UIButton *)sender;
 - (IBAction) trainingButtonTapped:(UIButton *)sender;
 - (IBAction) calculateTrainErrorTapped:(UIButton *)sender;
 
