@@ -23,6 +23,9 @@
 #import "TrainingAlgo.h"
 #import "UserDefine.h"
 #import "LogReg.h"
+#import "HingeLoss.h"
+#import "SoftMax.h"
+#import "NeuralNetwork.h"
 
 @import Accelerate;
 
@@ -175,9 +178,9 @@ float * noiseLoss(float *loss, int noiseFunction, int length, double variance){
             
             //Calculate gradients according to differnt loss functions
             if(lossFunction == 1){
-                grad = [self.LogRegAlgo computeLossLog :*(featureVector + data):(labelVector + data) :w :self.featureSize :regConstant];
+                grad = [self.LogRegAlgo computeGradLog :*(featureVector + data):(labelVector + data) :w :self.featureSize :regConstant];
             }else if(lossFunction == 2){
-                grad = [self.HingeLossAlgo computeLossSVM:*(featureVector + data) :(labelVector + data) :w :self.featureSize :regConstant :classes];
+                grad = [self.HingeLossAlgo computeGradSVM:*(featureVector + data) :(labelVector + data) :w :self.featureSize :regConstant :classes];
             }else if(lossFunction == 3){
                 grad = [self.SoftMaxAlgo computeSoftMax:*(featureVector + data) :(labelVector + data) :w :self.featureSize :classes :regConstant];
             }else if(lossFunction == 4){

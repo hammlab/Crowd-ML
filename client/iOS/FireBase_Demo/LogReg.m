@@ -44,13 +44,16 @@
     //Compute dot product
     for(int i = 0; i < D; i++){
         h += *(trainingFeature + i) * *(w + i);
+       // NSLog(@"method: %d, %f, feature: %f",i, *(w+i),*(trainingFeature + i));
     }
     
     
     double temp = exp( y * -1 * h);
+    //NSLog(@"exp: %f", y * -1 * h);
+    //NSLog(@"temp = %f",temp);
 
     temp = y * exp( y * -1 * h) / (1 + exp( y * -1 * h)) * -1;
-    
+    //NSLog(@"y*temp = %f, 1+temp = %f",y * temp,(1 + temp));
     
     float lambda = (float)regConstant;
     

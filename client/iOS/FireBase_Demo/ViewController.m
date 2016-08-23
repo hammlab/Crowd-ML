@@ -122,7 +122,7 @@
     [self.userParam Initialize:self.paramRef];
     self.countTrainingTime = 0;
     self.isTrainOnce = true;
-    self.localTraining = true;
+    self.localTraining = false;
     self.gradIter = 0;
     
     
@@ -278,16 +278,10 @@
  */
 - (IBAction)calculateTrainErrorTapped:(UIButton *)sender
 {
-    //Manually clear user's info
-    FIRDatabaseReference *userInfo = [self.rootRef child:@"users"];
-    [userInfo removeValue];
-    [self.trainErrorLabel setText:@"User infomation is cleared."];
-    
     /**
      *  Download the current weight from firebase. Calculate the error rate based on this weight.
      */
-    //[self loadWeightFromFireBaseAndCalculateTrainError];
-
+    [self loadWeightFromFireBaseAndCalculateTrainError];
 
 }
 
@@ -337,7 +331,7 @@
             
             double accuracy = [self.trainModel calculateTrainAccuracyWithWeight:w :labelName :featureName :fileType :DFeatureSize :classes :lossFunction :nh];
             
-            [self.trainErrorLabel setText:[NSString stringWithFormat:@"%.3f", accuracy]];
+            [self.trainErrorLabel setText:[[NSString stringWithFormat:@"%.3f", accuracy] stringByAppendingString:@"%"]];
             
             free(w);
         }
@@ -466,59 +460,6 @@
             
             
         } else {
-            //Check if paramIter is changed. If so, reset user info.
-            int server_paramIter = [self.userParam paramIter];
-            [[[[self.rootRef child:@"users"]  child:self.logginUID] child:@"paramIter"] observeSingleEventOfType:FIRDataEventTypeValue withBlock:^(FIRDataSnapshot *snapshot) {
-                    NSNumber *user_paramIter = snapshot.value;
-                    int user_paramIterInt = [user_paramIter intValue];
-                    if(user_paramIterInt != server_paramIter){
-                        NSLog(@"server: %d",server_paramIter);
-                        NSLog(@"Parameters change!");
-                        
-                        /**
-                         *  Reset account's info.
-                         */
-                        
-                        NSDictionary *gradDict = [NSDictionary dictionary];
-                        for(int i = 0; i < self.trainFeatureSize; i++) {
-                            [gradDict setValue: [NSNumber numberWithFloat:0.0] forKey:[NSString stringWithFormat:@"%d", i]];
-                        }
-                        
-                        
-                        FIRDatabaseReference *gradRef = [[[self.rootRef child:@"users" ] child:self.logginUID] child:@"gradients"];
-                        
-                        
-                        NSNumber *infoDict  = [NSNumber numberWithBool:YES];
-                        
-                        FIRDatabaseReference *infoRef = [[[self.rootRef child:@"users" ] child:self.logginUID] child:@"gradientProcessed"];
-                        
-                        FIRDatabaseReference *gradIterRef = [[[self.rootRef child:@"users" ] child:self.logginUID] child:@"gradIter"];
-                        NSString *graditer = @"1";
-                        self.gradIter = 1;
-
-                        
-                        FIRDatabaseReference *paraIterRef = [[[self.rootRef child:@"users" ] child:self.logginUID] child:@"paramIter"];
-                        NSNumber *paramNum = [NSNumber numberWithInt:server_paramIter ];
-                        
-                        [gradIterRef setValue:graditer];
-                        [gradRef setValue:gradDict];
-                        [infoRef setValue:infoDict];
-                        [paraIterRef setValue: paramNum];
-                        [self UpdateWeightIter];
-                        
-                        
-                        UIAlertController *checkedAlert = [UIAlertController alertControllerWithTitle:@"Message" message:@"Reset user info exists in Firebase." preferredStyle:UIAlertControllerStyleAlert];
-                        
-                        UIAlertAction *deaultAction = [UIAlertAction actionWithTitle:@"OK" style:UIAlertActionStyleDefault handler:^(UIAlertAction * _Nonnull action) {
-                        }];
-                        
-                        [checkedAlert addAction:deaultAction];
-                        [self presentViewController:checkedAlert animated:YES completion:nil];
-
-                    }
-                
-            
-            }];
             
             //Assign local self.gradIter to the value on firebase
             [[[[self.rootRef child:@"users"]  child:self.logginUID] child:@"gradIter"] observeSingleEventOfType:FIRDataEventTypeValue withBlock:^(FIRDataSnapshot *snapshot) {
@@ -814,6 +755,7 @@
         
     }else{
     //communicate with server
+        [self CheckParamsIter];
         int totalTrainTimes = 0;
         if([tempTimes length] > 0)
         {
@@ -874,6 +816,71 @@
     }];
 }
 
+
+
+/**
+ Check if paramIter under "parameters" is the same as it under "user". If they are different, reset user info.
+ **/
+-(void)CheckParamsIter
+{
+    //Check if paramIter is changed. If so, reset user info.
+    int server_paramIter = [self.userParam paramIter];
+   
+    [[[[self.rootRef child:@"users"] child:self.logginUID] child:@"paramIter"] observeSingleEventOfType:FIRDataEventTypeValue withBlock:^(FIRDataSnapshot *snapshot) {
+        if(snapshot.value != [NSNull null]) {
+            NSNumber *user_paramIter = snapshot.value;
+            int user_paramIterInt = [user_paramIter intValue];
+
+            if(user_paramIterInt != server_paramIter){
+                NSLog(@"server paramIter: %d, user paramIter: %d",server_paramIter,user_paramIterInt);
+                NSLog(@"Parameters change!");
+            
+                /**
+                 *  Reset account's info.
+                 */
+                NSDictionary *gradDict = [NSDictionary dictionary];
+                for(int i = 0; i < self.trainFeatureSize; i++) {
+                    [gradDict setValue: [NSNumber numberWithFloat:0.0] forKey:[NSString stringWithFormat:@"%d", i]];
+                }
+            
+            
+                FIRDatabaseReference *gradRef = [[[self.rootRef child:@"users" ] child:self.logginUID] child:@"gradients"];
+            
+            
+                NSNumber *infoDict  = [NSNumber numberWithBool:YES];
+            
+                FIRDatabaseReference *infoRef = [[[self.rootRef child:@"users" ] child:self.logginUID] child:@"gradientProcessed"];
+            
+                FIRDatabaseReference *gradIterRef = [[[self.rootRef child:@"users" ] child:self.logginUID] child:@"gradIter"];
+                NSString *graditer = @"1";
+                self.gradIter = 1;
+            
+            
+                FIRDatabaseReference *paraIterRef = [[[self.rootRef child:@"users" ] child:self.logginUID] child:@"paramIter"];
+                NSNumber *paramNum = [NSNumber numberWithInt:server_paramIter ];
+            
+                [gradIterRef setValue:graditer];
+                [gradRef setValue:gradDict];
+                [infoRef setValue:infoDict];
+                [paraIterRef setValue: paramNum];
+                [self UpdateWeightIter];
+            
+            
+                UIAlertController *checkedAlert = [UIAlertController alertControllerWithTitle:@"Message" message:@"Reset user info exists in Firebase." preferredStyle:UIAlertControllerStyleAlert];
+            
+                UIAlertAction *deaultAction = [UIAlertAction actionWithTitle:@"OK" style:UIAlertActionStyleDefault handler:^(UIAlertAction * _Nonnull action) {
+                }];
+            
+                [checkedAlert addAction:deaultAction];
+                [self presentViewController:checkedAlert animated:YES completion:nil];
+            
+            }
+        }
+        
+        
+    }];
+
+}
 
 /**
  Begin to train locally
