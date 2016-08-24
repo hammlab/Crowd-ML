@@ -17,13 +17,13 @@
 ##### How to set up Xcode
  
 1. The code needs Firebase library, which is already in the project. You shoud already install it in above step 3.
-2. Date files currently in "FireBase_Demo" folder are "trainingFeature.dat" and "trainingLabel.dat". Download "MNISTTrainLabels.dat" and "MNISTTrainImages.dat.zip"(unzip it before using) from "data" folder, and put them in "FireBase_Demo" folder, if necessary.
+2. Download training images files and training labels files from "data" folder, and put them in "FireBase_Demo" folder.
 
 
 ##### How to use the app
 1. First, the app will prompt a Login/Signup pop up. If you are a new user, you can create a new account by entering your email(more than 5 characters) and password(more than 5 characters). If you are a registered user, simply enter your email and password. If you enter a wrong password, the pop up will show up again and please re-enter your account information.
 
-  Note: if you have troube logining, please see a detailed error message in Xcode output console.
+  Note: if you have troube in logining, please see a detailed error message in Xcode output console.
   
 2. "Setup" (this step will set up a user's information in firebase database) --> enter an integer under "Train times" --> "Start Training" --> wait until it's done. You can see the current accuracy in terminal and messages in output console in Xcode --> "Start Training" (if you want to train it again, or "Get Train Accuracy" if your are training a binary model)
 
