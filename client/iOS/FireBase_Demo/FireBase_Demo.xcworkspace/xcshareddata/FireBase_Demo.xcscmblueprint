@@ -1,0 +1,30 @@
+{
+  "DVTSourceControlWorkspaceBlueprintPrimaryRemoteRepositoryKey" : "3D53ECDEAA79A412074C4FC7ED00C95670A11FD6",
+  "DVTSourceControlWorkspaceBlueprintWorkingCopyRepositoryLocationsKey" : {
+
+  },
+  "DVTSourceControlWorkspaceBlueprintWorkingCopyStatesKey" : {
+    "AAC8D2D37F90DE29F97F350E9772D5C4576A35C8" : 0,
+    "3D53ECDEAA79A412074C4FC7ED00C95670A11FD6" : 0
+  },
+  "DVTSourceControlWorkspaceBlueprintIdentifierKey" : "D93834F1-15B2-4B40-BB58-0933FC36E060",
+  "DVTSourceControlWorkspaceBlueprintWorkingCopyPathsKey" : {
+    "AAC8D2D37F90DE29F97F350E9772D5C4576A35C8" : "FireBase_Demo\/Pods\/",
+    "3D53ECDEAA79A412074C4FC7ED00C95670A11FD6" : "FireBase_Demo\/"
+  },
+  "DVTSourceControlWorkspaceBlueprintNameKey" : "FireBase_Demo",
+  "DVTSourceControlWorkspaceBlueprintVersion" : 204,
+  "DVTSourceControlWorkspaceBlueprintRelativePathToProjectKey" : "FireBase_Demo.xcworkspace",
+  "DVTSourceControlWorkspaceBlueprintRemoteRepositoriesKey" : [
+    {
+      "DVTSourceControlWorkspaceBlueprintRemoteRepositoryURLKey" : "https:\/\/github.com\/zeehun\/CrowdML.git",
+      "DVTSourceControlWorkspaceBlueprintRemoteRepositorySystemKey" : "com.apple.dt.Xcode.sourcecontrol.Git",
+      "DVTSourceControlWorkspaceBlueprintRemoteRepositoryIdentifierKey" : "3D53ECDEAA79A412074C4FC7ED00C95670A11FD6"
+    },
+    {
+      "DVTSourceControlWorkspaceBlueprintRemoteRepositoryURLKey" : "https:\/\/github.com\/zeehun\/CrowdML\/tree\/master\/client\/iOS\/FireBase_Demo",
+      "DVTSourceControlWorkspaceBlueprintRemoteRepositorySystemKey" : "com.apple.dt.Xcode.sourcecontrol.Git",
+      "DVTSourceControlWorkspaceBlueprintRemoteRepositoryIdentifierKey" : "AAC8D2D37F90DE29F97F350E9772D5C4576A35C8"
+    }
+  ]
+}

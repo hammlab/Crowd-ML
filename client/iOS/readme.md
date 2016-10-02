@@ -7,9 +7,7 @@
 3. Go into your new app, click "Add Firebase to your iOS app", and follow the instruction
 4. Go into your new app, and select "Auth".
 5. "Set up sign in method" --> "Email/password" --> "enable" and save
-
   Then you can create a new users here: --> refresh the webpage --> add users
-  
   Or create a new user when you use the app.
 
 
@@ -17,7 +15,7 @@
 ##### How to set up Xcode
  
 1. The code needs Firebase library, which is already in the project. You shoud already install it in above step 3.
-2. Download training images files and training labels files from "data" folder, and put them in "FireBase_Demo" folder.
+2. Download training images files and training labels files from "data" folder, and put them in "FireBase_Demo" folder. Note: files need to be renamed if a filename contains ".". For example, if a filename is "test.file.dat", please delete "."(testfile.dat) or change "." to another symbol(test_file.dat). 
 
 
 ##### How to use the app
