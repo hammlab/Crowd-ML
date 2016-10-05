@@ -1,7 +1,8 @@
 package osu.crowd_ml;
 
-import android.content.Context;
 import android.content.Intent;
+import android.net.ConnectivityManager;
+import android.net.NetworkInfo;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
 import android.view.View;
@@ -21,8 +22,6 @@ import java.io.BufferedReader;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.io.OutputStreamWriter;
-import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -65,6 +64,12 @@ public class DataSend extends AppCompatActivity {
     private int gradientIteration = 0;
     private int dataCount = 0;
     private boolean ready = false;
+    private boolean autosend = false;
+    private boolean init = false;
+
+    private ValueEventListener userListener;
+    private ValueEventListener paramListener;
+    private ValueEventListener weightListener;
 
     private int paramIter;
     private Distribution dist;
@@ -82,7 +87,9 @@ public class DataSend extends AppCompatActivity {
     private double c;
     private double eps;
     private String descentAlg;
+    private int maxIter;
     private int t = 1;
+    private List<Double> learningRateDenom = new ArrayList<Double>();
 
     private List<double[]> xBatch = new ArrayList<double[]>();
     private List<Integer> yBatch = new ArrayList<Integer>();
@@ -118,7 +125,9 @@ public class DataSend extends AppCompatActivity {
         final TextView message = (TextView) findViewById(R.id.messageDisplay);
 
 
-        parameters.addValueEventListener(new ValueEventListener() {
+
+
+        paramListener = parameters.addValueEventListener(new ValueEventListener() {
             @Override
             public void onDataChange(DataSnapshot dataSnapshot) {
                 params = dataSnapshot.getValue(Parameters.class);
@@ -138,6 +147,7 @@ public class DataSend extends AppCompatActivity {
                 c = params.getC();
                 eps = params.getEps();
                 descentAlg = params.getDescentAlg();
+                maxIter = params.getMaxIter();
 
 
                 dataCount = 0;
@@ -154,12 +164,16 @@ public class DataSend extends AppCompatActivity {
                     dataCount = -1;
                 }
 
+                for(int i = 0; i < length; i ++){
+                    learningRateDenom.add(0.0);
+                }
+
                 checkoutListener();
             }
 
             @Override
             public void onCancelled(DatabaseError error) {
-                message.setText("Weight event listener error");
+                message.setText("Parameter listener error");
             }
 
         });
@@ -167,10 +181,18 @@ public class DataSend extends AppCompatActivity {
 
 
 
-        weights.addValueEventListener(new ValueEventListener() {
+        weightListener = weights.addValueEventListener(new ValueEventListener() {
             @Override
             public void onDataChange(DataSnapshot dataSnapshot) {
                 weightVals = dataSnapshot.getValue(TrainingWeights.class);
+                List<Double> test = weightVals.getWeights().get(0);
+                //String testStr = test.get(0).toString() + test.get(1).toString() + test.get(2).toString();
+                message.setText("Weights received");
+                //message.setText(testStr);
+                double testIter = weightVals.getWeights().get(1).get(0);
+                String testStr = String.valueOf(testIter);
+                message.setText(testStr);
+
             }
 
             @Override
@@ -180,6 +202,10 @@ public class DataSend extends AppCompatActivity {
 
         });
 
+
+
+
+/*
         Button mSendTrainingData = (Button) findViewById(R.id.sendTrainingData);
         mSendTrainingData.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -205,6 +231,7 @@ public class DataSend extends AppCompatActivity {
                 if (ready && dataCount > 0 && dataCount <= N/batchSize && localUpdateNum == 0) {
                     message.setText("Sending Data");
                     ready = false;
+                    internetServices();
                     sendGradient();
                 }
 
@@ -246,24 +273,55 @@ public class DataSend extends AppCompatActivity {
                 message.setText("Waiting for data");
             }
         });
+*/
 
+
+    }
+
+
+
+    public void internetServices(){
+        ConnectivityManager connManager = (ConnectivityManager) getSystemService(this.CONNECTIVITY_SERVICE);
+        NetworkInfo mWifi = connManager.getNetworkInfo(ConnectivityManager.TYPE_WIFI);
+
+        if (!mWifi.isConnected()) {
+            parameters.removeEventListener(paramListener);
+            //weights.removeEventListener(weightListener);
+            userValues.removeEventListener(userListener);
+
+            System.out.println("enter wifi wait");
+            while (!mWifi.isConnected()) {
+                //wait
+            }
+            System.out.println("exit wifi wait");
+
+            parameters.addValueEventListener(paramListener);
+            //weights.addValueEventListener(weightListener);
+            userValues.addValueEventListener(userListener);
+        }
 
 
     }
 
     public void checkoutListener(){
         final TextView message = (TextView) findViewById(R.id.messageDisplay);
-        userValues.addValueEventListener(new ValueEventListener() {
+        userListener = userValues.addValueEventListener(new ValueEventListener() {
             @Override
             public void onDataChange(DataSnapshot dataSnapshot) {
+                internetServices();
                 userCheck = dataSnapshot.getValue(UserData.class);
+                if(init == false){
+                    init = true;
+                    initUser();
+                }
                 if (dataCount > 0 && userCheck.getGradientProcessed() && userCheck.getGradIter()== gradientIteration && localUpdateNum == 0) {
+                    internetServices();
                     sendGradient();
                 }
                 else if(dataCount > 0 && userCheck.getGradientProcessed() && userCheck.getGradIter()== gradientIteration && localUpdateNum > 0){
                     ready = false;
                     userData = new UserData();
-                    List<Double> oldWeight = weightVals.getWeights();
+                    List<Double> oldWeight = weightVals.getWeights().get(0);
                     List<Double> newWeight = new ArrayList<Double>(length);
                     userData.setParamIter(paramIter);
                     userData.setWeightIter(t);
@@ -284,6 +342,61 @@ public class DataSend extends AppCompatActivity {
                 if (dataCount == 0) {
                     ready = true;
                     message.setText("Waiting for data");
+
+                    //Auto-send used for testing
+                    if (autosend == true){
+                        System.out.println("test auto "+autosend);
+                        autosend = false;
+
+                        order = new ArrayList<>();
+                        for (int i = 0; i < N; i++) { //create sequential list of input sample #s
+                            order.add(i);
+                        }
+                        Collections.shuffle(order); //randomize order
+                        dataCount = maxIter;
+                        System.out.println("maxIter "+dataCount);
+                        if (dataCount > N / batchSize) {
+                            message.setText("Input count too high");
+                            dataCount = 0;
+                        }
+
+
+                        //message.setText("Sending Data");
+                        ready = false;
+                        internetServices();
+                        if (dataCount > 0 && dataCount <= N/batchSize && localUpdateNum == 0) {
+                            message.setText("Sending Data");
+                            ready = false;
+                            internetServices();
+                            sendGradient();
+                        }
+
+                        if (dataCount > 0  && localUpdateNum > 0) {
+                            message.setText("Sending Data");
+                            ready = false;
+
+                            userData = new UserData();
+                            List<Double> oldWeight = weightVals.getWeights().get(0);
+                            List<Double> newWeight = new ArrayList<Double>(length);
+                            userData.setParamIter(paramIter);
+                            userData.setWeightIter(t);
+                            for (int i = 0; i < localUpdateNum; i++) {
+                                newWeight = internalWeightCalc(oldWeight, t, i);
+                                t++;
+                                oldWeight = newWeight;
+                            }
+                            gradientIteration++;
+                            userData.setGradIter(gradientIteration);
+                            userData.setGradientProcessed(false);
+                            userData.setGradients(newWeight);
+                            userValues.setValue(userData);
+                            dataCount--;
+
+                            ready = true;
+
+                        }
+                    }
+                    //Auto-send used for testing
                 }
             }
 
@@ -297,18 +410,34 @@ public class DataSend extends AppCompatActivity {
 
     }
 
+    //allows for newly created users to initialize values
+    public void initUser(){
+        userData = new UserData();
+        userData.setParamIter(paramIter);
+        double weightIter = weightVals.getWeights().get(1).get(0);
+        userData.setWeightIter(weightIter);
+        userData.setGradientProcessed(false);
+        List<Double> initGrad = weightVals.getWeights().get(0);
+        userData.setGradients(initGrad);
+        userData.setGradIter(gradientIteration);
+        userValues.setValue(userData);
+    }
+
     public void sendGradient(){
         userData = new UserData();
         userData.setParamIter(paramIter);
+        double weightIter = weightVals.getWeights().get(1).get(0);
+        userData.setWeightIter(weightIter);
+        //userData.setWeightIter(1);
 
         List<Integer> batchSamples = new ArrayList<Integer>();
-        List<Double> currentWeights = weightVals.getWeights();
-        userData.setWeightIter(weightVals.getCurrentIteration());
+        List<Double> currentWeights = weightVals.getWeights().get(0);
         int batchSlot = 0;
         while(dataCount > 0 && batchSlot < batchSize) {
-            batchSamples.add(order.get((batchSize*(dataCount-1) + batchSlot)));
+           batchSamples.add(order.get((batchSize*(dataCount-1) + batchSlot)));
             batchSlot++;
         }
+
             dataCount--;
             xBatch = readSample(batchSamples);
             yBatch = readType(batchSamples);
@@ -339,7 +468,9 @@ public class DataSend extends AppCompatActivity {
         for (int j = 0; j < length; j++){
             noisyGrad.add(dist.noise(avgGrad.get(j), noiseScale));
         }
-
+        System.out.println("noisyGrad");
+        System.out.println(noisyGrad);
+        System.out.println("sendGradient");
         userData.setGradientProcessed(false);
         userData.setGradients(noisyGrad);
         gradientIteration++;
@@ -349,10 +480,12 @@ public class DataSend extends AppCompatActivity {
     }
 
 
-    public List<Double> internalWeightCalc(List<Double> weights, int weightIter, int localUpdateIter){
+    public List<Double> internalWeightCalc(List<Double> weights, float weightIter, int localUpdateIter){
 
         List<Integer> batchSamples = new ArrayList<Integer>();
         List<Double> currentWeights = weights;
+        System.out.println("currentWeights");
+        System.out.println(currentWeights);
         int batchSlot = 0;
         while(dataCount > 0 && batchSlot < batchSize) {
             batchSamples.add(order.get((batchSize*localUpdateNum*(dataCount-1) + batchSlot*(localUpdateIter+1))));
@@ -385,13 +518,31 @@ public class DataSend extends AppCompatActivity {
             avgGrad.set(i, sum/batchSize);
         }
 
+        System.out.println("internal Grad");
+        System.out.println(avgGrad);
+
         List<Double> noisyGrad = new ArrayList<Double>(length);
         for (int j = 0; j < length; j++){
             noisyGrad.add(dist.noise(avgGrad.get(j), noiseScale));
         }
 
         InternalServer server = new InternalServer();
-        List<Double> newWeight = server.calcWeight(currentWeights, noisyGrad, weightIter, descentAlg, c, eps);
+        if(descentAlg.equals("adagrad")){
+            for(int j = 0; j < length; j++){
+                double learningRate = learningRateDenom.get(j) + noisyGrad.get(j)*noisyGrad.get(j);
+                learningRateDenom.set(j, learningRate);
+            }
+        }
+        else if (descentAlg.equals("rmsProp")){
+            for(int j = 0; j < length; j++){
+                double learningRate = 0.9*learningRateDenom.get(j) + 0.1*noisyGrad.get(j)*noisyGrad.get(j);
+                learningRateDenom.set(j, learningRate);
+            }
+        }
+        List<Double> newWeight = server.calcWeight(currentWeights, learningRateDenom, noisyGrad, weightIter, descentAlg, c, eps);
+
+        System.out.println("new Weights");
+        System.out.println(newWeight);
 
         return newWeight;
 

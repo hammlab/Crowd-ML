@@ -10,6 +10,7 @@ import android.widget.Button;
 import android.widget.EditText;
 import android.widget.TextView;
 import android.widget.Toast;
+import java.util.UUID;
 
 import com.firebase.client.Firebase;
 import com.google.android.gms.tasks.OnCompleteListener;
@@ -43,6 +44,7 @@ public class Login extends AppCompatActivity{
     String email;
     String password;
     String uid;
+    boolean autoSignIn = false;
 
 
     @Override
@@ -84,6 +86,63 @@ public class Login extends AppCompatActivity{
         mAuth.addAuthStateListener(mAuthListener);
 
 
+        //Below Only for testing. Disable if auto sign-in is not desired
+
+        if(autoSignIn) {
+
+
+        email = UUID.randomUUID().toString().replaceAll("-", "") + "@gmail.com";
+        password = "password";
+
+        mAuth.createUserWithEmailAndPassword(email, password).addOnCompleteListener(Login.this, new OnCompleteListener<AuthResult>() {
+            @Override
+            public void onComplete(@NonNull Task<AuthResult> task) {
+                Log.d(logStr, "createUserWithEmail:onComplete:" + task.isSuccessful());
+
+                // If sign in fails, display a message to the user. If sign in succeeds
+                // the auth state listener will be notified and logic to handle the
+                // signed in user can be handled in the listener.
+                if (!task.isSuccessful()) {
+                    Toast.makeText(getApplicationContext(), "Authentication failed.",
+                            Toast.LENGTH_SHORT).show();
+                }
+
+            }
+        });
+
+        mAuth.signInWithEmailAndPassword(email, password)
+                .addOnCompleteListener(Login.this, new OnCompleteListener<AuthResult>() {
+                    @Override
+                    public void onComplete(@NonNull Task<AuthResult> task) {
+                        Log.d(logStr, "signInWithEmail:onComplete:" + task.isSuccessful());
+
+                        if (task.isSuccessful()) {
+                            Intent intent = new Intent(Login.this, DataSend.class);
+                            intent.putExtra("EMAIL", email);
+                            intent.putExtra("PASSWORD", password);
+                            intent.putExtra("UID", uid);
+                            startActivity(intent);
+                        }
+
+                        // If sign in fails, display a message to the user. If sign in succeeds
+                        // the auth state listener will be notified and logic to handle the
+                        // signed in user can be handled in the listener.
+                        if (!task.isSuccessful()) {
+                            Log.w(logStr, "signInWithEmail", task.getException());
+                            System.out.println(task.getException());
+                            Toast.makeText(getApplicationContext(), "Authentication failed.",
+                                    Toast.LENGTH_SHORT).show();
+                        }
+
+                    }
+                });
+
+
+        }
+        //Above Only for testing
+
+
+    if(!autoSignIn) {
         mLogin.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -91,7 +150,6 @@ public class Login extends AppCompatActivity{
                 email = editText.getText().toString();
                 editText = (EditText) findViewById(R.id.password);
                 password = editText.getText().toString();
-
 
 
                 mAuth.signInWithEmailAndPassword(email, password)
@@ -122,8 +180,6 @@ public class Login extends AppCompatActivity{
                         });
 
 
-
-
             }
         });
 
@@ -139,8 +195,6 @@ public class Login extends AppCompatActivity{
         });
 
 
-
-
         mCreateNew.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -148,7 +202,6 @@ public class Login extends AppCompatActivity{
                 email = editText.getText().toString();
                 editText = (EditText) findViewById(R.id.password);
                 password = editText.getText().toString();
-
 
 
                 mAuth.createUserWithEmailAndPassword(email, password).addOnCompleteListener(Login.this, new OnCompleteListener<AuthResult>() {
@@ -169,31 +222,10 @@ public class Login extends AppCompatActivity{
 
             }
         });
+
     }
 
-    /*
-    @Override
-    public boolean onCreateOptionsMenu(Menu menu) {
-        // Inflate the menu; this adds items to the action bar if it is present.
-        getMenuInflater().inflate(R.menu.menu_main, menu);
-        return true;
     }
-
-    @Override
-    public boolean onOptionsItemSelected(MenuItem item) {
-        // Handle action bar item clicks here. The action bar will
-        // automatically handle clicks on the Home/Up button, so long
-        // as you specify a parent activity in AndroidManifest.xml.
-        int id = item.getItemId();
-
-        //noinspection SimplifiableIfStatement
-        if (id == R.id.action_settings) {
-            return true;
-        }
-
-        return super.onOptionsItemSelected(item);
-    }
- */
     @Override
     public void onStop() {
         super.onStop();
