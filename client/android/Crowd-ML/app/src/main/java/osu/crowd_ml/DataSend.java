@@ -205,7 +205,7 @@ public class DataSend extends AppCompatActivity {
 
 
 
-/*
+
         Button mSendTrainingData = (Button) findViewById(R.id.sendTrainingData);
         mSendTrainingData.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -240,7 +240,7 @@ public class DataSend extends AppCompatActivity {
                     ready = false;
 
                     userData = new UserData();
-                    List<Double> oldWeight = weightVals.getWeights();
+                    List<Double> oldWeight = weightVals.getWeights().get(0);
                     List<Double> newWeight = new ArrayList<Double>(length);
                     userData.setParamIter(paramIter);
                     userData.setWeightIter(t);
@@ -273,7 +273,7 @@ public class DataSend extends AppCompatActivity {
                 message.setText("Waiting for data");
             }
         });
-*/
+
 
 
     }
