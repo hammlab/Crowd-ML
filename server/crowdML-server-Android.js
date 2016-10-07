@@ -55,14 +55,16 @@
 	var adaG = new Array(length);
 	var rms = new Array(length);
 
-	var trueWeights = require('fs').readFileSync("true-weights.dat").toString()
-	var weightStr = trueWeights.split(", ");
-	function valid(str) {
-	    			return str != "";}
-			var weightClean = weightStr.filter(valid);
-			var weightArray = [];
-			for(var j=0; j<weightClean.length; j++) { 
-				weightArray[j] = parseFloat(weightClean[j], 10);}
+	//var trueWeights = require('fs').readFileSync("true-weights.dat").toString()
+	//var weightStr = trueWeights.split(", ");
+	//function valid(str) {
+	//    			return str != "";}
+	//		var weightClean = weightStr.filter(valid);
+	//		var weightArray = [];
+	//		for(var j=0; j<weightClean.length; j++) { 
+	//			weightArray[j] = parseFloat(weightClean[j], 10);}
+
+
 	var initWeight = new Array(length);
 	for(i = 0; i < length; i++){
 		initWeight[i] = (Math.random() - 0.5);
