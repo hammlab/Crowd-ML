@@ -1,6 +1,6 @@
 var paramIter = 0;
-	
-	var serviceAccount = <insert service account file name>;	
+
+	var serviceAccount = <insert service account file name>;
 	var databaseURL = <insert database URL>;
 	var D = 785;
 	//var maxWeightBatchSize = 1;
@@ -16,11 +16,11 @@ var paramIter = 0;
 	var testFrequency = 1;
 
 	var L = 1e-6;
-    	var noiseScale = 1;
-    	var noiseDistribution = 'NoNoise';
-    	var lossFunction = 'Hinge';
-    	var labelSource = 'binaryTrainLabels.dat';
-    	var featureSource = 'binaryTrainImages.dat';
+	var noiseScale = 1;
+	var noiseDistribution = 'NoNoise';
+	var lossFunction = 'Hinge';
+	var labelSource = 'binaryTrainLabels.dat';
+	var featureSource = 'binaryTrainImages.dat';
 	var N = 12445;
 	var clientBatchSize = 1;
 	var nh = 1;
@@ -68,4 +68,3 @@ var paramIter = 0;
 	exports.N = N;
 	exports.clientBatchSize = clientBatchSize;
 	exports.nh = nh;
-

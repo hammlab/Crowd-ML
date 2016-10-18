@@ -1,8 +1,7 @@
 
 	var paramIter = 0;
-	
-	var serviceAccount = <Insert json filename here>;	
-	var databaseURL = <insert firebase database url here>;
+	var serviceAccount = 'Crowd-ML-e591994762fe.json';
+	var databaseURL = 'https://crowd-ml-6228f.firebaseio.com/';
 	var D = 50;
 	var maxWeightBatchSize = 1;
 	var localUpdateNum = 0;
@@ -18,11 +17,11 @@
 	var testFrequency = 1;
 
 	var L = 1e-6;
-    	var noiseScale = 1;
-    	var noiseDistribution = 'NoNoise';
-    	var lossFunction = 'SoftmaxNN';
-    	var labelSource = 'MNISTTrainLabels.dat';
-    	var featureSource = 'MNISTTrainImages.50.l2.dat';
+	var noiseScale = 1;
+	var noiseDistribution = 'NoNoise';
+	var lossFunction = 'SoftmaxNN';
+	var labelSource = 'MNISTTrainLabels.dat';
+	var featureSource = 'MNISTTrainImages.50.l2.dat';
 	var N = 60000;
 	var clientBatchSize = 50;
 	var nh = 75;
@@ -71,4 +70,3 @@
 	exports.N = N;
 	exports.clientBatchSize = clientBatchSize;
 	exports.nh = nh;
-

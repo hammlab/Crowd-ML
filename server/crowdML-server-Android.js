@@ -1,5 +1,5 @@
 	var firebase = require('firebase');
-	
+
 	var constFile = process.argv[2]
 	var constStr = './'+constFile
 	var constants = require(constStr)
@@ -29,7 +29,7 @@
 	var nh = constants.nh;
 	var maxIter = constants.maxIter;
 
-	var testNum = 0;	
+	var testNum = 0;
 	var changeiter = 0;
 	var D = constants.D;
 	var weightBatchSize = 0;
@@ -61,7 +61,7 @@
 	//    			return str != "";}
 	//		var weightClean = weightStr.filter(valid);
 	//		var weightArray = [];
-	//		for(var j=0; j<weightClean.length; j++) { 
+	//		for(var j=0; j<weightClean.length; j++) {
 	//			weightArray[j] = parseFloat(weightClean[j], 10);}
 
 
@@ -92,7 +92,7 @@
 		N: constants.N,
 		clientBatchSize: constants.clientBatchSize,
 		nh: nh,
-		maxIter: maxIter,
+		//maxIter: maxIter,
 		//necessary for client-side weight calculation
 		localUpdateNum: localUpdateNum,
 		c: c,
@@ -122,7 +122,7 @@
 		var userWeightIter = user.weightIter;
 		var userParamIter = user.paramIter;
 		var uid = snapshot.key;
-		var userID = users.child(uid);		
+		var userID = users.child(uid);
 		if(uid && !processed){
 			if(userWeightIter == iter && userParamIter == constants.paramIter){
 				if(localUpdateNum == 0){
@@ -136,7 +136,7 @@
 				gradientProcessed: true
 				});
 		}
-		
+
     });
 
 
@@ -158,38 +158,38 @@ function addToGradBatch(gradient){
 		var newWeight = [];
 		if(descentAlg=='constant'){
 			learningRate = c;
-			for (i = 0; i < length; i++) { 
+			for (i = 0; i < length; i++) {
 				newWeight[i] = currentWeight[i] - (learningRate * avgGradient[i]);
 			}
 		}
 		else if(descentAlg=='simple'){
 			learningRate = c/iter;
-			for (i = 0; i < length; i++) { 
+			for (i = 0; i < length; i++) {
 				newWeight[i] = currentWeight[i] - (learningRate * avgGradient[i]);
 			}
 		}
 		else if(descentAlg=='sqrt'){
 			learningRate = c/Math.sqrt(iter);
-			for (i = 0; i < length; i++) { 
+			for (i = 0; i < length; i++) {
 				newWeight[i] = currentWeight[i] - (learningRate * avgGradient[i]);
 			}
 		}
 		else if(descentAlg=='adagrad'){
-			for (i = 0; i < length; i++) { 
+			for (i = 0; i < length; i++) {
 				adaG[i] += gradient[i]*gradient[i];
 				learningRate = c/Math.sqrt(adaG[i]+eps);
 				newWeight[i] = currentWeight[i] - (learningRate * avgGradient[i]);
 			}
 		}
 		else if(descentAlg=='rmsProp'){
-			for (i = 0; i < length; i++) { 
+			for (i = 0; i < length; i++) {
 				rms[i] = 0.9*rms[i] + 0.1*gradient[i]*gradient[i];
 				learningRate = c/Math.sqrt(rms[i]+eps);
 				newWeight[i] = currentWeight[i] - (learningRate * avgGradient[i]);
 			}
-		}	
+		}
 		addToWeightBatch(newWeight);
-		
+
 	}
 }
 
@@ -237,10 +237,3 @@ function addToWeightBatch(weightArray){
 		weightBatch = [];
 	}
 }
-
-
-
-
-
-
-	
