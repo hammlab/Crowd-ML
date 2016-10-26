@@ -37,6 +37,12 @@ ehthumbs.db
 Thumbs.db
 
 # CrowdML Specific
-*node_modules/
-*build/
-*.idea/
+node_modules/
+
+# Android Studio
+*.iml
+.idea
+#.idea/workspace.xml - remove # and delete .idea if it better suit your needs.
+.gradle
+build/
+/local.properties
