@@ -77,7 +77,7 @@ public class DataSend extends AppCompatActivity {
     private LossFunction loss;
     private String labelSource;
     private String featureSource;
-    private int D;
+    private int D;  // Feature size
     private int N;
     private int batchSize;
     private double noiseScale;
@@ -91,8 +91,8 @@ public class DataSend extends AppCompatActivity {
     private int t = 1;
     private List<Double> learningRateDenom = new ArrayList<Double>();
 
-    private List<double[]> xBatch = new ArrayList<double[]>();
-    private List<Integer> yBatch = new ArrayList<Integer>();
+    private List<double[]> xBatch = new ArrayList<double[]>();  // Feature
+    private List<Integer> yBatch = new ArrayList<Integer>();    // Label
 
     private int length;
 
@@ -147,7 +147,7 @@ public class DataSend extends AppCompatActivity {
                 c = params.getC();
                 eps = params.getEps();
                 descentAlg = params.getDescentAlg();
-                maxIter = params.getMaxIter();
+                //maxIter = params.getMaxIter();
 
 
                 dataCount = 0;
@@ -185,11 +185,13 @@ public class DataSend extends AppCompatActivity {
             @Override
             public void onDataChange(DataSnapshot dataSnapshot) {
                 weightVals = dataSnapshot.getValue(TrainingWeights.class);
-                List<Double> test = weightVals.getWeights().get(0);
+                List<Double> test = weightVals.getWeights();
                 //String testStr = test.get(0).toString() + test.get(1).toString() + test.get(2).toString();
                 message.setText("Weights received");
                 //message.setText(testStr);
-                double testIter = weightVals.getWeights().get(1).get(0);
+                double testIter = weightVals.getWeights().get(0);
+                // It should be list of list. The first element
+                // is number of iterations???
                 String testStr = String.valueOf(testIter);
                 message.setText(testStr);
 
@@ -219,7 +221,7 @@ public class DataSend extends AppCompatActivity {
                 EditText countField = (EditText) findViewById(R.id.inputCount);
                 String numStr = countField.getText().toString();
                 try {
-                    dataCount = Integer.parseInt(numStr);
+                    dataCount = Integer.parseInt(numStr); // Number of gradient batches
                 } catch (NumberFormatException e) {
                     message.setText("Not a number");
                     dataCount = 0;
@@ -240,7 +242,7 @@ public class DataSend extends AppCompatActivity {
                     ready = false;
 
                     userData = new UserData();
-                    List<Double> oldWeight = weightVals.getWeights().get(0);
+                    List<Double> oldWeight = weightVals.getWeights(); //change
                     List<Double> newWeight = new ArrayList<Double>(length);
                     userData.setParamIter(paramIter);
                     userData.setWeightIter(t);
@@ -321,7 +323,7 @@ public class DataSend extends AppCompatActivity {
                 else if(dataCount > 0 && userCheck.getGradientProcessed() && userCheck.getGradIter()== gradientIteration && localUpdateNum > 0){
                     ready = false;
                     userData = new UserData();
-                    List<Double> oldWeight = weightVals.getWeights().get(0);
+                    List<Double> oldWeight = weightVals.getWeights();
                     List<Double> newWeight = new ArrayList<Double>(length);
                     userData.setParamIter(paramIter);
                     userData.setWeightIter(t);
@@ -376,7 +378,7 @@ public class DataSend extends AppCompatActivity {
                             ready = false;
 
                             userData = new UserData();
-                            List<Double> oldWeight = weightVals.getWeights().get(0);
+                            List<Double> oldWeight = weightVals.getWeights();
                             List<Double> newWeight = new ArrayList<Double>(length);
                             userData.setParamIter(paramIter);
                             userData.setWeightIter(t);
@@ -414,10 +416,10 @@ public class DataSend extends AppCompatActivity {
     public void initUser(){
         userData = new UserData();
         userData.setParamIter(paramIter);
-        double weightIter = weightVals.getWeights().get(1).get(0);
-        userData.setWeightIter(weightIter);
+        double weightIter = weightVals.getWeights().get(1);
+        userData.setWeightIter((int)weightIter);
         userData.setGradientProcessed(false);
-        List<Double> initGrad = weightVals.getWeights().get(0);
+        List<Double> initGrad = weightVals.getWeights();
         userData.setGradients(initGrad);
         userData.setGradIter(gradientIteration);
         userValues.setValue(userData);
@@ -426,12 +428,12 @@ public class DataSend extends AppCompatActivity {
     public void sendGradient(){
         userData = new UserData();
         userData.setParamIter(paramIter);
-        double weightIter = weightVals.getWeights().get(1).get(0);
-        userData.setWeightIter(weightIter);
+        double weightIter = weightVals.getWeights().get(1);
+        userData.setWeightIter((int)weightIter);
         //userData.setWeightIter(1);
 
         List<Integer> batchSamples = new ArrayList<Integer>();
-        List<Double> currentWeights = weightVals.getWeights().get(0);
+        List<Double> currentWeights = weightVals.getWeights();
         int batchSlot = 0;
         while(dataCount > 0 && batchSlot < batchSize) {
            batchSamples.add(order.get((batchSize*(dataCount-1) + batchSlot)));
@@ -441,6 +443,9 @@ public class DataSend extends AppCompatActivity {
             dataCount--;
             xBatch = readSample(batchSamples);
             yBatch = readType(batchSamples);
+
+        // Avg grad = Loss.gradient / batchSize
+
         List<Double> avgGrad = new ArrayList<Double>(length);
         for(int i = 0; i < length; i ++){
             avgGrad.add(0.0);
@@ -488,6 +493,7 @@ public class DataSend extends AppCompatActivity {
         System.out.println(currentWeights);
         int batchSlot = 0;
         while(dataCount > 0 && batchSlot < batchSize) {
+            //
             batchSamples.add(order.get((batchSize*localUpdateNum*(dataCount-1) + batchSlot*(localUpdateIter+1))));
             batchSlot++;
         }
@@ -539,7 +545,7 @@ public class DataSend extends AppCompatActivity {
                 learningRateDenom.set(j, learningRate);
             }
         }
-        List<Double> newWeight = server.calcWeight(currentWeights, learningRateDenom, noisyGrad, weightIter, descentAlg, c, eps);
+        List<Double> newWeight = server.calcWeight(currentWeights, noisyGrad, (int)weightIter, descentAlg, c, eps);
 
         System.out.println("new Weights");
         System.out.println(newWeight);
@@ -547,6 +553,12 @@ public class DataSend extends AppCompatActivity {
         return newWeight;
 
     }
+
+
+    /**
+     * Reading the feature file and return a list of feature arrays
+     *
+     */
 
     public List<double[]> readSample(List<Integer> sampleBatch){
         final TextView message = (TextView) findViewById(R.id.messageDisplay);
@@ -582,6 +594,10 @@ public class DataSend extends AppCompatActivity {
         return xBatch;
 
     }
+
+    /**
+     * Read label file
+     */
 
     public List<Integer> readType(List<Integer> sampleBatch){
         final TextView message = (TextView) findViewById(R.id.messageDisplay);

@@ -47,4 +47,7 @@ public class InternalServer {
         return newWeight;
 
     }
+    public List<Double> calcWeight(List<Double> oldWeights, List<Double> learningRate,List<Double> grad, int t, String descentAlg, double c, double eps){
+        return new ArrayList<>();
+    }
 }

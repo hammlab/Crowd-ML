@@ -38,7 +38,7 @@ import java.util.List;
 public class OfflineDataSend extends AppCompatActivity {
 
     private int dataCount = 0;
-    private boolean ready = false;
+    private boolean ready = true; //changed
 
     private List<Integer> order;
     private List<Double> weightVals;
@@ -116,7 +116,7 @@ public class OfflineDataSend extends AppCompatActivity {
 
                 order = new ArrayList<>();
                 for (int i = 0; i < N; i++) { //create sequential list of input sample #s
-                    order.add(i);
+                    order.add(i);    // Random a index
                 }
                 Collections.shuffle(order); //randomize order
                 EditText countField = (EditText) findViewById(R.id.inputCount);
@@ -145,8 +145,14 @@ public class OfflineDataSend extends AppCompatActivity {
                     }
                     System.out.println("new weight " + newWeight);
                     Double acc = test.accuracy(OfflineDataSend.this, weightVals, testLabels, testFeatures, testN, D, K, nh);
-                    String results = "Accuracy: "+acc.toString().substring(0, 6);
-                    message.setText(results);
+                    String accString = acc.toString();
+                    if(accString.length() > 6) {
+                        accString = "Accuracy: "+acc.toString().substring(0, 6);
+                    }else{
+                        accString = "Accuracy: " +acc;
+                    }
+
+                    message.setText(accString);
 
                     ready = true;
 
