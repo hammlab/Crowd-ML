@@ -1,7 +1,7 @@
 var paramIter = 0;
 
-var serviceAccount = <insert service account file name>;
-var databaseURL = <insert database URL>;
+var serviceAccount = 'Crowd-ML-e591994762fe.json';
+var databaseURL = 'https://crowd-ml-6228f.firebaseio.com/';
 var D = 785;
 //var maxWeightBatchSize = 1;
 var maxGradBatchSize = 1;

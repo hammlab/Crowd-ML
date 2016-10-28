@@ -1,5 +1,4 @@
-
-	function accuracy(testWeight, constStr){	
+function accuracy(testWeight, constStr){
 		var constants = require(constStr)
 
 		var D = constants.D;
@@ -25,7 +24,7 @@
 	    			return str != "";}
 			var featureClean = featureStr.filter(valid);
 			var featureArray = [];
-			for(var j=0; j<featureClean.length; j++) { 
+			for(var j = 0; j < featureClean.length; j++) {
 				featureArray[j] = parseFloat(featureClean[j], 10);}
 
 
@@ -172,7 +171,7 @@
 				if(scores[h]>scores[bestGuess]){
 					bestGuess = h;}
 			}
-	
+
 			var lessGuess = 0;
 			for(h = 0; h < K; h++){
 				if(scores[h]<scores[lessGuess]){
@@ -183,7 +182,7 @@
 			if(bestGuess == label){
 				correct++;}
 			if(lessGuess == label){
-				lessCorrect++;}	
+				lessCorrect++;}
 			//console.log('scores: ', scores);
 		}
 
@@ -191,7 +190,7 @@
 		console.log('Accuracy: ', accuracy, '%')
 		var lessaccuracy = 100*lessCorrect/N;
 		console.log('Less Accuracy: ', lessaccuracy, '%')
-		
+
 	}
 
 	exports.accuracy = accuracy;

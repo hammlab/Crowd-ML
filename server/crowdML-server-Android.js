@@ -156,32 +156,32 @@ function addToGradBatch(gradient){
 		gradBatch = [];
 
 		var newWeight = [];
-		if(descentAlg=='constant'){
+		if(descentAlg == 'constant'){
 			learningRate = c;
 			for (i = 0; i < length; i++) {
 				newWeight[i] = currentWeight[i] - (learningRate * avgGradient[i]);
 			}
 		}
-		else if(descentAlg=='simple'){
-			learningRate = c/iter;
+		else if(descentAlg == 'simple'){
+			learningRate = c / iter;
 			for (i = 0; i < length; i++) {
 				newWeight[i] = currentWeight[i] - (learningRate * avgGradient[i]);
 			}
 		}
-		else if(descentAlg=='sqrt'){
-			learningRate = c/Math.sqrt(iter);
+		else if(descentAlg == 'sqrt'){
+			learningRate = c / Math.sqrt(iter);
 			for (i = 0; i < length; i++) {
 				newWeight[i] = currentWeight[i] - (learningRate * avgGradient[i]);
 			}
 		}
-		else if(descentAlg=='adagrad'){
+		else if(descentAlg == 'adagrad'){
 			for (i = 0; i < length; i++) {
-				adaG[i] += gradient[i]*gradient[i];
-				learningRate = c/Math.sqrt(adaG[i]+eps);
+				adaG[i] += gradient[i] * gradient[i];
+				learningRate = c / Math.sqrt(adaG[i] + eps);
 				newWeight[i] = currentWeight[i] - (learningRate * avgGradient[i]);
 			}
 		}
-		else if(descentAlg=='rmsProp'){
+		else if(descentAlg == 'rmsProp'){
 			for (i = 0; i < length; i++) {
 				rms[i] = 0.9*rms[i] + 0.1*gradient[i]*gradient[i];
 				learningRate = c/Math.sqrt(rms[i]+eps);
@@ -203,10 +203,12 @@ function addToWeightBatch(weightArray){
 			for(j = 0; j < maxWeightBatchSize; j++){
 				sum += weightBatch[j][i];
 				}
-			newWeight[i] = sum/maxWeightBatchSize;
+			newWeight[i] = sum / maxWeightBatchSize;
 			}
 
 		testNum++;
+
+		// Why are these separate if statements? Their bodies are all the same
 		if(testNum == testFreq && testType == 'multiTest'){
 			testNum = 0;
 			console.log('Weight iteration ',iter)
@@ -220,19 +222,22 @@ function addToWeightBatch(weightArray){
 			console.log('Weight iteration ',iter)
 			test.accuracy(newWeight, constStr);}
 
-		if(localUpdateNum > 0)
-			{iter += localUpdateNum;}
-		else
-			{iter++;
-			}
+		if(localUpdateNum > 0){
+			iter += localUpdateNum;
+		} else{
+			iter++;
+		}
+
 		iterArray = [iter, -1];
 		weight.update({
 			iteration: iter
-			});
+		});
+
 		weightSet = [newWeight, iterArray];
 		weight.update({
 			weights: weightSet
-			});
+		});
+
 		weightBatchSize = 0;
 		weightBatch = [];
 	}
