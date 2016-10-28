@@ -1,5 +1,6 @@
 package osu.crowd_ml;
 
+import android.content.Context;
 import android.content.Intent;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
@@ -147,7 +148,7 @@ public class DataSend extends AppCompatActivity {
                 c = params.getC();
                 eps = params.getEps();
                 descentAlg = params.getDescentAlg();
-                maxIter = 1;//params.getMaxIter(); This error prevents building
+                maxIter = 100;//params.getMaxIter(); This error prevents building
 
 
                 dataCount = 0;
@@ -281,7 +282,7 @@ public class DataSend extends AppCompatActivity {
 
 
     public void internetServices(){
-        ConnectivityManager connManager = (ConnectivityManager) getSystemService(this.CONNECTIVITY_SERVICE);
+        ConnectivityManager connManager = (ConnectivityManager) getSystemService(CONNECTIVITY_SERVICE);
         NetworkInfo mWifi = connManager.getNetworkInfo(ConnectivityManager.TYPE_WIFI);
 
         if (!mWifi.isConnected()) {
@@ -310,19 +311,19 @@ public class DataSend extends AppCompatActivity {
             public void onDataChange(DataSnapshot dataSnapshot) {
                 internetServices();
                 userCheck = dataSnapshot.getValue(UserData.class);
-                if(init == false){
+                if(!init){
                     init = true;
                     initUser();
                 }
-                if (dataCount > 0 && userCheck.getGradientProcessed() && userCheck.getGradIter()== gradientIteration && localUpdateNum == 0) {
+                if (dataCount > 0 && userCheck.getGradientProcessed() && userCheck.getGradIter() == gradientIteration && localUpdateNum == 0) {
                     internetServices();
                     sendGradient();
                 }
-                else if(dataCount > 0 && userCheck.getGradientProcessed() && userCheck.getGradIter()== gradientIteration && localUpdateNum > 0){
+                else if(dataCount > 0 && userCheck.getGradientProcessed() && userCheck.getGradIter() == gradientIteration && localUpdateNum > 0){
                     ready = false;
                     userData = new UserData();
                     List<Double> oldWeight = null;//weightVals.getWeights().get(0); This error prevents building
-                    List<Double> newWeight = new ArrayList<Double>(length);
+                    List<Double> newWeight = new ArrayList<>(length);
                     userData.setParamIter(paramIter);
                     userData.setWeightIter(t);
                     for (int i = 0; i < localUpdateNum; i++) {
@@ -330,7 +331,7 @@ public class DataSend extends AppCompatActivity {
                         t++;
                         oldWeight = newWeight;
                     }
-                    System.out.println("new weight "+newWeight);
+                    System.out.println("new weight " + newWeight);
                     gradientIteration++;
                     userData.setGradIter(gradientIteration);
                     userData.setGradientProcessed(false);
@@ -377,7 +378,7 @@ public class DataSend extends AppCompatActivity {
 
                             userData = new UserData();
                             List<Double> oldWeight = null;//weightVals.getWeights().get(0); This error prevents building
-                            List<Double> newWeight = new ArrayList<Double>(length);
+                            List<Double> newWeight = new ArrayList<>(length);
                             userData.setParamIter(paramIter);
                             userData.setWeightIter(t);
                             for (int i = 0; i < localUpdateNum; i++) {
@@ -434,14 +435,15 @@ public class DataSend extends AppCompatActivity {
         List<Double> currentWeights = null;//weightVals.getWeights().get(0); This error prevents building
         int batchSlot = 0;
         while(dataCount > 0 && batchSlot < batchSize) {
-           batchSamples.add(order.get((batchSize*(dataCount-1) + batchSlot)));
+            batchSamples.add(order.get((batchSize * (dataCount - 1) + batchSlot)));
             batchSlot++;
         }
 
-            dataCount--;
-            xBatch = readSample(batchSamples);
-            yBatch = readType(batchSamples);
-        List<Double> avgGrad = new ArrayList<Double>(length);
+        dataCount--;
+        xBatch = readSample(batchSamples);
+        yBatch = readType(batchSamples);
+
+        List<Double> avgGrad = new ArrayList<>(length);
         for(int i = 0; i < length; i ++){
             avgGrad.add(0.0);
         }
@@ -482,18 +484,18 @@ public class DataSend extends AppCompatActivity {
 
     public List<Double> internalWeightCalc(List<Double> weights, float weightIter, int localUpdateIter){
 
-        List<Integer> batchSamples = new ArrayList<Integer>();
-        List<Double> currentWeights = weights;
+        List<Integer> batchSamples = new ArrayList<>();
         System.out.println("currentWeights");
-        System.out.println(currentWeights);
+        System.out.println(weights);
+
         int batchSlot = 0;
         while(dataCount > 0 && batchSlot < batchSize) {
-            batchSamples.add(order.get((batchSize*localUpdateNum*(dataCount-1) + batchSlot*(localUpdateIter+1))));
+            batchSamples.add(order.get((batchSize * localUpdateNum * (dataCount - 1) + batchSlot * (localUpdateIter+1) )));
             batchSlot++;
         }
         xBatch = readSample(batchSamples);
         yBatch = readType(batchSamples);
-        List<Double> avgGrad = new ArrayList<Double>(length);
+        List<Double> avgGrad = new ArrayList<>(length);
         for(int i = 0; i < length; i ++){
             avgGrad.add(0.0);
         }
@@ -501,7 +503,7 @@ public class DataSend extends AppCompatActivity {
         for(int i = 0; i < batchSize; i++){
             double[] X = xBatch.get(i);
             int Y = yBatch.get(i);
-            List<Double> grad = loss.gradient(currentWeights, X, Y, D, K, L, nh);
+            List<Double> grad = loss.gradient(weights, X, Y, D, K, L, nh);
 
 
             double sum;
@@ -521,7 +523,7 @@ public class DataSend extends AppCompatActivity {
         System.out.println("internal Grad");
         System.out.println(avgGrad);
 
-        List<Double> noisyGrad = new ArrayList<Double>(length);
+        List<Double> noisyGrad = new ArrayList<>(length);
         for (int j = 0; j < length; j++){
             noisyGrad.add(dist.noise(avgGrad.get(j), noiseScale));
         }
@@ -529,13 +531,13 @@ public class DataSend extends AppCompatActivity {
         InternalServer server = new InternalServer();
         if(descentAlg.equals("adagrad")){
             for(int j = 0; j < length; j++){
-                double learningRate = learningRateDenom.get(j) + noisyGrad.get(j)*noisyGrad.get(j);
+                double learningRate = learningRateDenom.get(j) + noisyGrad.get(j) * noisyGrad.get(j);
                 learningRateDenom.set(j, learningRate);
             }
         }
         else if (descentAlg.equals("rmsProp")){
             for(int j = 0; j < length; j++){
-                double learningRate = 0.9*learningRateDenom.get(j) + 0.1*noisyGrad.get(j)*noisyGrad.get(j);
+                double learningRate = 0.9 * learningRateDenom.get(j) + 0.1 * noisyGrad.get(j) * noisyGrad.get(j);
                 learningRateDenom.set(j, learningRate);
             }
         }
@@ -550,19 +552,18 @@ public class DataSend extends AppCompatActivity {
 
     public List<double[]> readSample(List<Integer> sampleBatch){
         final TextView message = (TextView) findViewById(R.id.messageDisplay);
-        List<double[]> xBatch = new ArrayList<double[]>();
+        List<double[]> xBatch = new ArrayList<>();
         try {
             BufferedReader br = new BufferedReader(new InputStreamReader(getAssets().open(featureSource)));
-            String line = null;
+            String line;
             int counter = 0;
             while ((line = br.readLine()) != null && counter <= Collections.max(sampleBatch)){
                 if(sampleBatch.contains(counter)){
                     double[] sampleFeatures = new double[D];
                     String[] features = line.split(",|\\ ");
-                    List<String> featureList = new ArrayList<String>(Arrays.asList(features));
+                    List<String> featureList = new ArrayList<>(Arrays.asList(features));
                     featureList.removeAll(Arrays.asList(""));
-                    for(int i = 0;i < D; i++)
-                    {
+                    for(int i = 0;i < D; i++) {
                         sampleFeatures[i] = Double.parseDouble(featureList.get(i));
                     }
                     xBatch.add(sampleFeatures);

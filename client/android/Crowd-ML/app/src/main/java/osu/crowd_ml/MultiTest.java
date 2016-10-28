@@ -33,32 +33,35 @@ public class MultiTest implements AccTest{
 
         int correct = 0;
         double dot;
+
         for(int i = 0; i < testN; i++){
             double[] X = testFeatures.get(i);
             Integer Y = testLabels.get(i);
             double[] classResults = new double[10];
+
             for(int h = 0; h < K; h++){
                 dot = 0;
+
                 for(int j = 0; j < D; j++){
-                    dot += X[j]*weightVals.get(j + (h*D));}
+                    dot += X[j] * weightVals.get(j + (h * D));
+                }
                 classResults[h] = dot;
             }
+
             int bestGuess = 0;
+
             for(int h = 0; h < K; h++){
                 if(classResults[h]>classResults[bestGuess]){
-                    bestGuess = h;}
+                    bestGuess = h;
+                }
             }
 
             if(bestGuess == Y){
-                correct++;}
+                correct++;
+            }
         }
 
-
-
-
-
-        double accuracy = 100*correct/testN;
-        return accuracy;
+        return 100 * correct / testN;
 
     }
 

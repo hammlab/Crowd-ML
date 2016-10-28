@@ -62,10 +62,10 @@ public class OfflineDataSend extends AppCompatActivity {
     private String descentAlg = "sqrt";
     private int t = 1;
 
-    private List<double[]> xBatch = new ArrayList<double[]>();
-    private List<Integer> yBatch = new ArrayList<Integer>();
-    List<double[]> testFeatures = new ArrayList<double[]>(testN);
-    List<Integer> testLabels = new ArrayList<Integer>(testN);
+    private List<double[]> xBatch = new ArrayList<>();
+    private List<Integer> yBatch = new ArrayList<>();
+    List<double[]> testFeatures = new ArrayList<>(testN);
+    List<Integer> testLabels = new ArrayList<>(testN);
 
     private int length;
     private AccTest test;
@@ -96,18 +96,19 @@ public class OfflineDataSend extends AppCompatActivity {
             message.setText("Binary classifier used on non-binary data");
             dataCount = -1;
         }
-        weightVals = new ArrayList<Double>(length);
+        weightVals = new ArrayList<>(length);
         for (int i = 0; i < length; i++) {
             weightVals.add(Math.random() - 0.5);
         }
 
-        List<Integer> allTestSamples = new ArrayList<Integer>(testN);
+        List<Integer> allTestSamples = new ArrayList<>(testN);
         for(int i = 0; i < testN; i++){
             allTestSamples.add(i);
         }
         testFeatures = readSample(allTestSamples);
         testLabels = readType(allTestSamples);
 
+        ready = true;
 
         Button mSendTrainingData = (Button) findViewById(R.id.sendTrainingData);
         mSendTrainingData.setOnClickListener(new View.OnClickListener() {
@@ -136,7 +137,7 @@ public class OfflineDataSend extends AppCompatActivity {
                     message.setText("Sending Data");
                     ready = false;
 
-                    List<Double> newWeight = new ArrayList<Double>(length);
+                    List<Double> newWeight = new ArrayList<>(length);
                     while (dataCount > 0) {
                         newWeight = internalWeightCalc(weightVals, t);
                         t++;
@@ -145,7 +146,7 @@ public class OfflineDataSend extends AppCompatActivity {
                     }
                     System.out.println("new weight " + newWeight);
                     Double acc = test.accuracy(OfflineDataSend.this, weightVals, testLabels, testFeatures, testN, D, K, nh);
-                    String results = "Accuracy: "+acc.toString().substring(0, 6);
+                    String results = "Accuracy: " + acc.toString(); //.substring(0, 6); Error, string index out of bounds
                     message.setText(results);
 
                     ready = true;
@@ -167,21 +168,18 @@ public class OfflineDataSend extends AppCompatActivity {
 
     }
 
-
-
-
     public List<Double> internalWeightCalc(List<Double> weights, int weightIter){
 
-        List<Integer> batchSamples = new ArrayList<Integer>();
+        List<Integer> batchSamples = new ArrayList<>();
         List<Double> currentWeights = weights;
         int batchSlot = 0;
         while(dataCount > 0 && batchSlot < batchSize) {
-            batchSamples.add(order.get((batchSize*(dataCount-1) + batchSlot)));
+            batchSamples.add(order.get((batchSize * (dataCount-1) + batchSlot)));
             batchSlot++;
         }
         xBatch = readSample(batchSamples);
         yBatch = readType(batchSamples);
-        List<Double> avgGrad = new ArrayList<Double>(length);
+        List<Double> avgGrad = new ArrayList<>(length);
         for(int i = 0; i < length; i ++){
             avgGrad.add(0.0);
         }
@@ -206,24 +204,23 @@ public class OfflineDataSend extends AppCompatActivity {
             avgGrad.set(i, sum/batchSize);
         }
 
-        List<Double> noisyGrad = new ArrayList<Double>(length);
+        List<Double> noisyGrad = new ArrayList<>(length);
         for (int j = 0; j < length; j++){
             noisyGrad.add(dist.noise(avgGrad.get(j), noiseScale));
         }
 
         InternalServer server = new InternalServer();
-        List<Double> newWeight = server.calcWeight(currentWeights, noisyGrad, weightIter, descentAlg, c, eps);
 
-        return newWeight;
+        return server.calcWeight(currentWeights, noisyGrad, weightIter, descentAlg, c, eps);
 
     }
 
     public List<double[]> readSample(List<Integer> sampleBatch){
         final TextView message = (TextView) findViewById(R.id.messageDisplay);
-        List<double[]> xBatch = new ArrayList<double[]>();
+        List<double[]> xBatch = new ArrayList<>();
         try {
             BufferedReader br = new BufferedReader(new InputStreamReader(getAssets().open(trainFeatureSource)));
-            String line = null;
+            String line;
             int counter = 0;
             while ((line = br.readLine()) != null && counter <= Collections.max(sampleBatch)){
                 if(sampleBatch.contains(counter)){
@@ -231,8 +228,7 @@ public class OfflineDataSend extends AppCompatActivity {
                     String[] features = line.split(",|\\ ");
                     List<String> featureList = new ArrayList<String>(Arrays.asList(features));
                     featureList.removeAll(Arrays.asList(""));
-                    for(int i = 0;i < D; i++)
-                    {
+                    for(int i = 0;i < D; i++) {
                         sampleFeatures[i] = Double.parseDouble(featureList.get(i));
                     }
                     xBatch.add(sampleFeatures);
@@ -256,10 +252,10 @@ public class OfflineDataSend extends AppCompatActivity {
     public List<Integer> readType(List<Integer> sampleBatch){
         final TextView message = (TextView) findViewById(R.id.messageDisplay);
         int sampleLabel = 0;
-        List<Integer> yBatch = new ArrayList<Integer>();
+        List<Integer> yBatch = new ArrayList<>();
         try {
             BufferedReader br = new BufferedReader(new InputStreamReader(getAssets().open(trainLabelSource)));
-            String line = null;
+            String line;
             int counter = 0;
             while ((line = br.readLine()) != null && counter <= Collections.max(sampleBatch)){
                 String cleanLine = line.trim();
