@@ -20,26 +20,26 @@ limitations under the License
 */
 
 public class TrainingWeights {
-    List<Double> weights;
-    int iteration;
+    private List<List<Double>> weights;
+    private int iteration;
 
     public TrainingWeights(){
 
     }
 
-    public List<Double> getWeights(){
+    public List<List<Double>> getWeights(){
         return weights;
     }
 
-    public void setWeights(List<Double> weightValues){
+    public void setWeights(List<List<Double>> weightValues){
         weights = weightValues;
     }
 
-    public int getCurrentIteration(){
+    public int getIteration(){
         return iteration;
     }
 
-    public void setCurrentIteration(int iteration){
+    public void setIteration(int iteration){
         this.iteration = iteration;
     }
 

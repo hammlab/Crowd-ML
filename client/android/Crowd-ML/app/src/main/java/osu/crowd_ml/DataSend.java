@@ -186,11 +186,11 @@ public class DataSend extends AppCompatActivity {
             @Override
             public void onDataChange(DataSnapshot dataSnapshot) {
                 weightVals = dataSnapshot.getValue(TrainingWeights.class);
-                //List<Double> test = weightVals.getWeights().get(0); // This error prevents building
+                //List<Double> test = weightVals.getWeights().get(0); // Not used?
                 //String testStr = test.get(0).toString() + test.get(1).toString() + test.get(2).toString();
                 message.setText("Weights received");
                 //message.setText(testStr);
-                double testIter = weightVals.getWeights().get(1);//.get(0); This error prevents building
+                double testIter = weightVals.getWeights().get(1).get(0); //This error prevents building
                 String testStr = String.valueOf(testIter);
                 message.setText(testStr);
 
@@ -232,17 +232,17 @@ public class DataSend extends AppCompatActivity {
                 if (ready && dataCount > 0 && dataCount <= N / batchSize && localUpdateNum == 0) {
                     message.setText("Sending Data");
                     ready = false;
-                    internetServices();
+                    checkForWifi();
                     sendGradient();
                 }
 
-                if (ready && dataCount > 0 && dataCount <= N/(batchSize*localUpdateNum) && localUpdateNum > 0) {
+                if (ready && dataCount > 0 && dataCount <= N/(batchSize * localUpdateNum) && localUpdateNum > 0) {
                     message.setText("Sending Data");
                     ready = false;
 
                     userData = new UserData();
-                    List<Double> oldWeight = null;//weightVals.getWeights().get(0); this error prevents building
-                    List<Double> newWeight = new ArrayList<Double>(length);
+                    List<Double> oldWeight = weightVals.getWeights().get(0); //this error prevents building
+                    List<Double> newWeight = new ArrayList<>(length);
                     userData.setParamIter(paramIter);
                     userData.setWeightIter(t);
                     for (int i = 0; i < localUpdateNum; i++) {
@@ -281,25 +281,26 @@ public class DataSend extends AppCompatActivity {
 
 
 
-    public void internetServices(){
-        ConnectivityManager connManager = (ConnectivityManager) getSystemService(CONNECTIVITY_SERVICE);
-        NetworkInfo mWifi = connManager.getNetworkInfo(ConnectivityManager.TYPE_WIFI);
-
-        if (!mWifi.isConnected()) {
-            parameters.removeEventListener(paramListener);
-            //weights.removeEventListener(weightListener);
-            userValues.removeEventListener(userListener);
-
-            System.out.println("enter wifi wait");
-            while (!mWifi.isConnected()) {
-                //wait
-            }
-            System.out.println("exit wifi wait");
-
-            parameters.addValueEventListener(paramListener);
-            //weights.addValueEventListener(weightListener);
-            userValues.addValueEventListener(userListener);
-        }
+    public void checkForWifi(){
+//        ConnectivityManager connManager = (ConnectivityManager) getSystemService(CONNECTIVITY_SERVICE);
+//        NetworkInfo mWifi = connManager.getNetworkInfo(ConnectivityManager.TYPE_WIFI);
+//
+//        if (!mWifi.isConnected()) {
+//            parameters.removeEventListener(paramListener);
+//            //weights.removeEventListener(weightListener);
+//            userValues.removeEventListener(userListener);
+//
+//            //System.out.println("enter wifi wait");
+            // This is an awful way to do this
+//            while (!mWifi.isConnected()) {
+//                //wait
+//            }
+//            //System.out.println("exit wifi wait");
+//
+//            parameters.addValueEventListener(paramListener);
+//            //weights.addValueEventListener(weightListener);
+//            userValues.addValueEventListener(userListener);
+//        }
 
 
     }
@@ -309,20 +310,20 @@ public class DataSend extends AppCompatActivity {
         userListener = userValues.addValueEventListener(new ValueEventListener() {
             @Override
             public void onDataChange(DataSnapshot dataSnapshot) {
-                internetServices();
+                checkForWifi();
                 userCheck = dataSnapshot.getValue(UserData.class);
                 if(!init){
                     init = true;
                     initUser();
                 }
                 if (dataCount > 0 && userCheck.getGradientProcessed() && userCheck.getGradIter() == gradientIteration && localUpdateNum == 0) {
-                    internetServices();
+                    checkForWifi();
                     sendGradient();
                 }
                 else if(dataCount > 0 && userCheck.getGradientProcessed() && userCheck.getGradIter() == gradientIteration && localUpdateNum > 0){
                     ready = false;
                     userData = new UserData();
-                    List<Double> oldWeight = null;//weightVals.getWeights().get(0); This error prevents building
+                    List<Double> oldWeight = weightVals.getWeights().get(0); //This error prevents building
                     List<Double> newWeight = new ArrayList<>(length);
                     userData.setParamIter(paramIter);
                     userData.setWeightIter(t);
@@ -364,11 +365,11 @@ public class DataSend extends AppCompatActivity {
 
                         //message.setText("Sending Data");
                         ready = false;
-                        internetServices();
+                        checkForWifi();
                         if (dataCount > 0 && dataCount <= N/batchSize && localUpdateNum == 0) {
                             message.setText("Sending Data");
                             ready = false;
-                            internetServices();
+                            checkForWifi();
                             sendGradient();
                         }
 
@@ -377,7 +378,7 @@ public class DataSend extends AppCompatActivity {
                             ready = false;
 
                             userData = new UserData();
-                            List<Double> oldWeight = null;//weightVals.getWeights().get(0); This error prevents building
+                            List<Double> oldWeight = weightVals.getWeights().get(0); //This error prevents building
                             List<Double> newWeight = new ArrayList<>(length);
                             userData.setParamIter(paramIter);
                             userData.setWeightIter(t);
@@ -415,10 +416,10 @@ public class DataSend extends AppCompatActivity {
     public void initUser(){
         userData = new UserData();
         userData.setParamIter(paramIter);
-        double weightIter = weightVals.getWeights().get(1);//.get(0); This error prevents building
+        double weightIter = weightVals.getWeights().get(1).get(0); //This error prevents building
         userData.setWeightIter((int)weightIter); // added cast to build
         userData.setGradientProcessed(false);
-        List<Double> initGrad = null;//weightVals.getWeights().get(0); This error prevents building
+        List<Double> initGrad = weightVals.getWeights().get(0); //This error prevents building
         userData.setGradients(initGrad);
         userData.setGradIter(gradientIteration);
         userValues.setValue(userData);
@@ -427,17 +428,19 @@ public class DataSend extends AppCompatActivity {
     public void sendGradient(){
         userData = new UserData();
         userData.setParamIter(paramIter);
-        double weightIter = weightVals.getWeights().get(1);//.get(0); This error prevents building
+        double weightIter = weightVals.getWeights().get(1).get(0); //This error prevents building
         userData.setWeightIter((int)weightIter); // added cast to build
         //userData.setWeightIter(1);
 
-        List<Integer> batchSamples = new ArrayList<Integer>();
-        List<Double> currentWeights = null;//weightVals.getWeights().get(0); This error prevents building
+        List<Integer> batchSamples = new ArrayList<>();
+        List<Double> currentWeights = weightVals.getWeights().get(0); //This error prevents building
         int batchSlot = 0;
         while(dataCount > 0 && batchSlot < batchSize) {
             batchSamples.add(order.get((batchSize * (dataCount - 1) + batchSlot)));
             batchSlot++;
         }
+
+        System.out.println("Batch samples: " + batchSamples.toString());
 
         dataCount--;
         xBatch = readSample(batchSamples);
@@ -447,7 +450,7 @@ public class DataSend extends AppCompatActivity {
         for(int i = 0; i < length; i ++){
             avgGrad.add(0.0);
         }
-
+        System.out.println(batchSize);
         for(int i = 0; i < batchSize; i++){
             double[] X = xBatch.get(i);
             int Y = yBatch.get(i);
@@ -463,10 +466,10 @@ public class DataSend extends AppCompatActivity {
         double total;
         for(int i = 0; i < length; i++) {
             total = avgGrad.get(i);
-            avgGrad.set(i, total/batchSize);
+            avgGrad.set(i, total / batchSize);
         }
 
-        List<Double> noisyGrad = new ArrayList<Double>(length);
+        List<Double> noisyGrad = new ArrayList<>(length);
         for (int j = 0; j < length; j++){
             noisyGrad.add(dist.noise(avgGrad.get(j), noiseScale));
         }
@@ -517,7 +520,7 @@ public class DataSend extends AppCompatActivity {
         double sum;
         for(int i = 0; i < length; i++) {
             sum = avgGrad.get(i);
-            avgGrad.set(i, sum/batchSize);
+            avgGrad.set(i, sum / batchSize);
         }
 
         System.out.println("internal Grad");
@@ -541,7 +544,7 @@ public class DataSend extends AppCompatActivity {
                 learningRateDenom.set(j, learningRate);
             }
         }
-        List<Double> newWeight = null;//server.calcWeight(currentWeights, learningRateDenom, noisyGrad, weightIter, descentAlg, c, eps); This error prevents building
+        List<Double> newWeight = server.calcWeight(weights, learningRateDenom, (int)weightIter, descentAlg, c, eps); //This error prevents building
 
         System.out.println("new Weights");
         System.out.println(newWeight);
@@ -559,11 +562,11 @@ public class DataSend extends AppCompatActivity {
             int counter = 0;
             while ((line = br.readLine()) != null && counter <= Collections.max(sampleBatch)){
                 if(sampleBatch.contains(counter)){
-                    double[] sampleFeatures = new double[D];
+                    double[] sampleFeatures = new double[D]; //D
                     String[] features = line.split(",|\\ ");
                     List<String> featureList = new ArrayList<>(Arrays.asList(features));
                     featureList.removeAll(Arrays.asList(""));
-                    for(int i = 0;i < D; i++) {
+                    for(int i = 0; i < D; i++) { // D
                         sampleFeatures[i] = Double.parseDouble(featureList.get(i));
                     }
                     xBatch.add(sampleFeatures);
@@ -586,11 +589,11 @@ public class DataSend extends AppCompatActivity {
 
     public List<Integer> readType(List<Integer> sampleBatch){
         final TextView message = (TextView) findViewById(R.id.messageDisplay);
-        int sampleLabel = 0;
-        List<Integer> yBatch = new ArrayList<Integer>();
+        int sampleLabel;
+        List<Integer> yBatch = new ArrayList<>();
         try {
             BufferedReader br = new BufferedReader(new InputStreamReader(getAssets().open(labelSource)));
-            String line = null;
+            String line;
             int counter = 0;
             while ((line = br.readLine()) != null && counter <= Collections.max(sampleBatch)){
                 String cleanLine = line.trim();
