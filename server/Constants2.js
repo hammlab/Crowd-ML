@@ -1,29 +1,31 @@
 var paramIter = 0;
-
-	var serviceAccount = <insert service account file name>;
+	
+	var serviceAccount = <insert service account file name>;	
 	var databaseURL = <insert database URL>;
-	var D = 784;
-	//var maxWeightBatchSize = 1;
+	var D = 50;
+	var maxWeightBatchSize = 1;
+	var localUpdateNum = 0; //set to 0 to disable
 	var maxGradBatchSize = 1;
 	var naughtRate = 10;
 	var eps = 0.00000001;
 	var K = 10;
 	var descentAlg = 'adagrad'; //simple, sqrt, adagrad, rmsProp
-	var testFeatures = 'MNISTTestImages.dat';
+	var testFeatures = 'MNISTTestImages-small.dat';
 	var testLabels = 'MNISTTestLabels.dat';
 	var testN = 1000;
-	var testType = 'multiTest'; //none, binary, multitest
+	var testType = 'multiTest'; //none, binaryTest, multiTest, NNTest
 	var testFrequency = 1;
+	var maxIter = 50;
 
 	var L = 1e-6;
-	var noiseScale = 1;
-	var noiseDistribution = 'NoNoise';
-	var lossFunction = 'Softmax';
-	var labelSource = 'MNISTTrainLabels.dat';
-	var featureSource = 'MNISTTrainImages.dat';
+    	var noiseScale = 0;
+    	var noiseDistribution = 'NoNoise';
+    	var lossFunction = 'Softmax';
+    	var labelSource = 'MNISTTrainLabels.dat';
+    	var featureSource = 'MNISTTrainImages-small.dat';
 	var N = 60000;
 	var clientBatchSize = 100;
-	var nh = 1;
+	var nh = 100;
 
 	if(descentAlg != 'simple' && descentAlg != 'sqrt' && descentAlg != 'adagrad' && descentAlg != 'rmsProp')
 	{
@@ -48,7 +50,8 @@ var paramIter = 0;
 	exports.serviceAccount = serviceAccount;
 	exports.databaseURL = databaseURL;
 	exports.D = D;
-	//exports.maxWeightBatchSize = maxWeightBatchSize;
+	exports.maxWeightBatchSize = maxWeightBatchSize;
+	exports.localUpdateNum = localUpdateNum;
 	exports.maxGradBatchSize = maxGradBatchSize;
 	exports.naughtRate = naughtRate;
 	exports.eps = eps;
@@ -59,6 +62,7 @@ var paramIter = 0;
 	exports.testN = testN;
 	exports.testType = testType;
 	exports.testFrequency = testFrequency;
+	exports.maxIter = maxIter;
 	exports.L = L;
 	exports.noiseScale = noiseScale;
 	exports.noiseDistribution = noiseDistribution;
@@ -68,3 +72,4 @@ var paramIter = 0;
 	exports.N = N;
 	exports.clientBatchSize = clientBatchSize;
 	exports.nh = nh;
+

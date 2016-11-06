@@ -1,5 +1,6 @@
-	
-	function accuracy(testWeight, constStr){
+
+	function accuracy(testWeight, constStr){	
+
 		var constants = require(constStr)
 
 		var D = constants.D;
@@ -8,6 +9,7 @@
 		var testFeatures = data.concat(constants.testFeatures);
 		var testLabels = data.concat(constants.testLabels);
 		var N = constants.testN;
+		var nh = 200;
 
 		var correct = 0;
 		var labels = require('fs').readFileSync(testLabels).toString().split('\n')
@@ -29,6 +31,10 @@
 				predict = 1;}
 			if(predict == label){
 				correct++;}
+			
+			if (i > N-5){
+				console.log('results');
+				console.log(dot);}
 	
 		}
 

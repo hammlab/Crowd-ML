@@ -15,6 +15,67 @@
 		var error = 0;
 		var labels = require('fs').readFileSync(testLabels).toString().split('\n')
 		var features = require('fs').readFileSync(testFeatures).toString().split('\n')
+
+		var W01 = [];
+		var b1 = [];
+		var W12 = [];
+		var b2 = [];
+		var W23 = [];
+		var b3 = [];
+		//Parse Parameters
+		var count = 0;
+		var end = count + D*nh;
+		var place = 0;
+		while(count < end){
+		    W01[place] = testWeight[count];
+		    place++;
+		    count++;
+		}
+		//console.log('W01 ', W01);
+		end = count + nh;
+		place = 0;
+		while(count < end){
+		    b1[place] = testWeight[count];
+		    place++;
+		    count++;
+		}
+
+		//console.log('b1 ', b1);
+		end = count + nh*nh;
+		place = 0;
+		while(count < end){
+		    W12[place] = testWeight[count];
+		    place++;
+		    count++;
+		}
+		//console.log('W12 ', W12);
+		end = count + nh;
+		place = 0;
+		while(count < end){
+		    b2[place] = testWeight[count];
+		    place++;
+		    count++;
+		}
+
+		//console.log('b2 ', b2);
+		end = count + nh*K;
+		place = 0;
+		while(count < end){
+		    W23[place] = testWeight[count];
+		    place++;
+		    count++;
+		}
+		//console.log('W23 ', W23);
+		end = count + K;
+		place = 0;
+		while(count < end){
+		    b3[place] = testWeight[count];
+		    place++;
+		    count++;
+		}
+
+		//console.log('b3 ', b3);
+
 		for(i = 0; i < N; i++){
 			var classResults = [];
 			line = labels[i];
@@ -29,57 +90,6 @@
 				featureArray[j] = parseFloat(featureClean[j], 10);}
 
 
-			var W01 = [];
-			var b1 = [];
-			var W12 = [];
-			var b2 = [];
-			var W23 = [];
-			var b3 = [];
-			//Parse Parameters
-			var count = 0;
-			var end = count + D*nh;
-			var place = 0;
-			while(count < end){
-			    W01[place] = testWeight[count];
-			    place++;
-			    count++;
-			}
-			end = count + nh;
-			place = 0;
-			while(count < end){
-			    b1[place] = testWeight[count];
-			    place++;
-			    count++;
-			}
-			end = count + nh*nh;
-			place = 0;
-			while(count < end){
-			    W12[place] = testWeight[count];
-			    place++;
-			    count++;
-			}
-			end = count + nh;
-			place = 0;
-			while(count < end){
-			    b2[place] = testWeight[count];
-			    place++;
-			    count++;
-			}
-			end = count + nh*K;
-			place = 0;
-			while(count < end){
-			    W23[place] = testWeight[count];
-			    place++;
-			    count++;
-			}
-			end = count + K;
-			place = 0;
-			while(count < end){
-			    b3[place] = testWeight[count];
-			    place++;
-			    count++;
-			}
-
 			//Forward Throw
 			var dot;
 			var h1 = [];
@@ -89,6 +99,8 @@
 			    for(j = 0; j < D; j++){
 				dot += featureArray[j]*W01[m + j*(nh)];
 			    }
+			//console.log('h1 dot', dot)
+			//console.log('plus b1', b1[m])
 			    if(dot + b1[m] > 0) {
 				h1[place]=(dot + b1[m]);
 			    }
@@ -97,6 +109,8 @@
 			    }
 			place++;
 			}
+			//console.log('h1', h1)
+
 
 			var h2 = [];
 			place = 0;
@@ -114,6 +128,12 @@
 			place++;
 			}
 
+			//if(i >= (N-3)){
+			//	console.log('h1: ', h1);
+			//	console.log('h2: ', h2);
+			//}
+
+
 			var scores = [];
 			place = 0;
 			for(m = 0; m < K; m++){
@@ -121,7 +141,7 @@
 			    for(j = 0; j < nh; j++){
 				dot += h2[j]*W23[m + j*(K)];
 			    }
-			    scores[place] = (dot + b3[m]);
+			scores[place] = (dot + b3[m]);
 			place++;
 			}
 
@@ -172,25 +192,18 @@
 				if(scores[h]>scores[bestGuess]){
 					bestGuess = h;}
 			}
-	
-			var lessGuess = 0;
-			for(h = 0; h < K; h++){
-				if(scores[h]<scores[lessGuess]){
-					lessGuess = h;}
-			}
 
 
 			if(bestGuess == label){
 				correct++;}
-			if(lessGuess == label){
-				lessCorrect++;}	
-			//console.log('scores: ', scores);
+			//if(i > (N-3)){
+			//	console.log('final scores: ', scores);
+			//}
 		}
 
 		var accuracy = 100*correct/N;
 		console.log('Accuracy: ', accuracy, '%')
-		var lessaccuracy = 100*lessCorrect/N;
-		console.log('Less Accuracy: ', lessaccuracy, '%')
+		
 		
 	}
 

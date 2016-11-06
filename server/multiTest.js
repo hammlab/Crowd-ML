@@ -38,12 +38,17 @@
 					bestGuess = h;}
 			}
 
+			//if(i > (N-5)){
+			//	console.log(bestGuess);
+			//}
+
 			if(bestGuess == label){
 				correct++;}		
 		}
-
+	
 		var accuracy = 100*correct/N;
-		console.log('Accuracy: ', accuracy, '%')
+		//console.log('Accuracy: ', accuracy, '%')
+		console.log(accuracy)
 	}
 
 	exports.accuracy = accuracy;
