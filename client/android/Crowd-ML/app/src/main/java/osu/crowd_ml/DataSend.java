@@ -191,7 +191,6 @@ public class DataSend extends AppCompatActivity {
                 //message.setText(testStr);
                 double testIter = weightVals.getWeights().get(1).get(0);
                 String testStr = String.valueOf(testIter);
-                message.setText(testStr);
 
             }
 
@@ -330,7 +329,6 @@ public class DataSend extends AppCompatActivity {
                         t++;
                         oldWeight = newWeight;
                     }
-                    System.out.println("new weight "+newWeight);
                     gradientIteration++;
                     userData.setGradIter(gradientIteration);
                     userData.setGradientProcessed(false);
@@ -468,9 +466,6 @@ public class DataSend extends AppCompatActivity {
         for (int j = 0; j < length; j++){
             noisyGrad.add(dist.noise(avgGrad.get(j), noiseScale));
         }
-        System.out.println("noisyGrad");
-        System.out.println(noisyGrad);
-        System.out.println("sendGradient");
         userData.setGradientProcessed(false);
         userData.setGradients(noisyGrad);
         gradientIteration++;
@@ -484,8 +479,6 @@ public class DataSend extends AppCompatActivity {
 
         List<Integer> batchSamples = new ArrayList<Integer>();
         List<Double> currentWeights = weights;
-        System.out.println("currentWeights");
-        System.out.println(currentWeights);
         int batchSlot = 0;
         while(dataCount > 0 && batchSlot < batchSize) {
             batchSamples.add(order.get((batchSize*localUpdateNum*(dataCount-1) + batchSlot*(localUpdateIter+1))));
@@ -518,8 +511,6 @@ public class DataSend extends AppCompatActivity {
             avgGrad.set(i, sum/batchSize);
         }
 
-        System.out.println("internal Grad");
-        System.out.println(avgGrad);
 
         List<Double> noisyGrad = new ArrayList<Double>(length);
         for (int j = 0; j < length; j++){
@@ -541,8 +532,6 @@ public class DataSend extends AppCompatActivity {
         }
         List<Double> newWeight = server.calcWeight(currentWeights, learningRateDenom, noisyGrad, weightIter, descentAlg, c, eps);
 
-        System.out.println("new Weights");
-        System.out.println(newWeight);
 
         return newWeight;
 
@@ -550,7 +539,7 @@ public class DataSend extends AppCompatActivity {
 
     public List<double[]> readSample(List<Integer> sampleBatch){
         final TextView message = (TextView) findViewById(R.id.messageDisplay);
-        List<double[]> xBatch = new ArrayList<double[]>();
+        List<double[]> xBatchSamples = new ArrayList<double[]>();
         try {
             BufferedReader br = new BufferedReader(new InputStreamReader(getAssets().open(featureSource)));
             String line = null;
@@ -565,7 +554,11 @@ public class DataSend extends AppCompatActivity {
                     {
                         sampleFeatures[i] = Double.parseDouble(featureList.get(i));
                     }
-                    xBatch.add(sampleFeatures);
+                    xBatchSamples.add(sampleFeatures);
+                    List<Double> test = new ArrayList<Double>();
+                    for(int i = 0;i < sampleFeatures.length; i++){
+                        test.add(sampleFeatures[i]);
+                    }
                 }
 
                 counter++;
@@ -579,14 +572,15 @@ public class DataSend extends AppCompatActivity {
             message.setText("Sample IO exception");
         }
 
-        return xBatch;
+
+        return xBatchSamples;
 
     }
 
     public List<Integer> readType(List<Integer> sampleBatch){
         final TextView message = (TextView) findViewById(R.id.messageDisplay);
         int sampleLabel = 0;
-        List<Integer> yBatch = new ArrayList<Integer>();
+        List<Integer> yBatchSamples = new ArrayList<Integer>();
         try {
             BufferedReader br = new BufferedReader(new InputStreamReader(getAssets().open(labelSource)));
             String line = null;
@@ -598,7 +592,7 @@ public class DataSend extends AppCompatActivity {
                     if(sampleLabel == 0 && loss.lossType().equals("binary")){
                         sampleLabel = -1;
                     }
-                    yBatch.add(sampleLabel);
+                    yBatchSamples.add(sampleLabel);
                 }
                 counter++;
             }
@@ -612,7 +606,7 @@ public class DataSend extends AppCompatActivity {
         }
 
 
-        return yBatch;
+        return yBatchSamples;
     }
 
 }

@@ -23,7 +23,7 @@ public class UserData {
     List<Double> gradients;
     boolean gradientProcessed;
     int gradIter;
-    int weightIter;
+    double weightIter;
     int paramIter;
 
 
@@ -55,11 +55,11 @@ public class UserData {
         gradIter = iter;
     }
 
-    public int getWeightIter(){
+    public double getWeightIter(){
         return weightIter;
     }
 
-    public void setWeightIter(int iter) {
+    public void setWeightIter(double iter) {
         weightIter = iter;
     }
 

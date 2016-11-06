@@ -27,6 +27,14 @@ public class Hinge implements LossFunction{
     }
 
     public List<Double> gradient(List<Double> weights, double[] X, int Y, int D, int K, double L, int nh){
+        List<Double> test = new ArrayList<Double>();
+        for(int j = 0;j < X.length; j++){
+            test.add(X[j]);
+        }
+        System.out.println("function X");
+        System.out.println(test);
+
+
         List<Double>  grad = new ArrayList<Double>(D);
         for (int i = 0; i < D; i++) {
             grad.add(0.0);
@@ -37,6 +45,10 @@ public class Hinge implements LossFunction{
         for (int j = 0; j < D; j++) {
             dot += weights.get(j) * X[j];
         }
+        System.out.println("dot");
+        System.out.println(dot);
+        System.out.println("Y*dot");
+        System.out.println(Y*dot);
 
         double[] regular = new double[D];
         for(int i = 0; i < D; i++){
@@ -45,12 +57,14 @@ public class Hinge implements LossFunction{
 
         for(int i = 0; i < D; i++){
             if(Y*dot < 1){
-                grad.set(i, (-1)*Y*X[i] + regular[i]);
+                grad.set(i, (-1)*Y*X[i]);// + regular[i]);
             }
             else{
-                grad.set(i, 0 + regular[i]);
+                grad.set(i, 0.0);// + regular[i]);
             }
         }
+        System.out.println("loss function");
+        System.out.println(grad);
 
         return grad;
     }

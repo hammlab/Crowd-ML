@@ -33,6 +33,7 @@ public class Parameters {
     private double c;
     private double eps;
     private String descentAlg;
+    private int maxIter;
 
     private int clientBatchSize;
 
@@ -165,4 +166,8 @@ public class Parameters {
     public void setDescentAlg(String descentAlgVal) {
         descentAlg = descentAlgVal;
     }
+
+    public int getMaxIter() {return maxIter;}
+
+    public void setMaxIter(int max){ maxIter = max;}
 }

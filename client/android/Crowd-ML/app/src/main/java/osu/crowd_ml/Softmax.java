@@ -28,6 +28,9 @@ public class Softmax implements LossFunction{
 
     public List<Double> gradient(List<Double> weights, double[] X, int Y, int D, int K, double L, int nh){
 
+        System.out.println("weights");
+        System.out.println(weights);
+
         List<Double> grad = new ArrayList<Double>(D*K);
         for(int i = 0; i < D*K; i++){
             grad.add(i, 0.0);
@@ -36,7 +39,7 @@ public class Softmax implements LossFunction{
 
         //dotMax used to prevent overflow
         double dot = 0;
-        double dotMax = 0;
+        double dotMax = -Double.MAX_VALUE;
         for(int i = 0; i < K; i++){
             //dot product w_i·x
             dot = 0;
@@ -48,6 +51,8 @@ public class Softmax implements LossFunction{
                 dotMax = dot;
             }
         }
+        System.out.println("dotMax");
+        System.out.println(dotMax);
 
         //denom = Σ(i:k) exp(Θ_i · X)
         double denom = 0;
@@ -58,8 +63,15 @@ public class Softmax implements LossFunction{
                 dot += X[j] * weights.get(j + (D*i));
             }
 
+            System.out.println("dot");
+            System.out.println(dot);
+            System.out.println("exp");
+            System.out.println(Math.exp(dot - dotMax));
+
             denom += Math.exp(dot - dotMax);
         }
+        System.out.println("denom");
+        System.out.println(denom);
 
         //regularization constants
         double[] regular = new double[D * K];
@@ -81,6 +93,10 @@ public class Softmax implements LossFunction{
             if(i == Y){
                 match = 1;
             }
+            System.out.println("dot");
+            System.out.println(dot);
+            System.out.println("prob");
+            System.out.println(prob);
             //∇_0_i = -X(1{i = y} - prob_i)
             for (int j = 0; j < D; j++) {
                 grad.set(j + (D * i), -1 * X[j] * (match - prob));

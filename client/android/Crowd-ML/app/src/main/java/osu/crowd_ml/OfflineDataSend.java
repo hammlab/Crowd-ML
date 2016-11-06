@@ -61,6 +61,7 @@ public class OfflineDataSend extends AppCompatActivity {
     private double eps = 0.00000001;
     private String descentAlg = "sqrt";
     private int t = 1;
+    private List<Double> learningRateDenom = new ArrayList<Double>();;
 
     private List<double[]> xBatch = new ArrayList<double[]>();
     private List<Integer> yBatch = new ArrayList<Integer>();
@@ -96,6 +97,11 @@ public class OfflineDataSend extends AppCompatActivity {
             message.setText("Binary classifier used on non-binary data");
             dataCount = -1;
         }
+
+        for(int i = 0; i < length; i ++){
+            learningRateDenom.add(0.0);
+        }
+
         weightVals = new ArrayList<Double>(length);
         for (int i = 0; i < length; i++) {
             weightVals.add(Math.random() - 0.5);
@@ -107,6 +113,9 @@ public class OfflineDataSend extends AppCompatActivity {
         }
         testFeatures = readSample(allTestSamples);
         testLabels = readType(allTestSamples);
+
+        ready = true;
+        message.setText("Waiting For Data");
 
 
         Button mSendTrainingData = (Button) findViewById(R.id.sendTrainingData);
@@ -145,7 +154,8 @@ public class OfflineDataSend extends AppCompatActivity {
                     }
                     System.out.println("new weight " + newWeight);
                     Double acc = test.accuracy(OfflineDataSend.this, weightVals, testLabels, testFeatures, testN, D, K, nh);
-                    String results = "Accuracy: "+acc.toString().substring(0, 6);
+                    int end = Math.min(acc.toString().length(),6);
+                    String results = "Accuracy: "+acc.toString().substring(0, end);
                     message.setText(results);
 
                     ready = true;
@@ -212,7 +222,19 @@ public class OfflineDataSend extends AppCompatActivity {
         }
 
         InternalServer server = new InternalServer();
-        List<Double> newWeight = server.calcWeight(currentWeights, noisyGrad, weightIter, descentAlg, c, eps);
+        if(descentAlg.equals("adagrad")){
+            for(int j = 0; j < length; j++){
+                double learningRate = learningRateDenom.get(j) + noisyGrad.get(j)*noisyGrad.get(j);
+                learningRateDenom.set(j, learningRate);
+            }
+        }
+        else if (descentAlg.equals("rmsProp")){
+            for(int j = 0; j < length; j++){
+                double learningRate = 0.9*learningRateDenom.get(j) + 0.1*noisyGrad.get(j)*noisyGrad.get(j);
+                learningRateDenom.set(j, learningRate);
+            }
+        }
+        List<Double> newWeight = server.calcWeight(currentWeights, learningRateDenom, noisyGrad, weightIter, descentAlg, c, eps);
 
         return newWeight;
 
