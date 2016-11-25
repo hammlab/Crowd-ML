@@ -30,11 +30,12 @@ public class Parameters {
     private int N;
     private int nh;
     private int localUpdateNum;
+    private int clientBatchSize;
+    private int maxIter;
     private double c;
     private double eps;
     private String descentAlg;
 
-    private int clientBatchSize;
 
     public Parameters() {
 
@@ -162,7 +163,9 @@ public class Parameters {
         return descentAlg;
     }
 
-    public void setDescentAlg(String descentAlgVal) {
-        descentAlg = descentAlgVal;
-    }
+    public void setDescentAlg(String descentAlgVal) {descentAlg = descentAlgVal;}
+
+    public int getMaxIter() {return maxIter;}
+
+    public void setMaxIter(int max){maxIter = max;}
 }

@@ -1,3 +1,4 @@
 <resources>
     <string name="app_name">Crowd-ML</string>
+    <string name="title_activity_offline_data_send">Offline</string>
 </resources>

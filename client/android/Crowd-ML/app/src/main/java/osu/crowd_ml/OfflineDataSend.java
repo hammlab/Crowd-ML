@@ -61,6 +61,7 @@ public class OfflineDataSend extends AppCompatActivity {
     private double eps = 0.00000001;
     private String descentAlg = "sqrt";
     private int t = 1;
+    private List<Double> learningRateDenom = new ArrayList<Double>();
 
     private List<double[]> xBatch = new ArrayList<double[]>();
     private List<Integer> yBatch = new ArrayList<Integer>();
@@ -212,7 +213,21 @@ public class OfflineDataSend extends AppCompatActivity {
         }
 
         InternalServer server = new InternalServer();
-        List<Double> newWeight = server.calcWeight(currentWeights, noisyGrad, weightIter, descentAlg, c, eps);
+
+        if(descentAlg.equals("adagrad")){
+            for(int j = 0; j < length; j++){
+                double learningRate = learningRateDenom.get(j) + noisyGrad.get(j)*noisyGrad.get(j);
+                learningRateDenom.set(j, learningRate);
+            }
+        }
+        else if (descentAlg.equals("rmsProp")){
+            for(int j = 0; j < length; j++){
+                double learningRate = 0.9*learningRateDenom.get(j) + 0.1*noisyGrad.get(j)*noisyGrad.get(j);
+                learningRateDenom.set(j, learningRate);
+            }
+        }
+
+        List<Double> newWeight = server.calcWeight(currentWeights, learningRateDenom, noisyGrad, weightIter, descentAlg, c, eps);
 
         return newWeight;
 

@@ -22,7 +22,7 @@ limitations under the License
 
 public class InternalServer {
 
-    public List<Double> calcWeight(List<Double> oldWeights, List<Double> grad, int t, String descentAlg, double c, double eps){
+    public List<Double> calcWeight(List<Double> oldWeights, List<Double> learningRateDenom, List<Double> grad, float t, String descentAlg, double c, double eps){
 
         List<Double> newWeight = new ArrayList<Double>(oldWeights.size());
 

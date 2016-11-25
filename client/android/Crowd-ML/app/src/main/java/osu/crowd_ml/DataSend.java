@@ -540,6 +540,7 @@ public class DataSend extends AppCompatActivity {
             }
         }
         List<Double> newWeight = server.calcWeight(currentWeights, learningRateDenom, noisyGrad, weightIter, descentAlg, c, eps);
+        //List<Double> newWeight = server.calcWeight(currentWeights, learningRateDenom, noisyGrad, weightIter, descentAlg, c, eps);
 
         System.out.println("new Weights");
         System.out.println(newWeight);

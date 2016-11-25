@@ -60,6 +60,14 @@
     <Button
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        android:text="Offline"
+        android:id="@+id/offline"
+        android:layout_below="@+id/loginButton"
+        android:layout_alignStart="@+id/textView" />
+
+    <Button
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
         android:text="Login"
         android:id="@+id/loginButton"
         android:layout_below="@+id/errorMessage"
