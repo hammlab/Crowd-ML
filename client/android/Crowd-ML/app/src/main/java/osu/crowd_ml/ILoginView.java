@@ -1,8 +1,21 @@
 package osu.crowd_ml;
 
-/**
- * Created by tylerzeller on 11/27/16.
- */
+import android.content.Context;
 
-public class ILoginView {
+public interface ILoginView {
+
+    void showCreatingUser();
+
+    void showUserSigningIn();
+
+    void showUserSigninSuccess();
+
+    void showErrorCreatingUser();
+
+    void showErrorSigningin();
+
+    void showUserOffline();
+
+    Context getContext();
+
 }

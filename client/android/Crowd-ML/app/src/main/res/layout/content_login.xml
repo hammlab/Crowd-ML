@@ -52,14 +52,6 @@
     <Button
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Create New"
-        android:id="@+id/createNewButton"
-        android:layout_alignTop="@+id/loginButton"
-        android:layout_alignStart="@+id/textView" />
-
-    <Button
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
         android:text="Offline"
         android:id="@+id/offline"
         android:layout_below="@+id/loginButton"
@@ -85,6 +77,14 @@
         android:id="@+id/errorMessage"
         android:layout_centerVertical="true"
         android:layout_centerHorizontal="true" />
+
+    <Button
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Create New"
+        android:id="@+id/createNewButton"
+        android:layout_above="@+id/offline"
+        android:layout_alignStart="@+id/offline" />
 
 
 </RelativeLayout>
