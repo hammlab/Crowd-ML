@@ -35,7 +35,7 @@ import java.util.UUID;
     limitations under the License
 */
 
-public class FirebaseInteractor implements IFirebaseInteractor{
+public class FirebaseInteractor implements IFirebaseInteractor {
 
     private static FirebaseInteractor instance = new FirebaseInteractor();
 
@@ -75,14 +75,14 @@ public class FirebaseInteractor implements IFirebaseInteractor{
         };
     }
 
-    // Helper method. Poll all registered listeners.
+    // Helper method. Alert all registered listeners of a sign in.
     private void alertSignIn(){
         for (AuthStateListener listener : mListeners){
             listener.onSignIn();
         }
     }
 
-    // Helper method. Poll all registered listeners.
+    // Helper method. Alert all registered listeners of a sign out.
     private void alertSignOut(){
         for (AuthStateListener listener : mListeners){
             listener.onSignOut();

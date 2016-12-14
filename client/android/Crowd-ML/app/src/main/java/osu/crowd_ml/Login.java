@@ -34,10 +34,9 @@ public class Login extends AppCompatActivity implements ILoginView {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.content_login);
+        setContentView(R.layout.content_setup);
         mPresenter = new SetupPresenter(this);
         mPresenter.onCreate();
-        //Firebase.setAndroidContext(this);
     }
 
     @Override protected void onStart() {
@@ -65,6 +64,8 @@ public class Login extends AppCompatActivity implements ILoginView {
             public void run() {
                 Toast.makeText(Login.this, "Creating user. Please wait.", Toast.LENGTH_LONG).show();
                 mProgress.setVisibility(View.VISIBLE);
+                mMessage.setVisibility(View.VISIBLE);
+                mMessage.setText("Creating user.");
             }
         });
     }
@@ -75,6 +76,8 @@ public class Login extends AppCompatActivity implements ILoginView {
             public void run() {
                 Toast.makeText(Login.this, "Signing user in. Please wait.", Toast.LENGTH_LONG).show();
                 mProgress.setVisibility(View.VISIBLE);
+                mMessage.setVisibility(View.VISIBLE);
+                mMessage.setText("Signing user in.");
             }
         });
     }
@@ -85,6 +88,8 @@ public class Login extends AppCompatActivity implements ILoginView {
             public void run() {
                 Toast.makeText(Login.this, "User signed in.", Toast.LENGTH_LONG).show();
                 mProgress.setVisibility(View.INVISIBLE);
+                mMessage.setVisibility(View.VISIBLE);
+                mMessage.setText("All Signed in!");
             }
         });
     }
@@ -96,6 +101,8 @@ public class Login extends AppCompatActivity implements ILoginView {
             public void run() {
                 Toast.makeText(Login.this, "Could not create user.", Toast.LENGTH_LONG).show();
                 mProgress.setVisibility(View.INVISIBLE);
+                mMessage.setVisibility(View.VISIBLE);
+                mMessage.setText("Could not create user.");
             }
         });
     }
@@ -107,6 +114,8 @@ public class Login extends AppCompatActivity implements ILoginView {
             public void run() {
                 Toast.makeText(Login.this, "Could not sign user in.", Toast.LENGTH_LONG).show();
                 mProgress.setVisibility(View.INVISIBLE);
+                mMessage.setVisibility(View.VISIBLE);
+                mMessage.setText("Could not sign user in.");
             }
         });
     }
@@ -118,6 +127,8 @@ public class Login extends AppCompatActivity implements ILoginView {
             public void run() {
                 Toast.makeText(Login.this, "User went offline.", Toast.LENGTH_LONG).show();
                 mProgress.setVisibility(View.INVISIBLE);
+                mMessage.setVisibility(View.VISIBLE);
+                mMessage.setText("User went offline");
             }
         });
     }

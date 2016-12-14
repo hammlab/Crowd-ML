@@ -19,11 +19,9 @@ See the License for the specific language governing permissions and
 limitations under the License
 */
 
-public class Gaussian implements Distribution{
+public class Gaussian implements Distribution {
 
-    public double noise(double mu, double noiseScale){;
-        Random rand = new Random();
-        double noise = rand.nextGaussian()*noiseScale+mu;
-        return noise;
+    public double noise(double mu, double noiseScale){
+        return new Random().nextGaussian() * noiseScale + mu;
     }
 }

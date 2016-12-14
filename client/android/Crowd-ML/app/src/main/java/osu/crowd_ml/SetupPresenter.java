@@ -17,6 +17,8 @@ package osu.crowd_ml;
     limitations under the License
 */
 
+import android.util.Log;
+
 public class SetupPresenter implements ILoginPresenter, IFirebaseInteractor.AuthStateListener,
         IFirebaseInteractor.OnCreateUserListener, IFirebaseInteractor.OnSigninUserListener {
 
@@ -47,10 +49,19 @@ public class SetupPresenter implements ILoginPresenter, IFirebaseInteractor.Auth
     @Override
     public void onDestroy() {
         mView = null;
+
+        // TODO: REMOVE - Only for testing
+        FirebaseInteractor.getInstance().destroyFirebaseListener();
     }
 
+    /**
+     * This is the callback that gets handled when the single, distributed firebase auth listener
+     * from FirebaseInteractor is passively signaled of a sign in. We don't need to do anything when that
+     * gets triggered.
+     */
     @Override
     public void onSignIn() { // Unnecessary to handle here
+        Log.d("SetupPresenter", "User Logged in.");
     }
 
     @Override
@@ -81,6 +92,10 @@ public class SetupPresenter implements ILoginPresenter, IFirebaseInteractor.Auth
         }
     }
 
+    /**
+     * This is the callback that gets handled when the application actively attempts to perform a
+     * user sign in. We handle the sign in functionality in this callback.
+     */
     @Override
     public void onSigninUserSuccess() {
         if (mView != null){

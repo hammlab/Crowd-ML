@@ -50,3 +50,12 @@ local.properties
 .idea/tasks.xml
 .idea/datasources.xml
 .idea/dataSources.ids
+
+# Android Project specific
+client/android/Crowd-ML/.idea/
+client/android/Crowd-ML/app/google-services.json
+client/android/Crowd-ML/app/src/main/assets/*.dat
+client/android/Crowd-ML/*.hprof
+server/*.json
+server/DataFiles/.Rhistory
+server/DataFiles/*.dat

@@ -26,6 +26,7 @@ public class CrowdMLApplication extends Application {
 
     private static Context context;
 
+    @Override
     public void onCreate() {
         super.onCreate();
         Firebase.setAndroidContext(this);
