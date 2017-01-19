@@ -1,6 +1,7 @@
 package osu.crowd_ml;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 /*
@@ -27,10 +28,7 @@ public class Hinge implements LossFunction{
     }
 
     public List<Double> gradient(List<Double> weights, double[] X, int Y, int D, int K, double L, int nh){
-        List<Double>  grad = new ArrayList<>(D);
-        for (int i = 0; i < D; i++) {
-            grad.add(0.0);
-        }
+        List<Double>  grad = new ArrayList<>(Collections.nCopies(D, 0.0d));
 
         //dot product w*x
         double dot = 0;

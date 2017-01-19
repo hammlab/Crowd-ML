@@ -145,6 +145,7 @@ public class BackgroundDataSend extends Service {
             @Override
             public void onDataChange(DataSnapshot dataSnapshot) {
                 weightVals = dataSnapshot.getValue(TrainingWeights.class);
+                Log.d("Weight size", weightVals.getWeights().get(0).size() + "");
             }
 
             @Override
@@ -154,7 +155,7 @@ public class BackgroundDataSend extends Service {
             }
         });
 
-        // Step 3. Send the training data
+        // Step 3. Send the training data.
         sendTrainingData();
 
         return START_STICKY;
@@ -190,7 +191,7 @@ public class BackgroundDataSend extends Service {
 
         System.out.println("Learning rate denom: " + learningRateDenom.size());
 
-        // Step 3. TODO: why do we add this here? This adds a new listener every time the parameters are updated
+        // Step 3. TODO: why do we add this here? This adds a new listener every time the parameters are update
         addUserListener();
     }
 
@@ -233,6 +234,11 @@ public class BackgroundDataSend extends Service {
     }
 
     private void addUserListener(){
+        if (userListener != null) {
+            userValues.removeEventListener(userListener);
+            userListener = null;
+        }
+
         userListener = userValues.addValueEventListener(new ValueEventListener() {
             @Override
             public void onDataChange(DataSnapshot dataSnapshot) {
@@ -303,6 +309,7 @@ public class BackgroundDataSend extends Service {
 
                             userData = new UserData();
                             List<Double> weight = weightVals.getWeights().get(0);
+                            Log.d("Weight size 2", weight.size() + "");
                             userData.setParamIter(paramIter);
                             userData.setWeightIter(t);
 
@@ -456,6 +463,7 @@ public class BackgroundDataSend extends Service {
         for(int i = 0; i < batchSize; i++){
             double[] X = xBatch.get(i);
             int Y = yBatch.get(i);
+            Log.d("Weight size 3", weights.size() + "");
             List<Double> grad = loss.gradient(weights, X, Y, D, K, L, nh);
 
             double sum;
