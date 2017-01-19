@@ -41,6 +41,7 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 
@@ -88,7 +89,7 @@ public class BackgroundDataSend extends Service {
     private String descentAlg;
     private int maxIter;
     private int t = 1;
-    private List<Double> learningRateDenom = new ArrayList<>();
+    private List<Double> learningRateDenom;
 
     private List<double[]> xBatch = new ArrayList<>();
     private List<Integer> yBatch = new ArrayList<>();
@@ -184,7 +185,10 @@ public class BackgroundDataSend extends Service {
             dataCount = -1;
         }
 
-        Collections.fill(learningRateDenom, 0.0d);
+        // Must call setLength() before this line
+        learningRateDenom = new ArrayList<>(Collections.nCopies(length, 0.0d));
+
+        System.out.println("Learning rate denom: " + learningRateDenom.size());
 
         // Step 3. TODO: why do we add this here? This adds a new listener every time the parameters are updated
         addUserListener();
@@ -198,6 +202,13 @@ public class BackgroundDataSend extends Service {
         }
         if(loss.lossType().equals("NN")){
             length = D*nh + nh + nh*nh + nh + nh*K + K;
+        }
+    }
+
+    // TODO: Consider removing
+    private void fill(List<Double> l, double val){
+        for(int i = 0; i < length; i++){
+            l.add(val);
         }
     }
 
@@ -450,7 +461,7 @@ public class BackgroundDataSend extends Service {
             double sum;
             for(int j = 0; j < length; j++) {
                 sum = avgGrad.get(j) + grad.get(j);
-                avgGrad.set(j,sum); // Consider dividing by batchSize here
+                avgGrad.set(j,sum); // TODO: Consider dividing by batchSize here
             }
         }
 

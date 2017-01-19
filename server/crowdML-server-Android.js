@@ -77,7 +77,7 @@ weightSet = [initWeight, iterArray];
 weight.update({
 	weights: weightSet,
 	iteration: iter
-	});
+});
 console.log('weights initialized');
 
 //send parameters to clients
