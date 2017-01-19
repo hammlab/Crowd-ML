@@ -1,8 +1,9 @@
 var paramIter = 0;
 
-	var serviceAccount = <insert service account file name>;
-	var databaseURL = <insert database URL>;
+	var serviceAccount = 'Crowd-ML-e591994762fe.json';
+	var databaseURL = 'https://crowd-ml-6228f.firebaseio.com/';
 	var D = 784;
+	var localUpdateNum = 0;
 	//var maxWeightBatchSize = 1;
 	var maxGradBatchSize = 1;
 	var naughtRate = 10;
@@ -22,7 +23,7 @@ var paramIter = 0;
 	var labelSource = 'MNISTTrainLabels.dat';
 	var featureSource = 'MNISTTrainImages.dat';
 	var N = 60000;
-	var clientBatchSize = 100;
+	var clientBatchSize = 1;
 	var nh = 1;
 
 	if(descentAlg != 'simple' && descentAlg != 'sqrt' && descentAlg != 'adagrad' && descentAlg != 'rmsProp')
@@ -47,6 +48,7 @@ var paramIter = 0;
 	exports.paramIter = paramIter;
 	exports.serviceAccount = serviceAccount;
 	exports.databaseURL = databaseURL;
+	exports.localUpdateNum = localUpdateNum;
 	exports.D = D;
 	//exports.maxWeightBatchSize = maxWeightBatchSize;
 	exports.maxGradBatchSize = maxGradBatchSize;

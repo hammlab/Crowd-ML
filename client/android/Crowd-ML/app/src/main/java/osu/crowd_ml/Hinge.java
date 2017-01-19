@@ -27,7 +27,7 @@ public class Hinge implements LossFunction{
     }
 
     public List<Double> gradient(List<Double> weights, double[] X, int Y, int D, int K, double L, int nh){
-        List<Double>  grad = new ArrayList<Double>(D);
+        List<Double>  grad = new ArrayList<>(D);
         for (int i = 0; i < D; i++) {
             grad.add(0.0);
         }

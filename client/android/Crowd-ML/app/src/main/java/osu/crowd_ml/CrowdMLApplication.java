@@ -1,5 +1,6 @@
 package osu.crowd_ml;
 
+import android.app.ActivityManager;
 import android.app.Application;
 import android.content.Context;
 

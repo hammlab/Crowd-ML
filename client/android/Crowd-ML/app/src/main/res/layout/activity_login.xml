@@ -9,20 +9,89 @@
 
     <android.support.design.widget.AppBarLayout
         android:layout_width="match_parent"
-        android:layout_height="wrap_content">
-        //android:theme="@style/AppTheme.AppBarOverlay">
+        android:layout_height="wrap_content"/>
 
 
-    </android.support.design.widget.AppBarLayout>
+    <RelativeLayout
+        android:orientation="vertical"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        app:layout_behavior="@string/appbar_scrolling_view_behavior"
+        tools:context="osu.crowd_ml.Login"
+        tools:showIn="@layout/activity_login">
 
-    <include layout="@layout/content_setup" />
 
-    <!--<android.support.design.widget.FloatingActionButton-->
-    <!--android:id="@+id/fab"-->
-    <!--android:layout_width="wrap_content"-->
-    <!--android:layout_height="wrap_content"-->
-    <!--android:layout_gravity="bottom|end"-->
-    <!--android:layout_margin="@dimen/fab_margin"-->
-    <!--android:src="@android:drawable/ic_dialog_email" />-->
+        <ToggleButton
+            android:text="Toggle Service"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignParentBottom="true"
+            android:layout_centerHorizontal="true"
+            android:layout_marginBottom="60dp"
+            android:id="@+id/toggle_button"
+            android:visibility="invisible"/>
+
+        <TextView
+            android:text="Service is Running."
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_above="@+id/toggle_button"
+            android:layout_centerHorizontal="true"
+            android:layout_marginBottom="28dp"
+            android:id="@+id/service_status"
+            android:visibility="invisible"/>
+
+        <TextView
+            android:text="User sign in."
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:id="@+id/message"
+            android:layout_marginTop="38dp"
+            android:gravity="center"
+            android:textSize="18sp"
+            android:fontFamily="sans-serif-thin"
+            android:textStyle="bold"
+            android:textColor="@color/common_google_signin_btn_text_light"
+            android:textAppearance="@style/TextAppearance.AppCompat"
+            android:visibility="invisible"
+            android:layout_alignParentTop="true"
+            android:layout_centerHorizontal="true" />
+
+        <ProgressBar
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:id="@+id/progress"
+            android:indeterminate="true"
+            android:visibility="invisible"
+            android:layout_below="@+id/message"
+            android:layout_centerHorizontal="true"
+            android:layout_marginTop="49dp" />
+
+        <TextView
+            android:text="Control the size of the batch you send to the server.\n(Default is 1)"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_below="@+id/progress"
+            android:layout_centerHorizontal="true"
+            android:layout_marginTop="55dp"
+            android:gravity="center"
+            android:id="@+id/batch_size_text"
+            android:visibility="invisible"/>
+
+        <EditText
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:inputType="number"
+            android:text="1"
+            android:ems="3"
+            android:layout_below="@+id/batch_size_text"
+            android:layout_centerHorizontal="true"
+            android:layout_marginTop="17dp"
+            android:background="@drawable/textview_border"
+            android:id="@+id/batch_size"
+            android:visibility="invisible"/>
+
+    </RelativeLayout>
+    <!--<include layout="@layout/content_setup" />-->
 
 </android.support.design.widget.CoordinatorLayout>

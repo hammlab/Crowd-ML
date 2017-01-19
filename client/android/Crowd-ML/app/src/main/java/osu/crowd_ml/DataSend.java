@@ -124,8 +124,6 @@ public class DataSend extends AppCompatActivity {
         final TextView message = (TextView) findViewById(R.id.messageDisplay);
 
 
-
-
         paramListener = parameters.addValueEventListener(new ValueEventListener() {
             @Override
             public void onDataChange(DataSnapshot dataSnapshot) {
@@ -184,10 +182,7 @@ public class DataSend extends AppCompatActivity {
             @Override
             public void onDataChange(DataSnapshot dataSnapshot) {
                 weightVals = dataSnapshot.getValue(TrainingWeights.class);
-                List<Double> test = weightVals.getWeights().get(0);
-                //String testStr = test.get(0).toString() + test.get(1).toString() + test.get(2).toString();
                 message.setText("Weights received");
-                //message.setText(testStr);
                 double testIter = weightVals.getWeights().get(1).get(0);
                 String testStr = String.valueOf(testIter);
                 message.setText(testStr);
@@ -198,68 +193,61 @@ public class DataSend extends AppCompatActivity {
             public void onCancelled(DatabaseError error) {
                 message.setText("Weight event listener error");
             }
-
         });
-
-
-
-
 
         Button mSendTrainingData = (Button) findViewById(R.id.sendTrainingData);
         mSendTrainingData.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
 
-                order = new ArrayList<>();
-                for (int i = 0; i < N; i++) { //create sequential list of input sample #s
-                    order.add(i);
+            order = new ArrayList<>();
+            for (int i = 0; i < N; i++) { //create sequential list of input sample #s
+                order.add(i);
+            }
+            Collections.shuffle(order); //randomize order
+            EditText countField = (EditText) findViewById(R.id.inputCount);
+            String numStr = countField.getText().toString();
+            try {
+                dataCount = Integer.parseInt(numStr);
+            } catch (NumberFormatException e) {
+                message.setText("Not a number");
+                dataCount = 0;
+            }
+            if(dataCount > N/batchSize){
+                message.setText("Input count too high");
+            }
+
+            if (ready && dataCount > 0 && dataCount <= N/batchSize && localUpdateNum == 0) {
+                message.setText("Sending Data");
+                ready = false;
+                internetServices();
+                sendGradient();
+            }
+
+            if (ready && dataCount > 0 && dataCount <= N/(batchSize*localUpdateNum) && localUpdateNum > 0) {
+                message.setText("Sending Data");
+                ready = false;
+
+                userData = new UserData();
+                List<Double> oldWeight = weightVals.getWeights().get(0);
+                List<Double> newWeight = new ArrayList<Double>(length);
+                userData.setParamIter(paramIter);
+                userData.setWeightIter(t);
+                for (int i = 0; i < localUpdateNum; i++) {
+                    newWeight = internalWeightCalc(oldWeight, t, i);
+                    t++;
+                    oldWeight = newWeight;
                 }
-                Collections.shuffle(order); //randomize order
-                EditText countField = (EditText) findViewById(R.id.inputCount);
-                String numStr = countField.getText().toString();
-                try {
-                    dataCount = Integer.parseInt(numStr);
-                } catch (NumberFormatException e) {
-                    message.setText("Not a number");
-                    dataCount = 0;
-                }
-                if(dataCount > N/batchSize){
-                    message.setText("Input count too high");
-                }
+                gradientIteration++;
+                userData.setGradIter(gradientIteration);
+                userData.setGradientProcessed(false);
+                userData.setGradients(newWeight);
+                userValues.setValue(userData);
+                dataCount--;
 
-                if (ready && dataCount > 0 && dataCount <= N/batchSize && localUpdateNum == 0) {
-                    message.setText("Sending Data");
-                    ready = false;
-                    internetServices();
-                    sendGradient();
-                }
+                ready = true;
 
-                if (ready && dataCount > 0 && dataCount <= N/(batchSize*localUpdateNum) && localUpdateNum > 0) {
-                    message.setText("Sending Data");
-                    ready = false;
-
-                    userData = new UserData();
-                    List<Double> oldWeight = weightVals.getWeights().get(0);
-                    List<Double> newWeight = new ArrayList<Double>(length);
-                    userData.setParamIter(paramIter);
-                    userData.setWeightIter(t);
-                    for (int i = 0; i < localUpdateNum; i++) {
-                        newWeight = internalWeightCalc(oldWeight, t, i);
-                        t++;
-                        oldWeight = newWeight;
-                    }
-                    gradientIteration++;
-                    userData.setGradIter(gradientIteration);
-                    userData.setGradientProcessed(false);
-                    userData.setGradients(newWeight);
-                    userValues.setValue(userData);
-                    dataCount--;
-
-                    ready = true;
-
-                }
-
-
+            }
             }
         });
 
@@ -309,7 +297,7 @@ public class DataSend extends AppCompatActivity {
             public void onDataChange(DataSnapshot dataSnapshot) {
                 internetServices();
                 userCheck = dataSnapshot.getValue(UserData.class);
-                if(init == false){
+                if(!init){
                     init = true;
                     initUser();
                 }
@@ -321,7 +309,7 @@ public class DataSend extends AppCompatActivity {
                     ready = false;
                     userData = new UserData();
                     List<Double> oldWeight = weightVals.getWeights().get(0);
-                    List<Double> newWeight = new ArrayList<Double>(length);
+                    List<Double> newWeight = new ArrayList<>(length);
                     userData.setParamIter(paramIter);
                     userData.setWeightIter(t);
                     for (int i = 0; i < localUpdateNum; i++) {
@@ -330,8 +318,7 @@ public class DataSend extends AppCompatActivity {
                         oldWeight = newWeight;
                     }
                     System.out.println("new weight "+newWeight);
-                    gradientIteration++;
-                    userData.setGradIter(gradientIteration);
+                    userData.setGradIter(++gradientIteration);
                     userData.setGradientProcessed(false);
                     userData.setGradients(newWeight);
                     userValues.setValue(userData);
@@ -343,7 +330,7 @@ public class DataSend extends AppCompatActivity {
                     message.setText("Waiting for data");
 
                     //Auto-send used for testing
-                    if (autosend == true){
+                    if (autosend){
                         System.out.println("test auto "+autosend);
                         autosend = false;
 
@@ -362,11 +349,13 @@ public class DataSend extends AppCompatActivity {
 
                         //message.setText("Sending Data");
                         ready = false;
-                        internetServices();
+                        internetServices(); // TODO: Why wait here ... ?
+
+                        // TODO: Why check dataCount here, if we check it above?
                         if (dataCount > 0 && dataCount <= N/batchSize && localUpdateNum == 0) {
                             message.setText("Sending Data");
-                            ready = false;
-                            internetServices();
+                            ready = false; //TODO: isn't ready already false?
+                            internetServices(); // TODO: ...  and here as well?
                             sendGradient();
                         }
 
@@ -379,11 +368,14 @@ public class DataSend extends AppCompatActivity {
                             List<Double> newWeight = new ArrayList<Double>(length);
                             userData.setParamIter(paramIter);
                             userData.setWeightIter(t);
+
+                            // Calc new weights using local update num
                             for (int i = 0; i < localUpdateNum; i++) {
                                 newWeight = internalWeightCalc(oldWeight, t, i);
                                 t++;
                                 oldWeight = newWeight;
                             }
+
                             gradientIteration++;
                             userData.setGradIter(gradientIteration);
                             userData.setGradientProcessed(false);

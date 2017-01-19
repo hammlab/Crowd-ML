@@ -1,6 +1,7 @@
 package osu.crowd_ml;
 
 import android.content.Context;
+import android.os.Bundle;
 
 public interface ILoginView {
 
@@ -15,6 +16,8 @@ public interface ILoginView {
     void showErrorSigningin();
 
     void showUserOffline();
+
+    void addUserInfoToPreferences(Bundle userInfo);
 
     Context getContext();
 

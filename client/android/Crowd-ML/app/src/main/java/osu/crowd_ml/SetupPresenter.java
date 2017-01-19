@@ -17,12 +17,14 @@ package osu.crowd_ml;
     limitations under the License
 */
 
+import android.os.Bundle;
 import android.util.Log;
 
 public class SetupPresenter implements ILoginPresenter, IFirebaseInteractor.AuthStateListener,
         IFirebaseInteractor.OnCreateUserListener, IFirebaseInteractor.OnSigninUserListener {
 
     private ILoginView mView;
+    private boolean mReceivedUserInfo = false;
 
     public SetupPresenter(ILoginView view){
         mView = view;
@@ -30,13 +32,14 @@ public class SetupPresenter implements ILoginPresenter, IFirebaseInteractor.Auth
 
     @Override
     public void onCreate(){
-        FirebaseInteractor.getInstance().addAuthStateListener(this);
+        // Pass
     }
 
     @Override
     public void onStart() {
         if (mView != null){
             mView.showCreatingUser();
+            FirebaseInteractor.getInstance().addAuthStateListener(this);
             FirebaseInteractor.getInstance().createUserAccount(this);
         }
     }
@@ -56,11 +59,14 @@ public class SetupPresenter implements ILoginPresenter, IFirebaseInteractor.Auth
 
     /**
      * This is the callback that gets handled when the single, distributed firebase auth listener
-     * from FirebaseInteractor is passively signaled of a sign in. We don't need to do anything when that
-     * gets triggered.
+     * from FirebaseInteractor is passively signaled of a sign in. This gets triggered multiple
+     * times when a user signs in and is a pain to deal with.
      */
     @Override
-    public void onSignIn() { // Unnecessary to handle here
+    public void onSignIn(Bundle userInfo) {
+        if (!mReceivedUserInfo && mView != null){
+            mView.addUserInfoToPreferences(userInfo);
+        }
         Log.d("SetupPresenter", "User Logged in.");
     }
 

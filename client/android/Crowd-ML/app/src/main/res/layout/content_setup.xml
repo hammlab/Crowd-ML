@@ -34,4 +34,25 @@
         android:id="@+id/progress"
         android:indeterminate="true"
         android:visibility="invisible" />
+
+    <ToggleButton
+        android:text="Toggle Service"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentBottom="true"
+        android:layout_centerHorizontal="true"
+        android:layout_marginBottom="60dp"
+        android:id="@+id/toggle_button"
+        android:visibility="visible"/>
+
+    <TextView
+        android:text=""
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_above="@+id/toggle_button"
+        android:layout_centerHorizontal="true"
+        android:layout_marginBottom="28dp"
+        android:id="@+id/service_status"
+        android:visibility="invisible"/>
+
 </RelativeLayout>

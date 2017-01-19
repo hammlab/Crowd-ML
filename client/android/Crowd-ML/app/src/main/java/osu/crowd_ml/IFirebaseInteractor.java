@@ -1,5 +1,7 @@
 package osu.crowd_ml;
 
+import android.os.Bundle;
+
 /**
  * Created by tylerzeller on 11/28/16.
  */
@@ -22,7 +24,7 @@ public interface IFirebaseInteractor {
     }
 
     interface AuthStateListener {
-        void onSignIn();
+        void onSignIn(Bundle userInfo);
 
         void onSignOut();
     }
@@ -30,6 +32,5 @@ public interface IFirebaseInteractor {
     void createUserAccount(OnCreateUserListener listener);
 
     void signInUser(OnSigninUserListener listener);
-
 
 }

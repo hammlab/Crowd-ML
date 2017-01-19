@@ -1,6 +1,7 @@
 package osu.crowd_ml;
 
 import android.content.Context;
+import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.util.Log;
 
@@ -47,6 +48,7 @@ public class FirebaseInteractor implements IFirebaseInteractor {
     private FirebaseAuth.AuthStateListener mAuthListener;
     private String mEmail = null;
     private String mPassword = null;
+    private String mUid = null;
 
     private HashSet<AuthStateListener> mListeners;
 
@@ -66,19 +68,26 @@ public class FirebaseInteractor implements IFirebaseInteractor {
                 // Step 2. Check if the resulting user is signed in or not
                 if (user != null) {
                     // User is signed in
-                    alertSignIn();
+                    mUid = user.getUid();
+                    Bundle userInfo = new Bundle();
+                    userInfo.putString("email", mEmail);
+                    userInfo.putString("password", mPassword);
+                    userInfo.putString("uid", mUid);
+                    alertSignIn(userInfo);
                 } else {
                     // User is signed out
                     alertSignOut();
                 }
             }
         };
+
+        mAuth.addAuthStateListener(mAuthListener);
     }
 
     // Helper method. Alert all registered listeners of a sign in.
-    private void alertSignIn(){
+    private void alertSignIn(Bundle userInfo){
         for (AuthStateListener listener : mListeners){
-            listener.onSignIn();
+            listener.onSignIn(userInfo);
         }
     }
 
@@ -92,25 +101,27 @@ public class FirebaseInteractor implements IFirebaseInteractor {
     // Register a new listener.
     public void addAuthStateListener(AuthStateListener listener){
         assert mListeners != null;
-        assert !mListeners.contains(listener);
 
         if (!mListeners.contains(listener)){
             mListeners.add(listener);
+            Log.d("FirebaseInteractor", "Listener added.");
         } else {
             Log.d("FirebaseInteractor", "Listener already exists.");
         }
+        Log.d("FirebaseInteractor", mListeners.size() + "");
     }
 
     // Remove an existing listener.
     public void removeAuthStateListener(AuthStateListener listener){
         assert mListeners != null;
-        assert mListeners.contains(listener);
 
         if (mListeners.contains(listener)){
             mListeners.remove(listener);
+            Log.d("FirebaseInteractor", "Listener removed.");
         } else {
             Log.d("FirebaseInteractor", "Listener does not exist.");
         }
+        Log.d("FirebaseInteractor", mListeners.size() + "");
     }
 
     public void destroyFirebaseListener(){
@@ -145,8 +156,6 @@ public class FirebaseInteractor implements IFirebaseInteractor {
             .addOnCompleteListener(new OnCompleteListener<AuthResult>() {
                 @Override
                 public void onComplete(@NonNull Task<AuthResult> task) {
-                    Log.d("FirebaseInteractor", "createUserWithEmail:onComplete:" + task.isSuccessful());
-
                     // Step 4. Check whether creation was successful
                     if (!task.isSuccessful()) {
 

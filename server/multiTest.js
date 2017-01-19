@@ -1,4 +1,3 @@
-	
 	function accuracy(testWeight, constStr){
 		var constants = require(constStr)
 
@@ -20,17 +19,18 @@
 			line = features[i];
 			var featureStr = line.split(/,| /);
 			function valid(str) {
-	    			return str != "";}
+	    	return str != "";
+			}
 			var featureClean = featureStr.filter(valid);
 			var featureArray = [];
-			for(var j=0; j<featureClean.length; j++) { 
+			for(var j=0; j<featureClean.length; j++) {
 				featureArray[j] = parseFloat(featureClean[j], 10);}
 
 			for(h = 0; h < K; h++){
-				dot = 0;		
+				dot = 0;
 				for(j = 0; j < D; j++){
 					dot += featureArray[j]*testWeight[j + (h*D)];}
-				classResults[h] = dot;		
+				classResults[h] = dot;
 			}
 			var bestGuess = 0;
 			for(h = 0; h < K; h++){
@@ -39,7 +39,7 @@
 			}
 
 			if(bestGuess == label){
-				correct++;}		
+				correct++;}
 		}
 
 		var accuracy = 100*correct/N;
