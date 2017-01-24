@@ -9,13 +9,13 @@ var maxGradBatchSize = 1;
 var naughtRate = .001;
 var eps = 0.00000001;
 var K = 2;
-var descentAlg = 'simple'; //simple, sqrt, adagrad, rmsProp
+var descentAlg = 'sqrt'; //simple, sqrt, adagrad, rmsProp
 var testFeatures = 'binaryTestImages.dat';
 var testLabels = 'binaryTestLabels.dat';
 var testN = 220;
 var testType = 'binaryTest'; //none, binary, multitest
 var testFrequency = 1;
-var maxIter = 1000;
+var maxIter = 5;
 
 var L = 1e-6;
 var noiseScale = 1;

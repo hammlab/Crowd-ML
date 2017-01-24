@@ -27,8 +27,15 @@ public class UserData {
     int paramIter;
 
 
-    public UserData() {
+    public UserData(List<Double> gradients, boolean gradientProcessed, int gradIter, int weightIter, int paramIter) {
+        this.gradients = gradients;
+        this.gradientProcessed = gradientProcessed;
+        this.gradIter = gradIter;
+        this.weightIter = weightIter;
+        this.paramIter = paramIter;
+    }
 
+    public UserData() {
     }
 
     public List<Double> getGradients() {

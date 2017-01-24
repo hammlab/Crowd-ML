@@ -1,6 +1,10 @@
 var firebase = require('firebase');
 
 var constFile = process.argv[2]
+if (!constFile){
+	console.log("Invalid constants file argument. Server command should be: \'node crowdML-server-Android.js Constants(#).js\'");
+	process.exit(ERROR_CODE);
+}
 var constStr = './'+constFile
 var constants = require(constStr)
 
@@ -77,7 +81,7 @@ weightSet = [initWeight, iterArray];
 weight.update({
 	weights: weightSet,
 	iteration: iter
-	});
+});
 console.log('weights initialized');
 
 //send parameters to clients
@@ -138,8 +142,7 @@ users.on("child_changed", function(snapshot) {
 });
 
 console.log("listeners set");
-
-
+ 
 function addToGradBatch(gradient){
 	gradBatch.push(gradient);
 	gradBatchSize++;
@@ -149,9 +152,9 @@ function addToGradBatch(gradient){
 			var sum = 0;
 			for(j = 0; j < maxGradBatchSize; j++){
 				sum += gradBatch[j][i];
-				}
-			avgGradient[i] = sum/maxGradBatchSize;
 			}
+			avgGradient[i] = sum/maxGradBatchSize;
+		}
 		gradBatchSize = 0;
 		gradBatch = [];
 
