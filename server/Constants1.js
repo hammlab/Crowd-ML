@@ -3,7 +3,7 @@ var serviceAccount = 'Crowd-ML-e591994762fe.json';
 var databaseURL = 'https://crowd-ml-6228f.firebaseio.com/';
 var D = 785;
 var maxWeightBatchSize = 1;
-var localUpdateNum = 15;
+var localUpdateNum = 100;
 var maxGradBatchSize = 1;
 //var naughtRate = 0.00001;
 var naughtRate = .001;
@@ -15,7 +15,7 @@ var testLabels = 'binaryTestLabels.dat';
 var testN = 220;
 var testType = 'binaryTest'; //none, binary, multitest
 var testFrequency = 1;
-var maxIter = 1000;
+var maxIter = 5;
 
 var L = 1e-6;
 var noiseScale = 1;

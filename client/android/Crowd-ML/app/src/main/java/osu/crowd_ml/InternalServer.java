@@ -1,5 +1,7 @@
 package osu.crowd_ml;
 
+import android.util.Log;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -27,25 +29,25 @@ public class InternalServer {
 
         List<Double> newWeight = new ArrayList<>(oldWeights.size());
 
-        if(descentAlg.equals("constant")){
-            for(int i = 0; i < oldWeights.size(); i ++){
-                newWeight.add(oldWeights.get(i) - (c)*grad.get(i));
+        for(int i = 0; i < oldWeights.size(); i ++){
+            double deltaW;
+            if(descentAlg.equals("constant")){
+                deltaW = c * grad.get(i);
+            } else if(descentAlg.equals("simple")){
+                deltaW = (c / t) * grad.get(i);
+            } else if(descentAlg.equals("sqrt")){
+                deltaW = (c / Math.sqrt(t)) * grad.get(i);
+            } else if(descentAlg.equals("adagrad")){
+                deltaW = (c / Math.sqrt(t)) * grad.get(i);
+            } else if(descentAlg.equals("rmsProp")) {
+                deltaW = (c / Math.sqrt(t)) * grad.get(i);
+            } else {
+                Log.e("InternalServer", "Invalid descent algorithm. Defaulting to \'simple\'.");
+                deltaW = (c / t) * grad.get(i);
             }
-        }
-
-        if(descentAlg.equals("simple")){
-            for(int i = 0; i < oldWeights.size(); i ++){
-                newWeight.add(oldWeights.get(i) - (c/t)*grad.get(i));
-            }
-        }
-
-        if(descentAlg.equals("sqrt")){
-            for(int i = 0; i < oldWeights.size(); i ++){
-                newWeight.add(oldWeights.get(i) - (c/Math.sqrt(t))*grad.get(i));
-            }
+            newWeight.add(oldWeights.get(i) - deltaW);
         }
 
         return newWeight;
-
     }
 }

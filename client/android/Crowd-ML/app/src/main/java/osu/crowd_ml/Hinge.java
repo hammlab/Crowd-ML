@@ -32,20 +32,21 @@ public class Hinge implements LossFunction{
 
         //dot product w*x
         double dot = 0;
-        for (int j = 0; j < D; j++) {
-            dot += weights.get(j) * X[j];
+        double[] regular = new double[D];
+        for (int i = 0; i < D; i++) {
+            double weight = weights.get(i);
+            dot += weight * X[i];
+            regular[i] = 2 * weight * L;
         }
 
-        double[] regular = new double[D];
-        for(int i = 0; i < D; i++){
-            regular[i] = 2*weights.get(i)*L;
-        }
+//        for(int i = 0; i < D; i++){
+//            regular[i] = 2*weights.get(i)*L;
+//        }
 
         for(int i = 0; i < D; i++){
             if(Y*dot < 1){
                 grad.set(i, (-1)*Y*X[i] + regular[i]);
-            }
-            else{
+            } else {
                 grad.set(i, 0 + regular[i]);
             }
         }

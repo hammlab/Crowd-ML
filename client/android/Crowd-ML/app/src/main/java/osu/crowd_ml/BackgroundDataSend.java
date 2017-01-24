@@ -43,7 +43,10 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Date;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Random;
 
 public class BackgroundDataSend extends Service {
 
@@ -64,7 +67,6 @@ public class BackgroundDataSend extends Service {
     private int gradientIteration = 0;
     private int dataCount = 0;
     private boolean ready = false;
-    private boolean autosend = true;
     private boolean init = false;
 
     private ValueEventListener userListener;
@@ -96,14 +98,11 @@ public class BackgroundDataSend extends Service {
 
     private int length;
 
-    @Nullable
-    @Override
-    public IBinder onBind(Intent intent) {
+    @Nullable @Override public IBinder onBind(Intent intent) {
         return null;
     }
 
-    @Override
-    public void onCreate() {
+    @Override public void onCreate() {
         super.onCreate();
         //Toast.makeText(this, "Service created.", Toast.LENGTH_SHORT).show();
         // Step 1. Get shared preferences.
@@ -122,19 +121,17 @@ public class BackgroundDataSend extends Service {
         params = new Parameters();
     }
 
-    @Override
-    public int onStartCommand(Intent intent, int flags, int startId) {
+    @Override public int onStartCommand(Intent intent, int flags, int startId) {
         super.onStartCommand(intent, flags, startId);
 
         // Step 1. Add parameters listener.
         paramListener = parameters.addValueEventListener(new ValueEventListener() {
-            @Override
-            public void onDataChange(DataSnapshot dataSnapshot) {
+            @Override public void onDataChange(DataSnapshot dataSnapshot) {
+                Log.d("onDataChange", "Got parameters");
                 onParameterDataChange(dataSnapshot);
             }
 
-            @Override
-            public void onCancelled(DatabaseError error) {
+            @Override public void onCancelled(DatabaseError error) {
                 // Parameter listener error
                 Log.d("BackgroundDataSend", "Parameter listener error");
             }
@@ -142,31 +139,44 @@ public class BackgroundDataSend extends Service {
 
         // Step 2. Add weight listener.
         weightListener = weights.addValueEventListener(new ValueEventListener() {
-            @Override
-            public void onDataChange(DataSnapshot dataSnapshot) {
+            @Override public void onDataChange(DataSnapshot dataSnapshot) {
+                // TODO: Need some way to signal when weights and parameters are set for training to resume.
+                Log.d("onDataChange", "Got weights");
                 weightVals = dataSnapshot.getValue(TrainingWeights.class);
-                Log.d("Weight size", weightVals.getWeights().get(0).size() + "");
             }
 
-            @Override
-            public void onCancelled(DatabaseError error) {
+            @Override public void onCancelled(DatabaseError error) {
                 // Weight event listener error
                 //message.setText("Weight event listener error");
+                Log.d("BackgroundDataSend", "Weights listener error");
             }
         });
 
-        // Step 3. Send the training data.
-        sendTrainingData();
+        /**
+         * This doesn't do anything. {@code sendTrainingData} checks for {@code ready} var, which is initialized to false
+         **/
+        //sendTrainingData();
+
+        // Step 3. Set up the order array for random access of training samples.
+//        order = new ArrayList<>();
+//        for (int i = 0; i < N; i++) //create sequential list of input sample #s
+//            order.add(i);
+//        Collections.shuffle(order); //randomize order
 
         return START_STICKY;
     }
 
-    @Override
-    public void onDestroy() {
+    @Override public void onDestroy() {
         super.onDestroy();
-        parameters.removeEventListener(paramListener);
-        weights.removeEventListener(weightListener);
-        userValues.removeEventListener(userListener);
+        if (paramListener != null)
+            parameters.removeEventListener(paramListener);
+
+        if (weightListener != null)
+            weights.removeEventListener(weightListener);
+
+        if (userListener != null)
+            userValues.removeEventListener(userListener);
+
         paramListener = null;
         userListener = null;
         weightListener = null;
@@ -179,7 +189,6 @@ public class BackgroundDataSend extends Service {
         // Step 2. Set parameters.
         setParameters();
         setLength();
-        dataCount = 0;
 
         if(loss.lossType().equals("binary") && K > 2){
             // Error: Binary classifier used on non-binary data
@@ -189,9 +198,14 @@ public class BackgroundDataSend extends Service {
         // Must call setLength() before this line
         learningRateDenom = new ArrayList<>(Collections.nCopies(length, 0.0d));
 
-        System.out.println("Learning rate denom: " + learningRateDenom.size());
+        // Must clear the sample order list of previous contents.
+        order = new ArrayList<>();
 
-        // Step 3. TODO: why do we add this here? This adds a new listener every time the parameters are update
+        // Calling this method after clearing the order list (the above line) will initialize
+        // it to a list of size N consisting of int values in the range [0, N) in random order.
+        maintainSampleOrder();
+
+        // Step 3. TODO: why do we add this here? This adds a new listener every time the parameters are updated
         addUserListener();
     }
 
@@ -203,13 +217,6 @@ public class BackgroundDataSend extends Service {
         }
         if(loss.lossType().equals("NN")){
             length = D*nh + nh + nh*nh + nh + nh*K + K;
-        }
-    }
-
-    // TODO: Consider removing
-    private void fill(List<Double> l, double val){
-        for(int i = 0; i < length; i++){
-            l.add(val);
         }
     }
 
@@ -231,6 +238,9 @@ public class BackgroundDataSend extends Service {
         eps = params.getEps();
         descentAlg = params.getDescentAlg();
         maxIter = params.getMaxIter();
+
+        // Added to stop infinite send loop
+        dataCount = maxIter;
     }
 
     private void addUserListener(){
@@ -240,116 +250,82 @@ public class BackgroundDataSend extends Service {
         }
 
         userListener = userValues.addValueEventListener(new ValueEventListener() {
-            @Override
-            public void onDataChange(DataSnapshot dataSnapshot) {
+            @Override public void onDataChange(DataSnapshot dataSnapshot) {
+                Log.d("onDataChange", "Got user values.");
                 //internetServices(); wait for wifi
                 userCheck = dataSnapshot.getValue(UserData.class);
                 if(!init){
                     init = true;
                     initUser();
                 }
-                if (dataCount > 0 && userCheck.getGradientProcessed() && userCheck.getGradIter() == gradientIteration){
+
+                if (dataCount > 0 && userCheck.getGradientProcessed() && userCheck.getGradIter() == gradientIteration) {
                     if (localUpdateNum == 0){
                         sendGradient();
                     } else if (localUpdateNum > 0){
-                        ready = false;
-                        userData = new UserData();
-                        List<Double> weight = weightVals.getWeights().get(0);
-                        userData.setParamIter(paramIter);
-                        userData.setWeightIter(t);
-                        for (int i = 0; i < localUpdateNum; i++) {
-                            weight = internalWeightCalc(weight, t, i);
-                            t++;
-                        }
-                        // System.out.println("new weight " + weight);
-                        userData.setGradIter(++gradientIteration);
-                        userData.setGradientProcessed(false);
-                        userData.setGradients(weight);
-                        userValues.setValue(userData);
-                        dataCount--;
-                        ready = true;
+                        sendWeight();
                     }
                 }
 
-                if (dataCount == 0) {
-                    ready = true;
-
-                    //Auto-send used for testing
-                    if (autosend){
-                        autosend = false;
-
-                        order = new ArrayList<>();
-                        for (int i = 0; i < N; i++) { //create sequential list of input sample #s
-                            order.add(i);
-                        }
-                        Collections.shuffle(order); //randomize order
-                        dataCount = maxIter;
-                        System.out.println("maxIter " + dataCount);
-                        if (dataCount > N / batchSize) {
-                            dataCount = 0;
-                        }
-
-                        //message.setText("Sending Data");
-                        ready = false;
-                        //internetServices(); // TODO: Why wait here ... ?
-
-                        // TODO: Why check dataCount here, if we check it above?
-                        if (dataCount > 0 && dataCount <= N/batchSize && localUpdateNum == 0) {
-                            // Sending data
-                            //message.setText("Sending Data");
-                            ready = false; //TODO: isn't ready already false?
-                            //internetServices(); // TODO: ...  and here as well?
-                            sendGradient();
-                        }
-
-                        if (dataCount > 0  && localUpdateNum > 0) {
-                            // Sending data
-                            //message.setText("Sending Data");
-                            ready = false;
-
-                            userData = new UserData();
-                            List<Double> weight = weightVals.getWeights().get(0);
-                            Log.d("Weight size 2", weight.size() + "");
-                            userData.setParamIter(paramIter);
-                            userData.setWeightIter(t);
-
-                            // Calc new weights using local update num
-                            for (int i = 0; i < localUpdateNum; i++) {
-                                weight = internalWeightCalc(weight, t, i);
-                                t++;
-                            }
-
-                            userData.setGradIter(++gradientIteration);
-                            userData.setGradientProcessed(false);
-                            userData.setGradients(weight);
-                            userValues.setValue(userData);
-                            dataCount--;
-
-                            ready = true;
-
-                        }
-                    }
-                }
+//                if (dataCount == 0) {
+//                    //ready = true;
+//
+//                    order = new ArrayList<>();
+//                    for (int i = 0; i < N; i++) { //create sequential list of input sample #s
+//                        order.add(i);
+//                    }
+//
+//                    Collections.shuffle(order); //randomize order
+//                    //dataCount = maxIter;
+//                    if (dataCount > N / batchSize) {
+//                        dataCount = 0;
+//                    }
+//
+//                    //ready = false;
+//                    //internetServices(); // TODO: Why wait here ... ?
+//
+//                    // TODO: Why check dataCount here, if we check it above?
+//                    //if (dataCount > 0 && dataCount <= N/batchSize && localUpdateNum == 0) {
+//                    if (dataCount > 0 && localUpdateNum == 0) {
+//                        // Sending data
+//                        //internetServices(); // TODO: ... and here as well?
+//                        sendGradient();
+//                    } else if (dataCount > 0 && localUpdateNum > 0) {
+//                        sendWeight();
+//                    }
+//                }
             }
 
-            @Override
-            public void onCancelled(DatabaseError firebaseError) {
+            @Override public void onCancelled(DatabaseError firebaseError) {
                 // Error
             }
         });
     }
 
     //allows for newly created users to initialize values
-    private void initUser(){
-        userData = new UserData();
-        userData.setParamIter(paramIter);
-        double weightIter = weightVals.getWeights().get(1).get(0);// TODO Why not getIteration()?
-        userData.setWeightIter(weightIter);
-        userData.setGradientProcessed(false);
+    private void initUser() {
         List<Double> initGrad = weightVals.getWeights().get(0);
-        userData.setGradients(initGrad);
-        userData.setGradIter(gradientIteration);
-        userValues.setValue(userData);
+        sendUserValues(initGrad, false, gradientIteration, weightVals.getIteration(), paramIter);
+    }
+
+    /**
+     * Maintains the sample order list.
+     * The sample order list is queried for random indices of training samples without replacement
+     * (until all values are removed, that is).
+     *
+     * If order is null, order will be initialized to an empty list. If order is empty, the list
+     * will be filled with int values in the range [0, N), then shuffled.
+     */
+    private void maintainSampleOrder(){
+        if (order == null){
+            order = new ArrayList<>();
+        }
+
+        if (order.isEmpty()){
+            for (int i = 0; i < N; i++) //create sequential list of input sample #s
+                order.add(i);
+            Collections.shuffle(order); //randomize order
+        }
     }
 
     private void sendTrainingData(){
@@ -361,24 +337,25 @@ public class BackgroundDataSend extends Service {
 
         // Sending data
         if (ready && dataCount > 0){
-            if (dataCount <= N/batchSize && localUpdateNum == 0) {
-                ready = false;
+            ready = false;
+            //if (dataCount <= N/batchSize && localUpdateNum == 0) {
+            if (localUpdateNum == 0) {
                 // TODO
                 //internetServices(); wait for wifi
                 sendGradient();
-            } else if (dataCount <= N/(batchSize*localUpdateNum) && localUpdateNum > 0) {
-                ready = false;
-
-                userData = new UserData();
+            //} else if (dataCount <= N/(batchSize*localUpdateNum) && localUpdateNum > 0) {
+            } else if (localUpdateNum > 0) {
+                Log.d("sendTrainingData", "Need the weights");
                 List<Double> weights = weightVals.getWeights().get(0);
-                userData.setParamIter(paramIter);
-                userData.setWeightIter(t);
-
                 for (int i = 0; i < localUpdateNum; i++) {
-                    weights = internalWeightCalc(weights, t, i);
+                    weights = internalWeightCalc(weights);
                     t++;
                 }
 
+                Log.d("sendTrainingData", "Sending gradient");
+                userData = new UserData();
+                userData.setParamIter(paramIter);
+                userData.setWeightIter(t);
                 userData.setGradIter(++gradientIteration);
                 userData.setGradientProcessed(false);
                 userData.setGradients(weights);
@@ -391,114 +368,128 @@ public class BackgroundDataSend extends Service {
     }
 
     private void sendGradient(){
-        userData = new UserData();
-        userData.setParamIter(paramIter);
-        double weightIter = weightVals.getWeights().get(1).get(0); //TODO Why not getIteration()?
-        userData.setWeightIter(weightIter);
+        // Get current weights.
+        List<Double> weights = weightVals.getWeights().get(0);
 
-        List<Integer> batchSamples = new ArrayList<>();
-        List<Double> currentWeights = weightVals.getWeights().get(0);
-        int batchSlot = 0;
-        while(dataCount > 0 && batchSlot < batchSize) {
-            batchSamples.add(order.get((batchSize*(dataCount-1) + batchSlot)));
-            batchSlot++;
-        }
+        // Compute the gradient with random noise added.
+        List<Double> noisyGrad = computeNoisyGrad(weights);
 
+        Log.d("sendGradient", "Sending gradient.");
+        // Send the gradient to the server.
+        sendUserValues(noisyGrad, false, ++gradientIteration, weightVals.getIteration(), paramIter);
+
+        // Decrease iteration
         dataCount--;
-        xBatch = readSamples(batchSamples);
-        yBatch = readLabels(batchSamples);
-        List<Double> avgGrad = new ArrayList<>(length);
-        for(int i = 0; i < length; i ++){
-            avgGrad.add(0.0);
-        }
-
-        for(int i = 0; i < batchSize; i++){
-            double[] X = xBatch.get(i);
-            int Y = yBatch.get(i);
-            List<Double> grad = loss.gradient(currentWeights, X, Y, D, K, L, nh);
-
-            double sum;
-            for(int j = 0; j < length; j++) {
-                sum = avgGrad.get(j) + grad.get(j);
-                avgGrad.set(j,sum);
-            }
-        }
-
-        double total;
-        for(int i = 0; i < length; i++) {
-            total = avgGrad.get(i);
-            avgGrad.set(i, total/batchSize);
-        }
-
-        List<Double> noisyGrad = new ArrayList<>(length);
-        for (int j = 0; j < length; j++){
-            noisyGrad.add(dist.noise(avgGrad.get(j), noiseScale));
-        }
-
-        System.out.println("sendGradient");
-        userData.setGradientProcessed(false);
-        userData.setGradients(noisyGrad);
-        userData.setGradIter(++gradientIteration);
-        userValues.setValue(userData);
-        avgGrad.clear();
     }
 
-    private List<Double> internalWeightCalc(List<Double> weights, float weightIter, int localUpdateIter){
+    private void sendWeight(){
+        // Get current weights.
+        List<Double> weights = weightVals.getWeights().get(0);
 
+        // Calc new weights using local update num.
+        for (int i = 0; i < localUpdateNum; i++) {
+            weights = internalWeightCalc(weights);
+            t++;
+        }
+
+        // Send the gradient to the server.
+        sendUserValues(weights, false, ++gradientIteration, t, paramIter);
+
+        // Decrease iteration.
+        dataCount--;
+    }
+
+    private void sendUserValues(List<Double> gradientsOrWeights, boolean gradientProcessed, int gradIter, int weightIter, int paramIter){
+        userValues.setValue(
+            new UserData(gradientsOrWeights, gradientProcessed, gradIter, weightIter, paramIter)
+        );
+    }
+
+    private List<Integer> gatherBatchSamples(){
         List<Integer> batchSamples = new ArrayList<>();
-        int batchSlot = 0;
-        while(dataCount > 0 && batchSlot < batchSize) {
-            //batchSamples.add(order.get((batchSize*localUpdateNum*(dataCount-1) + batchSlot*(localUpdateIter+1))));
-            batchSamples.add(order.get((batchSize*localUpdateNum*(dataCount-1) + batchSlot*(localUpdateIter+1))));
-            batchSlot++;
-        }
 
-        xBatch = readSamples(batchSamples);
-        yBatch = readLabels(batchSamples);
-        List<Double> avgGrad = new ArrayList<>(length);
-        for(int i = 0; i < length; i ++){
-            avgGrad.add(0.0);
-        }
+        int i = 0; // counter
+        Random r = new Random(); // rng
 
+        // Loop batchSize times
+        while(i < batchSize) {
+            // Calling this method here ensures that the order list is never empty. When the order
+            // list becomes empty, a new epoch of training occurs as the list is repopulated with
+            // random int values in the range [0, N).
+            maintainSampleOrder();
+
+            // get a random index in the range [0, |order|) to query the order list.
+            int q = r.nextInt(order.size());
+
+            // Remove the value at index q and add it to the current batch of samples.
+            batchSamples.add(order.remove(q));
+            i++; // counter
+        }
+        return batchSamples;
+    }
+
+    private List<Double> computeAverageGrad(List<double[]> X, List<Integer> Y, List<Double> weights){
+        // Init average gradient vector
+        List<Double> avgGrad = new ArrayList<>(Collections.nCopies(length, 0.0d));
+
+        // For each sample, compute the gradient averaged over the whole batch.
         for(int i = 0; i < batchSize; i++){
-            double[] X = xBatch.get(i);
-            int Y = yBatch.get(i);
-            Log.d("Weight size 3", weights.size() + "");
-            List<Double> grad = loss.gradient(weights, X, Y, D, K, L, nh);
+            double[] x = X.get(i); // current sample feature
+            int y = Y.get(i); // current label
 
-            double sum;
-            for(int j = 0; j < length; j++) {
-                sum = avgGrad.get(j) + grad.get(j);
-                avgGrad.set(j,sum); // TODO: Consider dividing by batchSize here
-            }
+            // Compute the gradient.
+            List<Double> grad = loss.gradient(weights, x, y, D, K, L, nh);
+
+            // Add the current normalized gradient to the avg gradient vector.
+            for(int j = 0; j < length; j++)
+                avgGrad.set(j, (avgGrad.get(j) + grad.get(j)) / batchSize);
         }
 
-        // TODO: This loop may not be necessary. May just have to divide by batchSize above
-        double sum;
-        for(int i = 0; i < length; i++) {
-            sum = avgGrad.get(i);
-            avgGrad.set(i, sum/batchSize);
-        }
+        return avgGrad;
+    }
 
-        List<Double> noisyGrad = new ArrayList<>(length);
-        for (int j = 0; j < length; j++){
-            noisyGrad.add(dist.noise(avgGrad.get(j), noiseScale));
-        }
+    private List<Double> computeNoisyGrad(List<Double> weights){
+        // Init training sample batch
+        List<Integer> batchSamples = gatherBatchSamples();//new ArrayList<>();
 
+        // Get training sample features.
+        List<double[]> xBatch = readSamples(batchSamples);
+
+        // Get training sample labels.
+        List<Integer> yBatch = readLabels(batchSamples);
+
+        // Init gradient vector
+        List<Double> avgGrad = computeAverageGrad(xBatch, yBatch, weights);
+
+        // Init empty noisy gradient vector
+        List<Double> noisyGrad = new ArrayList<>();
+
+        // Add random noise probed from the client's noise distribution.
+        for (double avg : avgGrad)
+            noisyGrad.add(dist.noise(avg, noiseScale));
+
+        return noisyGrad;
+    }
+
+    private List<Double> internalWeightCalc(List<Double> weights){
+        // Compute the gradient with random noise added
+        List<Double> noisyGrad = computeNoisyGrad(weights);
+
+        // Set the learningRateDenom if the descent alg is adagrad or rmsProp
         if(descentAlg.equals("adagrad")){
             for(int j = 0; j < length; j++){
-                double learningRate = learningRateDenom.get(j) + noisyGrad.get(j)*noisyGrad.get(j);
+                double learningRate = learningRateDenom.get(j) + noisyGrad.get(j) * noisyGrad.get(j);
                 learningRateDenom.set(j, learningRate);
             }
-        }
-        else if (descentAlg.equals("rmsProp")){
+        } else if (descentAlg.equals("rmsProp")){
             for(int j = 0; j < length; j++){
                 double learningRate = 0.9 * learningRateDenom.get(j) + 0.1 * noisyGrad.get(j)*noisyGrad.get(j);
                 learningRateDenom.set(j, learningRate);
             }
         }
 
-        return InternalServer.calcWeight(weights, learningRateDenom, noisyGrad, weightIter, descentAlg, c, eps);
+        // Return the updated weights
+        return InternalServer.calcWeight(weights, learningRateDenom, noisyGrad, t, descentAlg, c, eps);
     }
 
     public List<double[]> readSamples(List<Integer> sampleBatch){
