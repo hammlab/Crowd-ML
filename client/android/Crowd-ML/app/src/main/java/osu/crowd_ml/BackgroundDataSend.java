@@ -21,13 +21,9 @@ import android.app.Service;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
-import android.os.Bundle;
 import android.os.IBinder;
 import android.support.annotation.Nullable;
 import android.util.Log;
-import android.widget.EditText;
-import android.widget.TextView;
-import android.widget.Toast;
 
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
@@ -41,10 +37,7 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collection;
 import java.util.Collections;
-import java.util.Date;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Random;
 
@@ -58,7 +51,6 @@ public class BackgroundDataSend extends Service {
     final static DatabaseReference parameters = ref.child("parameters");
     DatabaseReference userValues;
 
-    private UserData userData;
     private String UID;
     private List<Integer> order;
     private TrainingWeights weightVals;
@@ -66,7 +58,6 @@ public class BackgroundDataSend extends Service {
     private UserData userCheck;
     private int gradientIteration = 0;
     private int dataCount = 0;
-    private boolean ready = false;
     private boolean init = false;
 
     private ValueEventListener userListener;
@@ -93,9 +84,6 @@ public class BackgroundDataSend extends Service {
     private int t = 1;
     private List<Double> learningRateDenom;
 
-    private List<double[]> xBatch = new ArrayList<>();
-    private List<Integer> yBatch = new ArrayList<>();
-
     private int length;
 
     @Nullable @Override public IBinder onBind(Intent intent) {
@@ -104,7 +92,6 @@ public class BackgroundDataSend extends Service {
 
     @Override public void onCreate() {
         super.onCreate();
-        //Toast.makeText(this, "Service created.", Toast.LENGTH_SHORT).show();
         // Step 1. Get shared preferences.
         SharedPreferences preferences = getSharedPreferences("UserPreferences", Context.MODE_PRIVATE);
 
@@ -151,17 +138,6 @@ public class BackgroundDataSend extends Service {
                 Log.d("BackgroundDataSend", "Weights listener error");
             }
         });
-
-        /**
-         * This doesn't do anything. {@code sendTrainingData} checks for {@code ready} var, which is initialized to false
-         **/
-        //sendTrainingData();
-
-        // Step 3. Set up the order array for random access of training samples.
-//        order = new ArrayList<>();
-//        for (int i = 0; i < N; i++) //create sequential list of input sample #s
-//            order.add(i);
-//        Collections.shuffle(order); //randomize order
 
         return START_STICKY;
     }
@@ -266,34 +242,6 @@ public class BackgroundDataSend extends Service {
                         sendWeight();
                     }
                 }
-
-//                if (dataCount == 0) {
-//                    //ready = true;
-//
-//                    order = new ArrayList<>();
-//                    for (int i = 0; i < N; i++) { //create sequential list of input sample #s
-//                        order.add(i);
-//                    }
-//
-//                    Collections.shuffle(order); //randomize order
-//                    //dataCount = maxIter;
-//                    if (dataCount > N / batchSize) {
-//                        dataCount = 0;
-//                    }
-//
-//                    //ready = false;
-//                    //internetServices(); // TODO: Why wait here ... ?
-//
-//                    // TODO: Why check dataCount here, if we check it above?
-//                    //if (dataCount > 0 && dataCount <= N/batchSize && localUpdateNum == 0) {
-//                    if (dataCount > 0 && localUpdateNum == 0) {
-//                        // Sending data
-//                        //internetServices(); // TODO: ... and here as well?
-//                        sendGradient();
-//                    } else if (dataCount > 0 && localUpdateNum > 0) {
-//                        sendWeight();
-//                    }
-//                }
             }
 
             @Override public void onCancelled(DatabaseError firebaseError) {
@@ -325,45 +273,6 @@ public class BackgroundDataSend extends Service {
             for (int i = 0; i < N; i++) //create sequential list of input sample #s
                 order.add(i);
             Collections.shuffle(order); //randomize order
-        }
-    }
-
-    private void sendTrainingData(){
-        order = new ArrayList<>();
-        for (int i = 0; i < N; i++) { //create sequential list of input sample #s
-            order.add(i);
-        }
-        Collections.shuffle(order); //randomize order
-
-        // Sending data
-        if (ready && dataCount > 0){
-            ready = false;
-            //if (dataCount <= N/batchSize && localUpdateNum == 0) {
-            if (localUpdateNum == 0) {
-                // TODO
-                //internetServices(); wait for wifi
-                sendGradient();
-            //} else if (dataCount <= N/(batchSize*localUpdateNum) && localUpdateNum > 0) {
-            } else if (localUpdateNum > 0) {
-                Log.d("sendTrainingData", "Need the weights");
-                List<Double> weights = weightVals.getWeights().get(0);
-                for (int i = 0; i < localUpdateNum; i++) {
-                    weights = internalWeightCalc(weights);
-                    t++;
-                }
-
-                Log.d("sendTrainingData", "Sending gradient");
-                userData = new UserData();
-                userData.setParamIter(paramIter);
-                userData.setWeightIter(t);
-                userData.setGradIter(++gradientIteration);
-                userData.setGradientProcessed(false);
-                userData.setGradients(weights);
-                userValues.setValue(userData);
-                dataCount--;
-
-                ready = true;
-            }
         }
     }
 
