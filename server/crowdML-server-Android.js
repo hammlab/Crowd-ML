@@ -76,7 +76,8 @@ for(i = 0; i < length; i++){
 	initWeight[i] = (Math.random() - 0.5);
 	//initWeight[i] = 1;
 	adaG[i] = 0;
-	rms[i] = 0;}
+	rms[i] = 0;
+}
 weightSet = [initWeight, iterArray];
 weight.update({
 	weights: weightSet,
@@ -142,7 +143,7 @@ users.on("child_changed", function(snapshot) {
 });
 
 console.log("listeners set");
- 
+
 function addToGradBatch(gradient){
 	gradBatch.push(gradient);
 	gradBatchSize++;

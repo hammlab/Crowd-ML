@@ -22,10 +22,9 @@ See the License for the specific language governing permissions and
 limitations under the License
 */
 
-public class InternalServer {
+class InternalServer {
 
-    // TODO: Why are learningRateDenom and eps not used?
-    public static List<Double> calcWeight(List<Double> oldWeights, List<Double> learningRateDenom, List<Double> grad, float t, String descentAlg, double c, double eps){
+    static List<Double> calcWeight(List<Double> oldWeights, List<Double> grad, List<Double> learningRate, float t, String descentAlg, double c, double eps){
 
         List<Double> newWeight = new ArrayList<>(oldWeights.size());
 
@@ -38,9 +37,13 @@ public class InternalServer {
             } else if(descentAlg.equals("sqrt")){
                 deltaW = (c / Math.sqrt(t)) * grad.get(i);
             } else if(descentAlg.equals("adagrad")){
-                deltaW = (c / Math.sqrt(t)) * grad.get(i);
+                double adagradRate = learningRate.get(i) + grad.get(i) * grad.get(i);
+                learningRate.set(i, c / Math.sqrt(adagradRate + eps));
+                deltaW = learningRate.get(i) * grad.get(i);
             } else if(descentAlg.equals("rmsProp")) {
-                deltaW = (c / Math.sqrt(t)) * grad.get(i);
+                double rmsRate = 0.9 * learningRate.get(i) + 0.1 * grad.get(i) * grad.get(i);
+                learningRate.set(i, c / Math.sqrt(rmsRate + eps));
+                deltaW = learningRate.get(i) * grad.get(i);
             } else {
                 Log.e("InternalServer", "Invalid descent algorithm. Defaulting to \'simple\'.");
                 deltaW = (c / t) * grad.get(i);

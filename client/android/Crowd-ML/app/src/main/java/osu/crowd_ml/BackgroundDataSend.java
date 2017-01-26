@@ -82,7 +82,7 @@ public class BackgroundDataSend extends Service {
     private String descentAlg;
     private int maxIter;
     private int t = 1;
-    private List<Double> learningRateDenom;
+    private List<Double> learningRate;
 
     private int length;
 
@@ -171,8 +171,8 @@ public class BackgroundDataSend extends Service {
             dataCount = -1;
         }
 
-        // Must call setLength() before this line
-        learningRateDenom = new ArrayList<>(Collections.nCopies(length, 0.0d));
+        // Must call setLength() before these lines
+        learningRate = new ArrayList<>(Collections.nCopies(length, 0.0d));
 
         // Must clear the sample order list of previous contents.
         order = new ArrayList<>();
@@ -384,21 +384,21 @@ public class BackgroundDataSend extends Service {
         // Compute the gradient with random noise added
         List<Double> noisyGrad = computeNoisyGrad(weights);
 
-        // Set the learningRateDenom if the descent alg is adagrad or rmsProp
-        if(descentAlg.equals("adagrad")){
-            for(int j = 0; j < length; j++){
-                double learningRate = learningRateDenom.get(j) + noisyGrad.get(j) * noisyGrad.get(j);
-                learningRateDenom.set(j, learningRate);
-            }
-        } else if (descentAlg.equals("rmsProp")){
-            for(int j = 0; j < length; j++){
-                double learningRate = 0.9 * learningRateDenom.get(j) + 0.1 * noisyGrad.get(j)*noisyGrad.get(j);
-                learningRateDenom.set(j, learningRate);
-            }
-        }
+        // Set the learningRate if the descent alg is adagrad or rmsProp
+//        if(descentAlg.equals("adagrad")){
+//            for(int j = 0; j < length; j++) {
+//                double learningRate = learningRate.get(j) + noisyGrad.get(j) * noisyGrad.get(j);
+//                learningRate.set(j, c / Math.sqrt(learningRate + eps));
+//            }
+//        } else if (descentAlg.equals("rmsProp")){
+//            for(int j = 0; j < length; j++) {
+//                double learningRate = 0.9 * learningRate.get(j) + 0.1 * noisyGrad.get(j) * noisyGrad.get(j);
+//                learningRate.set(j, c / Math.sqrt(learningRate + eps));
+//            }
+//        }
 
         // Return the updated weights
-        return InternalServer.calcWeight(weights, learningRateDenom, noisyGrad, t, descentAlg, c, eps);
+        return InternalServer.calcWeight(weights, noisyGrad, learningRate, t, descentAlg, c, eps);
     }
 
     public List<double[]> readSamples(List<Integer> sampleBatch){
