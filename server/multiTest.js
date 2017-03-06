@@ -44,6 +44,8 @@
 
 		var accuracy = 100*correct/N;
 		console.log('Accuracy: ', accuracy, '%')
+		console.log('Correct : ', correct)
+		console.log('Total   : ', N)
 	}
 
 	exports.accuracy = accuracy;

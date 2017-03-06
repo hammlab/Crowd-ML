@@ -3,27 +3,27 @@ var serviceAccount = 'Crowd-ML-e591994762fe.json';
 var databaseURL = 'https://crowd-ml-6228f.firebaseio.com/';
 var D = 50;
 var maxWeightBatchSize = 1;
-var localUpdateNum = 0;
+var localUpdateNum = 100;
 var maxGradBatchSize = 1;
-var naughtRate = 10;
+var naughtRate = .1;
 var eps = 0.0000001;
 var K = 10;
 var descentAlg = 'adagrad'; //simple, sqrt, adagrad, rmsProp
 var testFeatures = 'MNISTTestImages.50.l2.dat';
 var testLabels = 'MNISTTestLabels.dat';
 var testN = 1000;
-var testType = 'binaryTest'; //none, binary, multitest
+var testType = 'multiTest';//'binaryTest'; //none, binary, multitest
 var testFrequency = 1;
-var maxIter = 100;
+var maxIter = 10000;
 
 var L = 1e-6;
 var noiseScale = 1;
 var noiseDistribution = 'NoNoise';
-var lossFunction = 'Hinge';
+var lossFunction = 'Softmax';//'Hinge';
 var labelSource = 'MNISTTrainLabels.dat';
 var featureSource = 'MNISTTrainImages.50.l2.dat';
 var N = 60000;
-var clientBatchSize = 10;
+var clientBatchSize = 100;
 var nh = 75;
 
 // Node.js error exit code is 1, success is 0 (default)

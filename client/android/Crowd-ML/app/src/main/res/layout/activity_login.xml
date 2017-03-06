@@ -29,7 +29,7 @@
             android:layout_centerHorizontal="true"
             android:layout_marginBottom="60dp"
             android:id="@+id/toggle_button"
-            android:visibility="invisible"/>
+            android:visibility="visible"/>
 
         <TextView
             android:text="Service is Running."
@@ -39,7 +39,7 @@
             android:layout_centerHorizontal="true"
             android:layout_marginBottom="28dp"
             android:id="@+id/service_status"
-            android:visibility="invisible"/>
+            android:visibility="visible"/>
 
         <TextView
             android:text="User sign in."
@@ -62,13 +62,13 @@
             android:layout_height="wrap_content"
             android:id="@+id/progress"
             android:indeterminate="true"
-            android:visibility="invisible"
+            android:visibility="visible"
             android:layout_below="@+id/message"
             android:layout_centerHorizontal="true"
             android:layout_marginTop="49dp" />
 
         <TextView
-            android:text="Control the size of the batch you send to the server.\n(Default is 1)"
+            android:text="Use this to toggle the wifi"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_below="@+id/progress"
@@ -76,20 +76,17 @@
             android:layout_marginTop="55dp"
             android:gravity="center"
             android:id="@+id/batch_size_text"
-            android:visibility="invisible"/>
+            android:visibility="visible"/>
 
-        <EditText
+        <ToggleButton
+            android:text="Toggle Service"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:inputType="number"
-            android:text="1"
-            android:ems="3"
+            android:id="@+id/wifi_toggle"
+            android:visibility="visible"
             android:layout_below="@+id/batch_size_text"
-            android:layout_centerHorizontal="true"
-            android:layout_marginTop="17dp"
-            android:background="@drawable/textview_border"
-            android:id="@+id/batch_size"
-            android:visibility="invisible"/>
+            android:layout_alignStart="@+id/toggle_button"
+            android:layout_marginTop="35dp" />
 
     </RelativeLayout>
     <!--<include layout="@layout/content_setup" />-->
