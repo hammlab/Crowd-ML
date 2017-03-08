@@ -28,7 +28,7 @@ public class Softmax implements LossFunction{
 
     public List<Double> gradient(List<Double> weights, double[] X, int Y, int D, int K, double L, int nh){
 
-        List<Double> grad = new ArrayList<Double>(D*K);
+        List<Double> grad = new ArrayList<>(D*K);
         for(int i = 0; i < D*K; i++){
             grad.add(i, 0.0);
         }
