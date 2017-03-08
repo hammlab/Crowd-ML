@@ -135,10 +135,10 @@ public class Login extends AppCompatActivity implements ILoginView, View.OnClick
                 mSignInStatus.setText("All Signed in!");
 
                 // Step 2. Start the service.
-                startService(new Intent(Login.this, TestService.class));
+                startService(new Intent(Login.this, BackgroundDataSend.class));
 
                 // Step 3. Verify that the service is running.
-                if (isServiceRunning(TestService.class)){
+                if (isServiceRunning(BackgroundDataSend.class)){
                     mServiceStatus.setText("Service is running. Check button to stop.");
                     mToggle.setChecked(true);
                 } else {
@@ -235,11 +235,10 @@ public class Login extends AppCompatActivity implements ILoginView, View.OnClick
             if(tb.isChecked()){
 
                 // Step 1. Start the service.
-                startService(new Intent(Login.this, TestService.class));
-                Log.d("Starting test service", "lol");
+                startService(new Intent(Login.this, BackgroundDataSend.class));
 
                 // Step 2. Verify the service is running.
-                if (isServiceRunning(TestService.class)){
+                if (isServiceRunning(BackgroundDataSend.class)){
                     mServiceStatus.setText("Service is running. Check button to stop.");
                 } else {
                     // Error
@@ -249,10 +248,9 @@ public class Login extends AppCompatActivity implements ILoginView, View.OnClick
             } else {
 
                 // Step 1. Stop the service
-                stopService(new Intent(Login.this, TestService.class));
-                Log.d("stopping test service", "lol");
+                stopService(new Intent(Login.this, BackgroundDataSend.class));
                 // Step 2. Verify the service is stopped.
-                if (!isServiceRunning(TestService.class)){
+                if (!isServiceRunning(BackgroundDataSend.class)){
                     mServiceStatus.setText("Service is not running. Check button to stop.");
                 } else {
                     // Error
@@ -274,15 +272,15 @@ public class Login extends AppCompatActivity implements ILoginView, View.OnClick
     @Override
     public void addUserInfoToPreferences(Bundle userInfo){
         // Step 1. Get shared preferences and preferences editor.
-//        MultiprocessPreferences.Editor editor = MultiprocessPreferences.getDefaultSharedPreferences(this).edit();
-//
-//        // Step 2. Extract necessary user info from bundle.
-//        editor.putString("email", userInfo.getString("email"));
-//        editor.putString("password", userInfo.getString("password"));
-//        editor.putString("uid", userInfo.getString("uid"));
-//
-//        // Step 3. Apply the additions to shared preferences.
-//        editor.apply();
+        MultiprocessPreferences.Editor editor = MultiprocessPreferences.getDefaultSharedPreferences(this).edit();
+
+        // Step 2. Extract necessary user info from bundle.
+        editor.putString("email", userInfo.getString("email"));
+        editor.putString("password", userInfo.getString("password"));
+        editor.putString("uid", userInfo.getString("uid"));
+
+        // Step 3. Apply the additions to shared preferences.
+        editor.apply();
     }
 
     private void setViewsInvisible (View... views){

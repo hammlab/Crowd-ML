@@ -31,23 +31,30 @@
 
         <service
             android:name=".BackgroundDataSend"
+            android:process=":datasend"
             android:exported="false">
             <intent-filter>
                 <action android:name="android.net.conn.CONNECTIVITY_CHANGE" />
             </intent-filter>
         </service>
-        <service
+<!--        <service
             android:name=".TestService"
-            android:process=":TestService"
+            android:process=":datasend"
             android:exported="false">
         <intent-filter>
             <action android:name="android.net.conn.CONNECTIVITY_CHANGE" />
         </intent-filter>
-        </service>
+        </service> -->
         <provider
             android:name="osu.crowd_ml.MultiprocessPreferences"
             android:authorities="@string/multiprocess_preferences_authority"
             android:exported="false" />
+        <provider
+            android:name=".FirebaseProvider"
+            android:authorities="osu.crowd_ml.FirebaseProvider"
+            android:process=":datasend"
+            android:exported="false"
+            android:syncable="false" />
     </application>
 
 </manifest>

@@ -154,12 +154,12 @@ public class BackgroundDataSend extends Service {
         Log.d("uid", UID);
 
         // Step 3. Get database references.
-//        userValues = ref.child("users").child(UID);
-//
-//        // Step 4. Initialize necessary data.
-//        weightVals = new TrainingWeights();
-//        userCheck = new UserData();
-//        params = new Parameters();
+        userValues = ref.child("users").child(UID);
+
+        // Step 4. Initialize necessary data.
+        weightVals = new TrainingWeights();
+        userCheck = new UserData();
+        params = new Parameters();
 
         // Step 5. Create a worker to handle wifi connectivity.
         wifiHandler = new WifiHandler(this);
@@ -170,16 +170,16 @@ public class BackgroundDataSend extends Service {
         wakeLock.acquire();
 
         // Step 7. Begin this service as a foreground service.
-        //Intent notificationIntent = new Intent(this, Login.class);
+        Intent notificationIntent = new Intent(this, Login.class);
 
-        //PendingIntent pendingIntent = PendingIntent.getActivity(this, 0,
-        //        notificationIntent, 0);
+        PendingIntent pendingIntent = PendingIntent.getActivity(this, 0,
+                notificationIntent, 0);
 
         Notification notification = new NotificationCompat.Builder(this)
                 .setSmallIcon(android.R.drawable.stat_notify_sync)
                 .setContentTitle("Background Service Running")
                 .setContentText("Processing data")
-                .build();
+                .setContentIntent(pendingIntent).build();
 
         /*
          * NOTE: A foreground service is used to decouple the service from the application. When a
@@ -195,7 +195,7 @@ public class BackgroundDataSend extends Service {
         Log.d("uid", "hello");
         super.onStartCommand(intent, flags, startId);
         Log.d("uid", "hello");
-        /*wifiThread = new Thread() {
+        wifiThread = new Thread() {
             @Override
             public void run() {
                 try {
@@ -227,7 +227,7 @@ public class BackgroundDataSend extends Service {
             }
         };
 
-        wifiThread.start();*/
+        wifiThread.start();
 
         return START_STICKY;
     }

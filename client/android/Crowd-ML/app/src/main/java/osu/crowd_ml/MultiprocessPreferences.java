@@ -15,7 +15,7 @@ import android.net.Uri;
 import android.os.Build;
 import android.preference.PreferenceManager;
 
-public class MultiprocessPreferences extends ContentProvider{
+public class MultiprocessPreferences extends ContentProvider {
 
     public static String PREFFERENCE_AUTHORITY;
     public static Uri BASE_URI;
