@@ -235,7 +235,11 @@ public class Login extends AppCompatActivity implements ILoginView, View.OnClick
             if(tb.isChecked()){
 
                 // Step 1. Start the service.
-                startService(new Intent(Login.this, BackgroundDataSend.class));
+                if (isServiceRunning(BackgroundDataSend.class)){
+                    Log.d("onClick", "Service already running.");
+                } else {
+                    startService(new Intent(Login.this, BackgroundDataSend.class));
+                }
 
                 // Step 2. Verify the service is running.
                 if (isServiceRunning(BackgroundDataSend.class)){
@@ -251,9 +255,10 @@ public class Login extends AppCompatActivity implements ILoginView, View.OnClick
                 stopService(new Intent(Login.this, BackgroundDataSend.class));
                 // Step 2. Verify the service is stopped.
                 if (!isServiceRunning(BackgroundDataSend.class)){
-                    mServiceStatus.setText("Service is not running. Check button to stop.");
+                    mServiceStatus.setText("Service is not running. Check button to start.");
                 } else {
                     // Error
+                    Log.d("onClick", "There was an error stopping the service.");
                     mServiceStatus.setText("There was an error stopping the service.");
                     mToggle.setChecked(true);
                 }

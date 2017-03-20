@@ -20,7 +20,6 @@ package osu.crowd_ml;
 import android.app.Notification;
 import android.app.PendingIntent;
 import android.app.Service;
-import android.content.Context;
 import android.content.Intent;
 import android.os.Handler;
 import android.os.IBinder;
@@ -143,7 +142,6 @@ public class BackgroundDataSend extends Service {
     }
 
     @Override public void onCreate() {
-        Log.d("uid", "hello");
         super.onCreate();
 
         // Step 1. Get shared preferences.
@@ -151,7 +149,6 @@ public class BackgroundDataSend extends Service {
 
         // Step 2. Extract necessary information
         UID = MultiprocessPreferences.getDefaultSharedPreferences(this).getString("uid", "");
-        Log.d("uid", UID);
 
         // Step 3. Get database references.
         userValues = ref.child("users").child(UID);
@@ -192,9 +189,7 @@ public class BackgroundDataSend extends Service {
     }
 
     @Override public int onStartCommand(Intent intent, int flags, int startId) {
-        Log.d("uid", "hello");
         super.onStartCommand(intent, flags, startId);
-        Log.d("uid", "hello");
         wifiThread = new Thread() {
             @Override
             public void run() {
@@ -287,10 +282,10 @@ public class BackgroundDataSend extends Service {
     }
 
     @Override public void onDestroy() {
-        super.onDestroy();
+
         Log.d("onDestroy", "Interrupting the wifi");
         // Step 1. End the wifi thread.
-        wifiThread.interrupt();
+        stopWifiThread();
 
         Log.d("onDestroy", "Stopping the worker thread.");
         // Step 2. End the worker thread, if running.
@@ -307,6 +302,12 @@ public class BackgroundDataSend extends Service {
         Log.d("onDestroy", "Releasing wakelock.");
         // Step 5. Release the wakelock.
         wakeLock.release();
+
+        // Step 6. Stop the service.
+        stopSelf();
+
+        // Step 7. Let Android destroy the rest.
+        super.onDestroy();
     }
 
     private void onParameterDataChange(DataSnapshot dataSnapshot){
@@ -424,12 +425,39 @@ public class BackgroundDataSend extends Service {
         });
     }
 
+    private void stopWifiThread(){
+        // Step 1. Check if the worker thread is non-null and running.
+        if (wifiThread != null && wifiThread.isAlive()){
+
+            // Step 2. Interrupt the thread.
+            wifiThread.interrupt();
+
+            // Step 3. Wait for the thread to die.
+            try {
+                wifiThread.join();
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            } finally {
+                Log.d("stopWifiThread", "Wifi thread ended.");
+            }
+        }
+    }
+
     private void stopWorkThread(){
         // Step 1. Check if the worker thread is non-null and running.
         if (workThread != null && workThread.isAlive()){
 
             // Step 2. Interrupt the thread.
             workThread.interrupt();
+
+            // Step 3. Wait for the thread to die.
+            try {
+                workThread.join();
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            } finally {
+                Log.d("stopWorkThread", "Work thread ended.");
+            }
         }
     }
 
