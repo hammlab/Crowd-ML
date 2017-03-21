@@ -14,6 +14,8 @@ npm install firebase-tools --save
 
 ## Pre-Setup -- Docker
 
+**NOTE**: One may not be able to run both Docker and an Android/iOS emulator. Consider using on device builds with the Docker container. 
+
 1. Install [Docker](http://docker.com/)
 2. Build the docker image and run the container:
 
