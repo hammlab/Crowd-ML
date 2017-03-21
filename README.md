@@ -44,14 +44,18 @@ from smartphones and IoT devices. More examples will be added in the near future
 ---
 #### 1. Set up firebase account.
 See [firebase/readme.md](firebase/readme.md) for more instructions.
+
 #### 2. Download and build client apps
 Currently, the client uses pre-stored local data such as MNIST.
-The users of this library should replace it with custom data sensing or collecting routines.
-For iOS devices, see [client/iOS/readme.md](client/iOS/readme.md).
-For Android devices, see [client/android/readme.md](client/android/readme.md).
-For python clients, see [client/python/readme.md](client/python/readme.md).
+The users of this library should replace it with custom data sensing or collecting routines. Specific instructions are available for:
+
+- iOS devices, see [client/iOS/readme.md](client/iOS/readme.md).
+- Android devices, see [client/android/readme.md](client/android/readme.md).
+- Python clients, see [client/python/readme.md](client/python/readme.md).
+
 #### 3. Download and change server-side app.
 See [server/readme.md](server/readme.md) for more instructions.
+
 #### 4. Distribute client apps to users and start the server-side app.
 
 
