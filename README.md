@@ -63,6 +63,7 @@ See [server/readme.md](server/readme.md) for more instructions.
 ---
 * Jihun Hamm (PI, OSU [homepage](https://web.cse.ohio-state.edu/~hammj/))
 * Tyler Zeller (Undergraduate, OSU)
+* David Soller (Undergraduate, OSU)
 * Sayam Ganguly (Graduate, OSU)
 * Jackson Luken (Undergraduate, OSU)
 * Yani Xie (Undergraduate, OSU)
