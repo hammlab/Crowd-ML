@@ -72,7 +72,7 @@ This research was supported in part by Google Faculty Research Award 2015 and Go
 
 
 ### References
----
+* [Hamm'17]: J. Hamm, J. Luken, Y. Xie, "Crowd-ML: A Library for Privacy-preserving Machine Learning on Smart Devices," IEEE International Conference on Acoustics, Speech and Signal Processing (ICASSP), 2017 [pdf](docs/icassp17_2_jh.pdf)
 * [Hamm'15]: J. Hamm, A. Champion, G. Chen, M. Belkin, and D.Xuan, 
 "Crowd-ML: A privacy-preserving learning framework for a crowd of smart devices." In Proceedings of the 35th IEEE
 International Conference on Distributed Computing Systems (ICDCS). IEEE, 2015. [pdf](docs/icdcs15_jh_final.pdf)
