@@ -36,7 +36,6 @@ import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
 
 import java.io.BufferedReader;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.lang.ref.WeakReference;
@@ -49,6 +48,7 @@ import osu.crowd_ml.utils.NetworkUtils;
 
 public class BackgroundDataSend extends Service {
 
+    // TODO(tylermzeller) this is never used. Consider removing.
     private static final int DEFAULT_BATCH_SIZE = 1;
 
     final static FirebaseDatabase database = FirebaseDatabase.getInstance();
@@ -62,6 +62,7 @@ public class BackgroundDataSend extends Service {
     private Thread workThread;
     private Handler wifiHandler;
     private volatile boolean isWifiConnected = false;
+    private boolean wifiDisconnect = false;
 
     // Wakelock
     private PowerManager.WakeLock wakeLock;
@@ -71,9 +72,9 @@ public class BackgroundDataSend extends Service {
     private TrainingWeights weightVals;
     private Parameters params;
     private UserData userCheck;
-    private int gradientIteration = 0;
+    private int gradientIteration;
     private int dataCount = 0;
-    private boolean init = false;
+    private boolean init;
 
     // Database Listeners
     private ValueEventListener userListener;
@@ -100,7 +101,7 @@ public class BackgroundDataSend extends Service {
     private double eps;
     private String descentAlg;
     private int maxIter;
-    private volatile int t = 1;
+    private volatile int t;
     private List<Double> learningRate;
 
     private int length;
@@ -127,11 +128,13 @@ public class BackgroundDataSend extends Service {
 
             isWifiConnected = true;
             addFirebaseListeners();
+            wifiDisconnect = false;
         } else if (msg.what == 1){
             stopWorkThread();
             if (VERBOSE_DEBUG)
                 Log.d("handleMessage", "Handling wifi disconnect.");
 
+            wifiDisconnect = true;
             isWifiConnected = false;
             removeFirebaseListeners();
         }
@@ -144,29 +147,26 @@ public class BackgroundDataSend extends Service {
     @Override public void onCreate() {
         super.onCreate();
 
-        // Step 1. Get shared preferences.
-        //SharedPreferences preferences = getSharedPreferences("UserPreferences", Context.MODE_PRIVATE);
-
-        // Step 2. Extract necessary information
+        // Step 1. Extract necessary information
         UID = MultiprocessPreferences.getDefaultSharedPreferences(this).getString("uid", "");
 
-        // Step 3. Get database references.
+        // Step 2. Get database references.
         userValues = ref.child("users").child(UID);
 
-        // Step 4. Initialize necessary data.
+        // Step 3. Initialize necessary data.
         weightVals = new TrainingWeights();
         userCheck = new UserData();
         params = new Parameters();
 
-        // Step 5. Create a worker to handle wifi connectivity.
+        // Step 4. Create a worker to handle wifi connectivity.
         wifiHandler = new WifiHandler(this);
 
-        // Step 6. Acquire a lock on the CPU for computation during sleep.
+        // Step 5. Acquire a lock on the CPU for computation during sleep.
         PowerManager powerManager = (PowerManager) getSystemService(POWER_SERVICE);
         wakeLock = powerManager.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "MyWakelockTag");
         wakeLock.acquire();
 
-        // Step 7. Begin this service as a foreground service.
+        // Step 6. Begin this service as a foreground service.
         Intent notificationIntent = new Intent(this, Login.class);
 
         PendingIntent pendingIntent = PendingIntent.getActivity(this, 0,
@@ -188,41 +188,47 @@ public class BackgroundDataSend extends Service {
 
     }
 
+    // Start command is called whenever focus is given back to the app (like when the user clicks
+    // the notification for the foreground service.
     @Override public int onStartCommand(Intent intent, int flags, int startId) {
         super.onStartCommand(intent, flags, startId);
-        wifiThread = new Thread() {
-            @Override
-            public void run() {
-                try {
-                    if (VERBOSE_DEBUG)
-                        Log.d("wifiThread", "Detecting Wifi.");
 
-                    // Step 1. Run thread until interrupted.
-                    while (!isInterrupted()) {
+        // Make sure there isn't already a wifi thread working.
+        if (wifiThread == null) {
+            wifiThread = new Thread() {
+                @Override
+                public void run() {
+                    try {
+                        if (VERBOSE_DEBUG)
+                            Log.d("wifiThread", "Detecting Wifi.");
 
-                        // Step 2. Check if a wifi connection is detected AND if the user can access the internet.
-                        if (NetworkUtils.isWifiConnected(BackgroundDataSend.this) && NetworkUtils.isOnline()){
-                            // Step 3. Check if wifi was previously disconnected.
-                            if (!isWifiConnected) {
-                                wifiHandler.sendEmptyMessage(0);
+                        // Step 1. Run thread until interrupted.
+                        while (!isInterrupted()) {
+
+                            // Step 2. Check if a wifi connection is detected AND if the user can access the internet.
+                            if (NetworkUtils.isWifiConnected(BackgroundDataSend.this) && NetworkUtils.isOnline()) {
+                                // Step 3. Check if wifi was previously disconnected.
+                                if (!isWifiConnected) {
+                                    wifiHandler.sendEmptyMessage(0);
+                                }
+                            } else {
+                                // Step 3. Check if wifi was previously connected.
+                                if (isWifiConnected) {
+                                    wifiHandler.sendEmptyMessage(1);
+                                }
                             }
-                        } else {
-                            // Step 3. Check if wifi was previously connected.
-                            if (isWifiConnected) {
-                                wifiHandler.sendEmptyMessage(1);
-                            }
+
+                            // Step 4. Sleep 1 second before checking wifi status again.
+                            Thread.sleep(1000);
                         }
-
-                        // Step 4. Sleep 1 second before checking wifi status again.
-                        Thread.sleep(1000);
+                    } catch (Exception e) {
+                        Log.e("wifiThread", "Interrupt.");
                     }
-                } catch (Exception e) {
-                    Log.e("wifiThread", "Interrupt.");
                 }
-            }
-        };
+            };
 
-        wifiThread.start();
+            wifiThread.start();
+        }
 
         return START_STICKY;
     }
@@ -386,6 +392,13 @@ public class BackgroundDataSend extends Service {
             userListener = null;
         }
 
+        if (!wifiDisconnect) {
+            Log.d("addUserListener", "Wifi was not disconnected.");
+            init = false;
+            t = 1;
+            gradientIteration = 0;
+        }
+
         // Step 2. Add new user listener.
         userListener = userValues.addValueEventListener(new ValueEventListener() {
             @Override public void onDataChange(DataSnapshot dataSnapshot) {
@@ -406,7 +419,7 @@ public class BackgroundDataSend extends Service {
                 Log.d("userValues", userCheck.getGradientProcessed() + " " + userCheck.getGradIter() + " " + gradientIteration);
 
                 // Step 5. Check if we can compute the gradient.
-                if (dataCount > 0 && userCheck.getGradientProcessed() && userCheck.getGradIter() == gradientIteration) {
+                if (userCheck.getGradientProcessed() && userCheck.getGradIter() == gradientIteration) {
 
                     // Step 6. Check the localUpdateNum for the type of processing the client should do.
                     if (localUpdateNum == 0) {
@@ -641,6 +654,8 @@ public class BackgroundDataSend extends Service {
         double[] x;
         List<Double> grad;
         for(int i = 0; i < batchSize; i++){
+            // Periodically check if this thread has been interrupted. See the javadocs on
+            // threading for best practices.
             if (Thread.currentThread().isInterrupted()){
                 break;
             }
@@ -652,6 +667,8 @@ public class BackgroundDataSend extends Service {
 
             // Add the current normalized gradient to the avg gradient vector.
             for(int j = 0; j < length; j++) {
+                // Periodically check if this thread has been interrupted. See the javadocs on
+                // threading for best practices.
                 if (Thread.currentThread().isInterrupted()){
                     break;
                 }
@@ -664,26 +681,23 @@ public class BackgroundDataSend extends Service {
 
     private List<Double> computeNoisyGrad(List<Double> weights){
         // Init training sample batch
-        //Log.e("computeNoisyGrad", "Gathering batch samples");
         List<Integer> batchSamples = gatherBatchSamples();
 
+        // TODO(tylermzeller) this is a bottleneck on physical devices. Buffered file I/O seems to
+        // TODO invoke the GC often.
         // Get training sample features.
-        //Log.e("computeNoisyGrad", "Gathering sample features");
         List<double[]> xBatch = readSamples(batchSamples);
 
         // Get training sample labels.
-        //Log.e("computeNoisyGrad", "Gathering sample labels");
         List<Integer> yBatch = readLabels(batchSamples);
 
         // Compute average gradient vector
-        //Log.e("computeNoisyGrad", "Computing avg grad");
         List<Double> avgGrad = computeAverageGrad(xBatch, yBatch, weights);
 
         // Init empty noisy gradient vector
         List<Double> noisyGrad = new ArrayList<>(length);
 
         // Add random noise probed from the client's noise distribution.
-        //Log.e("computeNoisyGrad", "Computing noisy grad");
         for (double avg : avgGrad) {
             if (Thread.currentThread().isInterrupted()) {
                 break;
@@ -698,6 +712,8 @@ public class BackgroundDataSend extends Service {
         // Compute the gradient with random noise added
         List<Double> noisyGrad = computeNoisyGrad(weights);
 
+        // Periodically check if this thread has been interrupted. See the javadocs on
+        // threading for best practices.
         if (Thread.currentThread().isInterrupted()){
             return noisyGrad;
         }
@@ -716,9 +732,14 @@ public class BackgroundDataSend extends Service {
             String[] features;
             int max = Collections.max(sampleBatch);
             while ((line = br.readLine()) != null && counter <= max){
+                // Periodically check if this thread has been interrupted. See the javadocs on
+                // threading for best practices.
+                if (Thread.currentThread().isInterrupted()) {
+                    break;
+                }
+
                 if(sampleBatch.contains(counter)){
 
-                    // TODO: redundant escape?
                     features = line.split(",| ");
 
                     // TODO: why is this list necessary?
@@ -732,15 +753,12 @@ public class BackgroundDataSend extends Service {
                 }
                 counter++;
             }
-        } catch (FileNotFoundException e) {
+        } catch (IOException e) {
+            // TODO(tylermzeller) probably a better way to handle this.
             e.printStackTrace();
             dataCount = -1;
-        } catch (IOException e) {
-            e.printStackTrace();
         }
-
         return xBatch;
-
     }
 
     public List<Integer> readLabels(List<Integer> sampleBatch){
@@ -750,9 +768,15 @@ public class BackgroundDataSend extends Service {
             String line;
             int counter = 0;
             while ((line = br.readLine()) != null && counter <= Collections.max(sampleBatch)){
+                // Periodically check if this thread has been interrupted. See the javadocs on
+                // threading for best practices.
+                if (Thread.currentThread().isInterrupted()) {
+                    break;
+                }
+
                 if(sampleBatch.contains(counter)){
                     line = line.trim();
-                    int sampleLabel = (int)Double.parseDouble(line);
+                    int sampleLabel = Integer.parseInt(line);
                     if(sampleLabel == 0 && loss.lossType().equals("binary")){
                         sampleLabel = -1;
                     }
@@ -760,13 +784,11 @@ public class BackgroundDataSend extends Service {
                 }
                 counter++;
             }
-        } catch (FileNotFoundException e) {
+        } catch (IOException e) {
+            // TODO(tylermzeller) probably a better way to handle this.
             e.printStackTrace();
             dataCount = -1;
-        } catch (IOException e) {
-            e.printStackTrace();
         }
-
         return yBatch;
     }
 }
