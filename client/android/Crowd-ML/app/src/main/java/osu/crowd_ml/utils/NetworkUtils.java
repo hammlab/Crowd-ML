@@ -27,7 +27,7 @@ public final class NetworkUtils {
 //        }
 //
 //        return networkInfo != null && networkInfo.getState() == NetworkInfo.State.CONNECTED && networkInfo.getType() == ConnectivityManager.TYPE_WIFI;
-        return isWifiOn;
+        return true;
     }
     public static boolean isOnline() throws IOException, InterruptedException{
 

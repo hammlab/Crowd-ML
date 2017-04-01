@@ -41,6 +41,7 @@ var weightBatch = [];
 var gradBatchSize = 0;
 var gradBatch = [];
 var iter = 1;
+//TODO(tylermzeller) Not sure why this -1 is here. Consider removing.
 var iterArray = [iter, -1];
 var learningRate = c;
 
