@@ -49,13 +49,13 @@ import osu.crowd_ml.utils.NetworkUtils;
 public class BackgroundDataSend extends Service {
 
     // TODO(tylermzeller) this is never used. Consider removing.
-    private static final int DEFAULT_BATCH_SIZE = 1;
+    //private static final int DEFAULT_BATCH_SIZE = 1;
 
     final static FirebaseDatabase database = FirebaseDatabase.getInstance();
     final static DatabaseReference ref = database.getReference();
-    final static DatabaseReference weights = ref.child("trainingWeights");
-    final static DatabaseReference parameters = ref.child("parameters");
-    DatabaseReference userValues;
+    final static DatabaseReference weightsRef = ref.child("trainingWeights");
+    final static DatabaseReference parametersRef = ref.child("parameters");
+    DatabaseReference userRef;
 
     // Handling WiFi connectivity
     private Thread wifiThread;
@@ -103,6 +103,7 @@ public class BackgroundDataSend extends Service {
     private int maxIter;
     private volatile int t;
     private List<Double> learningRate;
+    private List<Double> weights;
 
     private int length;
 
@@ -128,7 +129,6 @@ public class BackgroundDataSend extends Service {
 
             isWifiConnected = true;
             addFirebaseListeners();
-            wifiDisconnect = false;
         } else if (msg.what == 1){
             stopWorkThread();
             if (VERBOSE_DEBUG)
@@ -151,7 +151,7 @@ public class BackgroundDataSend extends Service {
         UID = MultiprocessPreferences.getDefaultSharedPreferences(this).getString("uid", "");
 
         // Step 2. Get database references.
-        userValues = ref.child("users").child(UID);
+        userRef = ref.child("users").child(UID);
 
         // Step 3. Initialize necessary data.
         weightVals = new TrainingWeights();
@@ -238,7 +238,7 @@ public class BackgroundDataSend extends Service {
             Log.d("addFirebaseListeners", "Adding listeners.");
 
         // Step 1. Add parameters listener.
-        paramListener = parameters.addValueEventListener(new ValueEventListener() {
+        paramListener = parametersRef.addValueEventListener(new ValueEventListener() {
             @Override public void onDataChange(DataSnapshot dataSnapshot) {
                 if (VERBOSE_DEBUG)
                     Log.d("onDataChange", "Got parameters");
@@ -253,12 +253,14 @@ public class BackgroundDataSend extends Service {
         });
 
         // Step 2. Add weight listener.
-        weightListener = weights.addValueEventListener(new ValueEventListener() {
+        weightListener = weightsRef.addValueEventListener(new ValueEventListener() {
             @Override public void onDataChange(DataSnapshot dataSnapshot) {
                 if (VERBOSE_DEBUG)
                     Log.d("onDataChange", "Got weights");
 
                 weightVals = dataSnapshot.getValue(TrainingWeights.class);
+                weights = weightVals.getWeights().get(0);
+                t = weightVals.getIteration();
             }
 
             @Override public void onCancelled(DatabaseError error) {
@@ -273,13 +275,13 @@ public class BackgroundDataSend extends Service {
 
         // Step 1. Check if listeners are null, and if not remove them as listeners.
         if (paramListener != null)
-            parameters.removeEventListener(paramListener);
+            parametersRef.removeEventListener(paramListener);
 
         if (weightListener != null)
-            weights.removeEventListener(weightListener);
+            weightsRef.removeEventListener(weightListener);
 
         if (userListener != null)
-            userValues.removeEventListener(userListener);
+            userRef.removeEventListener(userListener);
 
         // Step 2. Set to null.
         paramListener  = null;
@@ -289,13 +291,13 @@ public class BackgroundDataSend extends Service {
 
     @Override public void onDestroy() {
 
-        Log.d("onDestroy", "Interrupting the wifi");
-        // Step 1. End the wifi thread.
-        stopWifiThread();
-
         Log.d("onDestroy", "Stopping the worker thread.");
         // Step 2. End the worker thread, if running.
         stopWorkThread();
+
+        Log.d("onDestroy", "Interrupting the wifi");
+        // Step 1. End the wifi thread.
+        stopWifiThread();
 
         Log.d("onDestroy", "Removing Listeners.");
         // Step 3. Remove listeners.
@@ -388,19 +390,19 @@ public class BackgroundDataSend extends Service {
 
         // Step 1. Check if there is already a user listener and remove if so.
         if (userListener != null) {
-            userValues.removeEventListener(userListener);
+            userRef.removeEventListener(userListener);
             userListener = null;
         }
 
         if (!wifiDisconnect) {
             Log.d("addUserListener", "Wifi was not disconnected.");
             init = false;
-            t = 1;
             gradientIteration = 0;
         }
+        wifiDisconnect = false;
 
         // Step 2. Add new user listener.
-        userListener = userValues.addValueEventListener(new ValueEventListener() {
+        userListener = userRef.addValueEventListener(new ValueEventListener() {
             @Override public void onDataChange(DataSnapshot dataSnapshot) {
                 if (VERBOSE_DEBUG)
                     Log.d("onDataChange", "Got user values.");
@@ -525,10 +527,10 @@ public class BackgroundDataSend extends Service {
     //allows for newly created users to initialize values
     private void initUser() {
         // Step 1. Get the current weight vector.
-        List<Double> initGrad = weightVals.getWeights().get(0);
+        //List<Double> initGrad = weightVals.getWeights().get(0);
 
         // Step 2. Send the DB the user's initial values.
-        sendUserValues(initGrad, false, gradientIteration, t, paramIter);
+        sendUserValues(weights, false, gradientIteration, t, paramIter);
     }
 
     /**
@@ -562,7 +564,7 @@ public class BackgroundDataSend extends Service {
         List<Integer> oldOrder = new ArrayList<>(order);
 
         // Get current weights.
-        List<Double> weights = weightVals.getWeights().get(0);
+        //List<Double> weights = weightVals.getWeights().get(0);
 
         // Compute the gradient with random noise added.
         List<Double> noisyGrad = computeNoisyGrad(weights);
@@ -572,7 +574,7 @@ public class BackgroundDataSend extends Service {
             Log.d("sendGradient", "Sending gradient.");
 
             // Send the gradient to the server.
-            sendUserValues(noisyGrad, false, ++gradientIteration, weightVals.getIteration(), paramIter);
+            sendUserValues(noisyGrad, false, ++gradientIteration, t, paramIter);
 
             // Decrease iteration
             //dataCount--;
@@ -587,16 +589,16 @@ public class BackgroundDataSend extends Service {
         List<Integer> oldOrder = new ArrayList<>(order);
 
         // Get current weights.
-        List<Double> weights = weightVals.getWeights().get(0);
+        //List<Double> weights = weightVals.getWeights().get(0);
         // Calc new weights using local update num.
         for (int i = 0; i < localUpdateNum; i++) {
             if (Thread.currentThread().isInterrupted()) {
                 break;
             }
             weights = internalWeightCalc(weights);
-            t++;
+            //t++;
             if (VERBOSE_DEBUG)
-                Log.d("sendWeight", "weightIter: " + t);
+                Log.d("sendWeight", "local iter: " + i + 1);
         }
 
         // Check if wifi is connected to send the gradient.
@@ -617,8 +619,9 @@ public class BackgroundDataSend extends Service {
         }
     }
 
+    //TODO(tylermzeller) we don't use the gradIter on the server side. Consider removing from this method.
     private void sendUserValues(List<Double> gradientsOrWeights, boolean gradientProcessed, int gradIter, int weightIter, int paramIter){
-        userValues.setValue(
+        userRef.setValue(
             new UserData(gradientsOrWeights, gradientProcessed, gradIter, weightIter, paramIter)
         );
     }
@@ -669,11 +672,16 @@ public class BackgroundDataSend extends Service {
             for(int j = 0; j < length; j++) {
                 // Periodically check if this thread has been interrupted. See the javadocs on
                 // threading for best practices.
-                if (Thread.currentThread().isInterrupted()){
-                    break;
-                }
+//                if (Thread.currentThread().isInterrupted()){
+//                    break;
+//                }
                 avgGrad.set(j, (avgGrad.get(j) + grad.get(j)) / batchSize);
             }
+
+//            for(int j = 0; j < length; j++) {
+//                avgGrad.set(j, avgGrad.get(j) / batchSize);
+//            }
+
         }
 
         return avgGrad;
