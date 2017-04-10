@@ -10,7 +10,7 @@ More specifically, can machine learning be outsourced to a crowd of connected de
 ![Crowd-ML concept figure](schematic1-5.jpg "Crowd-ML concept")
 
 The library allows devices (Android, iOS, and python clients) to learn a common classifier/regression model with differential privacy, by solving the distributed ERM problem: min_w f(w) = 1/M sum_{i=1}^M f_i(w), where f_i(w) = 1/n sum_j l(h_w(x_{ij}), y_{ij}).
-The library implements private distributed synchronous risk minimization based on [**Hamm'15**], using [Google Firebase](https://firebase.google.com/) as a simple and robust syncrhonization method.  This idea was featured in [Gigaom] (https://gigaom.com/2015/01/22/researchers-show-a-machine-learning-network-for-connected-devices/).
+The library implements private distributed synchronous risk minimization based on [**Hamm'15**], using [Google Firebase](https://firebase.google.com/) as a simple and robust syncrhonization method.  This idea was featured in [Gigaom](https://gigaom.com/2015/01/22/researchers-show-a-machine-learning-network-for-connected-devices/).
 
 Choosing the type and amount of noise to guarantee differential privacy is left to the library user; the type and the amount 
 depend on model assumptions. Please see [Chaudhuri'11], [Rajkumar'12], [Song'13], [Bassily'14], [Hamm'16].
