@@ -16,6 +16,8 @@ public final class NetworkUtils {
     // Prevent instantiation
     private NetworkUtils(){}
 
+    private static final int TRIES = 3;
+
     public static boolean isWifiOn = false;
 
     public static boolean isWifiConnected(Context context) {
@@ -30,14 +32,17 @@ public final class NetworkUtils {
         return true;
     }
     public static boolean isOnline() throws IOException, InterruptedException{
-
-        Runtime runtime = Runtime.getRuntime();
         try {
-
-            Process ipProcess = runtime.exec("/system/bin/ping -c 1 8.8.8.8");
-            int     exitValue = ipProcess.waitFor();
-            return (exitValue == 0);
-
+            boolean isOnline = false;
+            int i = 0;
+            Runtime runtime = Runtime.getRuntime();
+            while (!isOnline && i < TRIES){
+                Process ipProcess = runtime.exec("/system/bin/ping -c 1 8.8.8.8");
+                int exitValue = ipProcess.waitFor();
+                isOnline = (exitValue == 0);
+                i++;
+            }
+            return isOnline;
         } catch (IOException | InterruptedException e) { throw e; }
     }
 

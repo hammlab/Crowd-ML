@@ -106,6 +106,7 @@ public class BackgroundDataSend extends Service {
     private List<Double> weights;
 
     private int length;
+    private int disconnectCounter = 0;
 
     static class WifiHandler extends Handler {
         private final WeakReference<BackgroundDataSend> mService;
@@ -258,6 +259,8 @@ public class BackgroundDataSend extends Service {
                 if (VERBOSE_DEBUG)
                     Log.d("onDataChange", "Got weights");
 
+                stopWorkThread();
+
                 weightVals = dataSnapshot.getValue(TrainingWeights.class);
                 weights = weightVals.getWeights().get(0);
                 t = weightVals.getIteration();
@@ -394,23 +397,31 @@ public class BackgroundDataSend extends Service {
             userListener = null;
         }
 
+        // Step 2. Check if a wifi disconnect caused this listener to be reinitialized.
         if (!wifiDisconnect) {
+            // Wifi did not disconnect. This means the application has been launched for the first
+            // time.
             Log.d("addUserListener", "Wifi was not disconnected.");
             init = false;
+
+            // TODO(tylermzeller): Gradient iteration needs to be 0 when a new experiment starts.
+            // How do we let the client know a new experiment has started?
             gradientIteration = 0;
         }
+
+        // If there was a wifi disconnect, we need to reset the disconnect var.
         wifiDisconnect = false;
 
-        // Step 2. Add new user listener.
+        // Step 3. Add new user listener.
         userListener = userRef.addValueEventListener(new ValueEventListener() {
             @Override public void onDataChange(DataSnapshot dataSnapshot) {
                 if (VERBOSE_DEBUG)
                     Log.d("onDataChange", "Got user values.");
 
-                // Step 3. Get updated user values.
+                // Step 4. Get updated user values.
                 userCheck = dataSnapshot.getValue(UserData.class);
 
-                // Step 4. If the user hasn't been initialized yet, do it now.
+                // Step 5. If the user hasn't been initialized yet, do it now.
                 if(!init){
                     if (VERBOSE_DEBUG)
                         Log.d("userValues", "Init user");
@@ -420,15 +431,15 @@ public class BackgroundDataSend extends Service {
 
                 Log.d("userValues", userCheck.getGradientProcessed() + " " + userCheck.getGradIter() + " " + gradientIteration);
 
-                // Step 5. Check if we can compute the gradient.
+                // Step 6. Check if we can compute the gradient.
                 if (userCheck.getGradientProcessed() && userCheck.getGradIter() == gradientIteration) {
 
-                    // Step 6. Check the localUpdateNum for the type of processing the client should do.
+                    // Step 7. Check the localUpdateNum for the type of processing the client should do.
                     if (localUpdateNum == 0) {
-                        // Step 7. Compute a single step of SGD.
+                        // Step 8. Compute a single step of SGD.
                         startGradientThread();
                     } else if (localUpdateNum > 0) {
-                        // Step 7. Compute localUpdateNum steps of SGD.
+                        // Step 8. Compute localUpdateNum steps of batchGD.
                         startWeightThread();
                     }
                 }
@@ -476,11 +487,15 @@ public class BackgroundDataSend extends Service {
         }
     }
 
+    /**
+     * When the client runs with localUpdateNum=0, the client only computes the gradient of the
+     * weights and sends the gradients back.
+     */
     private void startGradientThread(){
         // Step 1. Check if the worker thread is non-null and running.
         if (workThread != null && workThread.isAlive()){
 
-            // Wait for the thread to stop.
+            // Wait for the thread to finish.
             try {
                 workThread.join();
             } catch (InterruptedException e) {
@@ -559,15 +574,15 @@ public class BackgroundDataSend extends Service {
         }
     }
 
+    /**
+     * Compute the gradient of the weights and send back to the server.
+     */
     private void sendGradient(){
         // Cache old parameters, in case we need to rollback changes
         List<Integer> oldOrder = new ArrayList<>(order);
 
-        // Get current weights.
-        //List<Double> weights = weightVals.getWeights().get(0);
-
         // Compute the gradient with random noise added.
-        List<Double> noisyGrad = computeNoisyGrad(weights);
+        List<Double> noisyGrad = computeNoisyGrad();
 
         // Check if wifi is connected to send the gradient.
         if (!Thread.currentThread().isInterrupted()) {
@@ -595,7 +610,7 @@ public class BackgroundDataSend extends Service {
             if (Thread.currentThread().isInterrupted()) {
                 break;
             }
-            weights = internalWeightCalc(weights);
+            weights = internalWeightCalc();
             //t++;
             if (VERBOSE_DEBUG)
                 Log.d("sendWeight", "local iter: " + i + 1);
@@ -619,7 +634,6 @@ public class BackgroundDataSend extends Service {
         }
     }
 
-    //TODO(tylermzeller) we don't use the gradIter on the server side. Consider removing from this method.
     private void sendUserValues(List<Double> gradientsOrWeights, boolean gradientProcessed, int gradIter, int weightIter, int paramIter){
         userRef.setValue(
             new UserData(gradientsOrWeights, gradientProcessed, gradIter, weightIter, paramIter)
@@ -670,11 +684,6 @@ public class BackgroundDataSend extends Service {
 
             // Add the current normalized gradient to the avg gradient vector.
             for(int j = 0; j < length; j++) {
-                // Periodically check if this thread has been interrupted. See the javadocs on
-                // threading for best practices.
-//                if (Thread.currentThread().isInterrupted()){
-//                    break;
-//                }
                 avgGrad.set(j, (avgGrad.get(j) + grad.get(j)) / batchSize);
             }
 
@@ -687,12 +696,12 @@ public class BackgroundDataSend extends Service {
         return avgGrad;
     }
 
-    private List<Double> computeNoisyGrad(List<Double> weights){
+    private List<Double> computeNoisyGrad(){
         // Init training sample batch
         List<Integer> batchSamples = gatherBatchSamples();
 
         // TODO(tylermzeller) this is a bottleneck on physical devices. Buffered file I/O seems to
-        // TODO invoke the GC often.
+        // invoke the GC often.
         // Get training sample features.
         List<double[]> xBatch = readSamples(batchSamples);
 
@@ -716,9 +725,9 @@ public class BackgroundDataSend extends Service {
         return noisyGrad;
     }
 
-    private List<Double> internalWeightCalc(List<Double> weights){
+    private List<Double> internalWeightCalc(){
         // Compute the gradient with random noise added
-        List<Double> noisyGrad = computeNoisyGrad(weights);
+        List<Double> noisyGrad = computeNoisyGrad();
 
         // Periodically check if this thread has been interrupted. See the javadocs on
         // threading for best practices.
