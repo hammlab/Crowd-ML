@@ -10,7 +10,7 @@ More specifically, can machine learning be outsourced to a crowd of connected de
 ![Crowd-ML concept figure](schematic1-5.jpg "Crowd-ML concept")
 
 The library allows devices (Android, iOS, and python clients) to learn a common classifier/regression model with differential privacy, by solving the distributed ERM problem: min_w f(w) = 1/M sum_{i=1}^M f_i(w), where f_i(w) = 1/n sum_j l(h_w(x_{ij}), y_{ij}).
-The library implements private distributed synchronous risk minimization based on [**Hamm'15**], using [Google Firebase](https://firebase.google.com/) as a simple and robust syncrhonization method.  This idea was featured in [Gigaom] (https://gigaom.com/2015/01/22/researchers-show-a-machine-learning-network-for-connected-devices/).
+The library implements private distributed synchronous risk minimization based on [**Hamm'15**], using [Google Firebase](https://firebase.google.com/) as a simple and robust syncrhonization method.  This idea was featured in [Gigaom](https://gigaom.com/2015/01/22/researchers-show-a-machine-learning-network-for-connected-devices/).
 
 Choosing the type and amount of noise to guarantee differential privacy is left to the library user; the type and the amount 
 depend on model assumptions. Please see [Chaudhuri'11], [Rajkumar'12], [Song'13], [Bassily'14], [Hamm'16].
@@ -44,14 +44,18 @@ from smartphones and IoT devices. More examples will be added in the near future
 ---
 #### 1. Set up firebase account.
 See [firebase/readme.md](firebase/readme.md) for more instructions.
+
 #### 2. Download and build client apps
 Currently, the client uses pre-stored local data such as MNIST.
-The users of this library should replace it with custom data sensing or collecting routines.
-For iOS devices, see [client/iOS/readme.md](client/iOS/readme.md).
-For Android devices, see [client/android/readme.md](client/android/readme.md).
-For python clients, see [client/python/readme.md](client/python/readme.md).
+The users of this library should replace it with custom data sensing or collecting routines. Specific instructions are available for:
+
+- iOS devices, see [client/iOS/readme.md](client/iOS/readme.md).
+- Android devices, see [client/android/readme.md](client/android/readme.md).
+- Python clients, see [client/python/readme.md](client/python/readme.md).
+
 #### 3. Download and change server-side app.
 See [server/readme.md](server/readme.md) for more instructions.
+
 #### 4. Distribute client apps to users and start the server-side app.
 
 
@@ -59,6 +63,7 @@ See [server/readme.md](server/readme.md) for more instructions.
 ---
 * Jihun Hamm (PI, OSU [homepage](https://web.cse.ohio-state.edu/~hammj/))
 * Tyler Zeller (Undergraduate, OSU)
+* David Soller (Undergraduate, OSU)
 * Sayam Ganguly (Graduate, OSU)
 * Jackson Luken (Undergraduate, OSU)
 * Yani Xie (Undergraduate, OSU)
@@ -67,7 +72,7 @@ This research was supported in part by Google Faculty Research Award 2015 and Go
 
 
 ### References
----
+* [Hamm'17]: J. Hamm, J. Luken, Y. Xie, "Crowd-ML: A Library for Privacy-preserving Machine Learning on Smart Devices," IEEE International Conference on Acoustics, Speech and Signal Processing (ICASSP), 2017 [pdf](docs/icassp17_2_jh.pdf)
 * [Hamm'15]: J. Hamm, A. Champion, G. Chen, M. Belkin, and D.Xuan, 
 "Crowd-ML: A privacy-preserving learning framework for a crowd of smart devices." In Proceedings of the 35th IEEE
 International Conference on Distributed Computing Systems (ICDCS). IEEE, 2015. [pdf](docs/icdcs15_jh_final.pdf)

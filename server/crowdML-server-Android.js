@@ -1,5 +1,5 @@
 var firebase = require('firebase');
-
+var ERROR_CODE = 1;
 var constFile = process.argv[2]
 if (!constFile){
 	console.log("Invalid constants file argument. Server command should be: \'node crowdML-server-Android.js Constants(#).js\'");
@@ -41,6 +41,7 @@ var weightBatch = [];
 var gradBatchSize = 0;
 var gradBatch = [];
 var iter = 1;
+//TODO(tylermzeller) Not sure why this -1 is here. Consider removing.
 var iterArray = [iter, -1];
 var learningRate = c;
 
@@ -83,7 +84,7 @@ weight.update({
 	weights: weightSet,
 	iteration: iter
 });
-console.log('weights initialized');
+console.log('[weights initialized        ]');
 
 //send parameters to clients
 params.update({
@@ -106,12 +107,13 @@ params.update({
 	eps: eps,
 	descentAlg: descentAlg,
 });
-console.log('parameters set');
+console.log('[parameters set             ]');
 
 var currentWeight;
 var currentIter;
 
 weight.on("value", function(snapshot, prevChildKey) {
+	console.log('[Weights changed            ]');
 	var currentWeights = snapshot.val();
 	weightArrays = currentWeights.weights;
 	currentWeight = weightArrays[0];
@@ -120,6 +122,7 @@ weight.on("value", function(snapshot, prevChildKey) {
 
 
 users.on("child_changed", function(snapshot) {
+	console.log('[User changed               ]');
 	changeiter++;
 	var user = snapshot.val();
   var grad = user.gradients;
@@ -129,22 +132,25 @@ users.on("child_changed", function(snapshot) {
 	var uid = snapshot.key;
 	var userID = users.child(uid);
 	if(uid && !processed){
+		console.log('WeightIter: ' + userWeightIter + ' ' + iter);
 		if(userWeightIter == iter && userParamIter == constants.paramIter){
 			if(localUpdateNum == 0){
 				addToGradBatch(grad);
 			} else {
 				addToWeightBatch(grad);
 			}
+			console.log('[Updating gradient processed]');
+			userID.update({
+				gradientProcessed: true
+			});
 		}
-		userID.update({
-			gradientProcessed: true
-		});
 	}
 });
 
-console.log("listeners set");
+console.log("[listeners set              ]");
 
 function addToGradBatch(gradient){
+	console.log('[Adding to gradient batch   ]');
 	gradBatch.push(gradient);
 	gradBatchSize++;
 	if(gradBatchSize == maxGradBatchSize){
@@ -160,6 +166,8 @@ function addToGradBatch(gradient){
 		gradBatch = [];
 
 		var newWeight = [];
+
+		console.log('[Performing descent         ]');
 		if(descentAlg=='constant'){
 			learningRate = c;
 			for (i = 0; i < length; i++) {
@@ -198,6 +206,7 @@ function addToGradBatch(gradient){
 }
 
 function addToWeightBatch(weightArray){
+	console.log('[Adding to weight batch     ]');
 	weightBatch.push(weightArray);
 	weightBatchSize++;
 	if(weightBatchSize == maxWeightBatchSize){
@@ -232,14 +241,19 @@ function addToWeightBatch(weightArray){
 		} else {
 			iter++;
 		}
+
+		console.log('[Updating weights in DB     ]');
 		iterArray = [iter, -1];
-		weight.update({
-			iteration: iter
-		});
 		weightSet = [newWeight, iterArray];
 		weight.update({
-			weights: weightSet
+			iteration: iter,
+			weights: weightSet, // Combined from line below
 		});
+
+		// TODO: Why two separate db queries?
+		// weight.update({
+		// 	weights: weightSet
+		// });
 		weightBatchSize = 0;
 		weightBatch = [];
 	}

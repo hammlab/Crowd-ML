@@ -1,33 +1,59 @@
-#### How to set up server-side app
+# Server
+## Pre-Setup -- Local Build
 
-1. Download and install Node which can be done here: https://nodejs.org/en/
+1. Download and install [Node.js and npm](http://nodejs.org/en/) which can be done here: [nodejs.org](http://nodejs.org/)
 2. Setup Node Firebase API with the commands:
 
-   ```
-  $npm install firebase --save
-  $npm install firebase-token-generator --save
-  $npm install firebase-tools
-  ```
-3. Go to your project page in the firebase website. Download firebase service account json object from <your firebase app>/Settings/Permissions/Service Accounts/Create service account' and place it in same directory as server. 
+```bash
+npm install firebase --save
+npm install firebase-token-generator --save
+npm install firebase-tools --save
+```
 
-   *Make sure to select 'Furnish a new private key' and select the key type as JSON, and leave 'Enable Google Apps Domain-wide Delegation' unselected.*
-4. Paste Testing data feature and label files (found in the data folder) into a folder labelled 'DataFiles' and place it in the Server directory.   
-5. Set server and gradient constant values in Constants.js file
-6. Download crowdML-server.js 
-7. Run command
+3. The local environment is now setup proceed to **step 4**
 
-  ```
-  $nodejs crowdML-server.js [Constants file name you wish to use]
-  ```
+## Pre-Setup -- Docker
 
-#### What the server-side app does
+**NOTE**: One may not be able to run both Docker and an Android/iOS emulator. Consider using on device builds with the Docker container. 
 
- The server listens to any changes in the data values of the various user trees, and uses any updated gradient information to create new weight values. The Constants folder contains parameter information for both the server itself as well as all of the clients. Any information needed by the clients is sent to the parameters branch of firebase upon running the server code, which the clients can read. The server also updates various iterators and process checks, which is detailed in the firebase ReadMe. Depending on the learning rate algorithm chosen by the user, the server will subtract the adjusted gradient from the current weight to create a new weight which is uploaded to firebase. The Server allows for gradient mini-batches of a size chosen by the user, in which the gradients collected are stored and when the batch is filled, the average is sent to be applied to the weight values. The server also allows for accuracy testing, which when enabled will compare every X weight values uploaded against a chosen dataset to see what percentage of test feature sets return the correct result.
+1. Install [Docker](http://docker.com/)
+2. Build the docker image and run the container:
+
+```bash
+# Builds the Dockerfile
+# Switch `pwd` to $pwd` if running on PowerShell
+docker build -t crowdml-server .
+docker run -it --rm -v `pwd`:/usr/src/app/ crowdml-server bash
+```
+
+3. The docker environment is now setup proceed to **step 4**
+
+## Final setup and running of the server
+
+4. Create a Firebase service account through the [console](console.firebase.google.com) via: Settings > Permissions > Service accounts > Create
+
+    - **NOTE** make sure to:
+        - [x] Select 'Furnish a new private key'
+        - [x] Get *key type* as `JSON`
+        - [x] Leave unselected 'Enable Google Apps Domain-wide Delegation'
+
+5. Download the service account `.json` file and place it in `server/`
+6. Paste desired testing data, feature and label files (found in `data/`), into the `server/DataFiles/` folder
+7. Setup config, server and gradient constant values in the `Constants.js` file see [Constants Setup](#constants-setup) (*Notice*: You can copy the `Constants.js` file to a numerated file)
+8. Run command within your setup environment:
+
+```bash
+node crowdML-server.js <Desired Constants File>
+```
+
+## What the server does
+
+The server listens to any changes in the data values of the various user trees, and uses any updated gradient information to create new weight values. The Constants folder contains parameter information for both the server itself as well as all of the clients. Any information needed by the clients is sent to the parameters branch of firebase upon running the server code, which the clients can read. The server also updates various iterators and process checks, which is detailed in the firebase ReadMe. Depending on the learning rate algorithm chosen by the user, the server will subtract the adjusted gradient from the current weight to create a new weight which is uploaded to firebase. The Server allows for gradient mini-batches of a size chosen by the user, in which the gradients collected are stored and when the batch is filled, the average is sent to be applied to the weight values. The server also allows for accuracy testing, which when enabled will compare every X weight values uploaded against a chosen dataset to see what percentage of test feature sets return the correct result.
 
 
-#### Setting up firebase URL, keys, etc
+## Constants Setup
 
-Editing the Constants.js file allows you to affect the:
+One can change the firebase URL, keys, etc. by editing the `Constants.js` file. This allows one to affect the following:
 * Parameter iteration
 * Service Account json file name
 * database URL (this can be found on the database page of your project console)
@@ -50,4 +76,3 @@ Editing the Constants.js file allows you to affect the:
 * Noise variance (noiseScale)
 * Number of training samples (N)
 * Client batch size
-

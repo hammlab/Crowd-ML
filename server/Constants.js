@@ -1,18 +1,18 @@
-var paramIter = 0;
+var paramIter = 1;
 var serviceAccount = 'Crowd-ML-e591994762fe.json';
 var databaseURL = 'https://crowd-ml-6228f.firebaseio.com/';
 var D = 50;
 var maxWeightBatchSize = 1;
-var localUpdateNum = 100;
+var localUpdateNum = 0;
 var maxGradBatchSize = 1;
-var naughtRate = 10;
-var eps = 0.0000001;
+var naughtRate = 0.5;
+var eps = 1e-6;
 var K = 10;
 var descentAlg = 'adagrad'; //simple, sqrt, adagrad, rmsProp
 var testFeatures = 'MNISTTestImages.50.l2.dat';
 var testLabels = 'MNISTTestLabels.dat';
 var testN = 1000;
-var testType = 'multitest';//'binaryTest'; //none, binary, multitest
+var testType = 'multiTest';//'binaryTest'; //none, binary, multitest
 var testFrequency = 1;
 var maxIter = 10000;
 
