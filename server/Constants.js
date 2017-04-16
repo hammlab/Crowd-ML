@@ -5,14 +5,14 @@ var D = 50;
 var maxWeightBatchSize = 1;
 var localUpdateNum = 100;
 var maxGradBatchSize = 1;
-var naughtRate = 10;
+var naughtRate = .1;
 var eps = 0.0000001;
 var K = 10;
 var descentAlg = 'adagrad'; //simple, sqrt, adagrad, rmsProp
 var testFeatures = 'MNISTTestImages.50.l2.dat';
 var testLabels = 'MNISTTestLabels.dat';
 var testN = 1000;
-var testType = 'multitest';//'binaryTest'; //none, binary, multitest
+var testType = 'multiTest';//'binaryTest'; //none, binary, multitest
 var testFrequency = 1;
 var maxIter = 10000;
 

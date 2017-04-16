@@ -4,9 +4,13 @@ package osu.crowd_ml.utils;
  * Created by tylerzeller on 12/15/16.
  */
 
-public class StringUtils {
+public final class StringUtils {
+
+    // Prevent instantiation
+    private StringUtils(){}
+
     public static boolean isInteger(String s) {
-        return isInteger(s,10);
+        return isInteger(s, 10);
     }
 
     public static boolean isInteger(String s, int radix) {
