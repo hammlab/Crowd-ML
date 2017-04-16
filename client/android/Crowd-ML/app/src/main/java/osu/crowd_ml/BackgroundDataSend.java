@@ -20,7 +20,6 @@ package osu.crowd_ml;
 import android.app.Notification;
 import android.app.PendingIntent;
 import android.app.Service;
-import android.content.Context;
 import android.content.Intent;
 import android.os.Handler;
 import android.os.IBinder;
@@ -37,7 +36,6 @@ import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
 
 import java.io.BufferedReader;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.lang.ref.WeakReference;
@@ -50,19 +48,21 @@ import osu.crowd_ml.utils.NetworkUtils;
 
 public class BackgroundDataSend extends Service {
 
-    private static final int DEFAULT_BATCH_SIZE = 1;
+    // TODO(tylermzeller) this is never used. Consider removing.
+    //private static final int DEFAULT_BATCH_SIZE = 1;
 
     final static FirebaseDatabase database = FirebaseDatabase.getInstance();
     final static DatabaseReference ref = database.getReference();
-    final static DatabaseReference weights = ref.child("trainingWeights");
-    final static DatabaseReference parameters = ref.child("parameters");
-    DatabaseReference userValues;
+    final static DatabaseReference weightsRef = ref.child("trainingWeights");
+    final static DatabaseReference parametersRef = ref.child("parameters");
+    DatabaseReference userRef;
 
     // Handling WiFi connectivity
     private Thread wifiThread;
     private Thread workThread;
     private Handler wifiHandler;
     private volatile boolean isWifiConnected = false;
+    private boolean wifiDisconnect = false;
 
     // Wakelock
     private PowerManager.WakeLock wakeLock;
@@ -72,9 +72,9 @@ public class BackgroundDataSend extends Service {
     private TrainingWeights weightVals;
     private Parameters params;
     private UserData userCheck;
-    private int gradientIteration = 0;
+    private int gradientIteration;
     private int dataCount = 0;
-    private boolean init = false;
+    private boolean init;
 
     // Database Listeners
     private ValueEventListener userListener;
@@ -101,10 +101,12 @@ public class BackgroundDataSend extends Service {
     private double eps;
     private String descentAlg;
     private int maxIter;
-    private volatile int t = 1;
+    private volatile int t;
     private List<Double> learningRate;
+    private List<Double> weights;
 
     private int length;
+    private int disconnectCounter = 0;
 
     static class WifiHandler extends Handler {
         private final WeakReference<BackgroundDataSend> mService;
@@ -133,6 +135,7 @@ public class BackgroundDataSend extends Service {
             if (VERBOSE_DEBUG)
                 Log.d("handleMessage", "Handling wifi disconnect.");
 
+            wifiDisconnect = true;
             isWifiConnected = false;
             removeFirebaseListeners();
         }
@@ -143,33 +146,28 @@ public class BackgroundDataSend extends Service {
     }
 
     @Override public void onCreate() {
-        Log.d("uid", "hello");
         super.onCreate();
 
-        // Step 1. Get shared preferences.
-        //SharedPreferences preferences = getSharedPreferences("UserPreferences", Context.MODE_PRIVATE);
-
-        // Step 2. Extract necessary information
+        // Step 1. Extract necessary information
         UID = MultiprocessPreferences.getDefaultSharedPreferences(this).getString("uid", "");
-        Log.d("uid", UID);
 
-        // Step 3. Get database references.
-        userValues = ref.child("users").child(UID);
+        // Step 2. Get database references.
+        userRef = ref.child("users").child(UID);
 
-        // Step 4. Initialize necessary data.
+        // Step 3. Initialize necessary data.
         weightVals = new TrainingWeights();
         userCheck = new UserData();
         params = new Parameters();
 
-        // Step 5. Create a worker to handle wifi connectivity.
+        // Step 4. Create a worker to handle wifi connectivity.
         wifiHandler = new WifiHandler(this);
 
-        // Step 6. Acquire a lock on the CPU for computation during sleep.
+        // Step 5. Acquire a lock on the CPU for computation during sleep.
         PowerManager powerManager = (PowerManager) getSystemService(POWER_SERVICE);
         wakeLock = powerManager.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "MyWakelockTag");
         wakeLock.acquire();
 
-        // Step 7. Begin this service as a foreground service.
+        // Step 6. Begin this service as a foreground service.
         Intent notificationIntent = new Intent(this, Login.class);
 
         PendingIntent pendingIntent = PendingIntent.getActivity(this, 0,
@@ -191,43 +189,47 @@ public class BackgroundDataSend extends Service {
 
     }
 
+    // Start command is called whenever focus is given back to the app (like when the user clicks
+    // the notification for the foreground service.
     @Override public int onStartCommand(Intent intent, int flags, int startId) {
-        Log.d("uid", "hello");
         super.onStartCommand(intent, flags, startId);
-        Log.d("uid", "hello");
-        wifiThread = new Thread() {
-            @Override
-            public void run() {
-                try {
-                    if (VERBOSE_DEBUG)
-                        Log.d("wifiThread", "Detecting Wifi.");
 
-                    // Step 1. Run thread until interrupted.
-                    while (!isInterrupted()) {
+        // Make sure there isn't already a wifi thread working.
+        if (wifiThread == null) {
+            wifiThread = new Thread() {
+                @Override
+                public void run() {
+                    try {
+                        if (VERBOSE_DEBUG)
+                            Log.d("wifiThread", "Detecting Wifi.");
 
-                        // Step 2. Check if a wifi connection is detected AND if the user can access the internet.
-                        if (NetworkUtils.isWifiConnected(BackgroundDataSend.this) && NetworkUtils.isOnline()){
-                            // Step 3. Check if wifi was previously disconnected.
-                            if (!isWifiConnected) {
-                                wifiHandler.sendEmptyMessage(0);
+                        // Step 1. Run thread until interrupted.
+                        while (!isInterrupted()) {
+
+                            // Step 2. Check if a wifi connection is detected AND if the user can access the internet.
+                            if (NetworkUtils.isWifiConnected(BackgroundDataSend.this) && NetworkUtils.isOnline()) {
+                                // Step 3. Check if wifi was previously disconnected.
+                                if (!isWifiConnected) {
+                                    wifiHandler.sendEmptyMessage(0);
+                                }
+                            } else {
+                                // Step 3. Check if wifi was previously connected.
+                                if (isWifiConnected) {
+                                    wifiHandler.sendEmptyMessage(1);
+                                }
                             }
-                        } else {
-                            // Step 3. Check if wifi was previously connected.
-                            if (isWifiConnected) {
-                                wifiHandler.sendEmptyMessage(1);
-                            }
+
+                            // Step 4. Sleep 1 second before checking wifi status again.
+                            Thread.sleep(1000);
                         }
-
-                        // Step 4. Sleep 1 second before checking wifi status again.
-                        Thread.sleep(1000);
+                    } catch (Exception e) {
+                        Log.e("wifiThread", "Interrupt.");
                     }
-                } catch (Exception e) {
-                    Log.e("wifiThread", "Interrupt.");
                 }
-            }
-        };
+            };
 
-        wifiThread.start();
+            wifiThread.start();
+        }
 
         return START_STICKY;
     }
@@ -237,7 +239,7 @@ public class BackgroundDataSend extends Service {
             Log.d("addFirebaseListeners", "Adding listeners.");
 
         // Step 1. Add parameters listener.
-        paramListener = parameters.addValueEventListener(new ValueEventListener() {
+        paramListener = parametersRef.addValueEventListener(new ValueEventListener() {
             @Override public void onDataChange(DataSnapshot dataSnapshot) {
                 if (VERBOSE_DEBUG)
                     Log.d("onDataChange", "Got parameters");
@@ -252,12 +254,16 @@ public class BackgroundDataSend extends Service {
         });
 
         // Step 2. Add weight listener.
-        weightListener = weights.addValueEventListener(new ValueEventListener() {
+        weightListener = weightsRef.addValueEventListener(new ValueEventListener() {
             @Override public void onDataChange(DataSnapshot dataSnapshot) {
                 if (VERBOSE_DEBUG)
                     Log.d("onDataChange", "Got weights");
 
+                stopWorkThread();
+
                 weightVals = dataSnapshot.getValue(TrainingWeights.class);
+                weights = weightVals.getWeights().get(0);
+                t = weightVals.getIteration();
             }
 
             @Override public void onCancelled(DatabaseError error) {
@@ -272,13 +278,13 @@ public class BackgroundDataSend extends Service {
 
         // Step 1. Check if listeners are null, and if not remove them as listeners.
         if (paramListener != null)
-            parameters.removeEventListener(paramListener);
+            parametersRef.removeEventListener(paramListener);
 
         if (weightListener != null)
-            weights.removeEventListener(weightListener);
+            weightsRef.removeEventListener(weightListener);
 
         if (userListener != null)
-            userValues.removeEventListener(userListener);
+            userRef.removeEventListener(userListener);
 
         // Step 2. Set to null.
         paramListener  = null;
@@ -287,14 +293,14 @@ public class BackgroundDataSend extends Service {
     }
 
     @Override public void onDestroy() {
-        super.onDestroy();
-        Log.d("onDestroy", "Interrupting the wifi");
-        // Step 1. End the wifi thread.
-        wifiThread.interrupt();
 
         Log.d("onDestroy", "Stopping the worker thread.");
         // Step 2. End the worker thread, if running.
         stopWorkThread();
+
+        Log.d("onDestroy", "Interrupting the wifi");
+        // Step 1. End the wifi thread.
+        stopWifiThread();
 
         Log.d("onDestroy", "Removing Listeners.");
         // Step 3. Remove listeners.
@@ -307,6 +313,12 @@ public class BackgroundDataSend extends Service {
         Log.d("onDestroy", "Releasing wakelock.");
         // Step 5. Release the wakelock.
         wakeLock.release();
+
+        // Step 6. Stop the service.
+        stopSelf();
+
+        // Step 7. Let Android destroy the rest.
+        super.onDestroy();
     }
 
     private void onParameterDataChange(DataSnapshot dataSnapshot){
@@ -381,20 +393,35 @@ public class BackgroundDataSend extends Service {
 
         // Step 1. Check if there is already a user listener and remove if so.
         if (userListener != null) {
-            userValues.removeEventListener(userListener);
+            userRef.removeEventListener(userListener);
             userListener = null;
         }
 
-        // Step 2. Add new user listener.
-        userListener = userValues.addValueEventListener(new ValueEventListener() {
+        // Step 2. Check if a wifi disconnect caused this listener to be reinitialized.
+        if (!wifiDisconnect) {
+            // Wifi did not disconnect. This means the application has been launched for the first
+            // time.
+            Log.d("addUserListener", "Wifi was not disconnected.");
+            init = false;
+
+            // TODO(tylermzeller): Gradient iteration needs to be 0 when a new experiment starts.
+            // How do we let the client know a new experiment has started?
+            gradientIteration = 0;
+        }
+
+        // If there was a wifi disconnect, we need to reset the disconnect var.
+        wifiDisconnect = false;
+
+        // Step 3. Add new user listener.
+        userListener = userRef.addValueEventListener(new ValueEventListener() {
             @Override public void onDataChange(DataSnapshot dataSnapshot) {
                 if (VERBOSE_DEBUG)
                     Log.d("onDataChange", "Got user values.");
 
-                // Step 3. Get updated user values.
+                // Step 4. Get updated user values.
                 userCheck = dataSnapshot.getValue(UserData.class);
 
-                // Step 4. If the user hasn't been initialized yet, do it now.
+                // Step 5. If the user hasn't been initialized yet, do it now.
                 if(!init){
                     if (VERBOSE_DEBUG)
                         Log.d("userValues", "Init user");
@@ -404,15 +431,15 @@ public class BackgroundDataSend extends Service {
 
                 Log.d("userValues", userCheck.getGradientProcessed() + " " + userCheck.getGradIter() + " " + gradientIteration);
 
-                // Step 5. Check if we can compute the gradient.
-                if (dataCount > 0 && userCheck.getGradientProcessed() && userCheck.getGradIter() == gradientIteration) {
+                // Step 6. Check if we can compute the gradient.
+                if (userCheck.getGradientProcessed() && userCheck.getGradIter() == gradientIteration) {
 
-                    // Step 6. Check the localUpdateNum for the type of processing the client should do.
+                    // Step 7. Check the localUpdateNum for the type of processing the client should do.
                     if (localUpdateNum == 0) {
-                        // Step 7. Compute a single step of SGD.
+                        // Step 8. Compute a single step of SGD.
                         startGradientThread();
                     } else if (localUpdateNum > 0) {
-                        // Step 7. Compute localUpdateNum steps of SGD.
+                        // Step 8. Compute localUpdateNum steps of batchGD.
                         startWeightThread();
                     }
                 }
@@ -424,20 +451,51 @@ public class BackgroundDataSend extends Service {
         });
     }
 
+    private void stopWifiThread(){
+        // Step 1. Check if the worker thread is non-null and running.
+        if (wifiThread != null && wifiThread.isAlive()){
+
+            // Step 2. Interrupt the thread.
+            wifiThread.interrupt();
+
+            // Step 3. Wait for the thread to die.
+            try {
+                wifiThread.join();
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            } finally {
+                Log.d("stopWifiThread", "Wifi thread ended.");
+            }
+        }
+    }
+
     private void stopWorkThread(){
         // Step 1. Check if the worker thread is non-null and running.
         if (workThread != null && workThread.isAlive()){
 
             // Step 2. Interrupt the thread.
             workThread.interrupt();
+
+            // Step 3. Wait for the thread to die.
+            try {
+                workThread.join();
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            } finally {
+                Log.d("stopWorkThread", "Work thread ended.");
+            }
         }
     }
 
+    /**
+     * When the client runs with localUpdateNum=0, the client only computes the gradient of the
+     * weights and sends the gradients back.
+     */
     private void startGradientThread(){
         // Step 1. Check if the worker thread is non-null and running.
         if (workThread != null && workThread.isAlive()){
 
-            // Wait for the thread to stop.
+            // Wait for the thread to finish.
             try {
                 workThread.join();
             } catch (InterruptedException e) {
@@ -484,10 +542,10 @@ public class BackgroundDataSend extends Service {
     //allows for newly created users to initialize values
     private void initUser() {
         // Step 1. Get the current weight vector.
-        List<Double> initGrad = weightVals.getWeights().get(0);
+        //List<Double> initGrad = weightVals.getWeights().get(0);
 
         // Step 2. Send the DB the user's initial values.
-        sendUserValues(initGrad, false, gradientIteration, t, paramIter);
+        sendUserValues(weights, false, gradientIteration, t, paramIter);
     }
 
     /**
@@ -516,22 +574,22 @@ public class BackgroundDataSend extends Service {
         }
     }
 
+    /**
+     * Compute the gradient of the weights and send back to the server.
+     */
     private void sendGradient(){
         // Cache old parameters, in case we need to rollback changes
         List<Integer> oldOrder = new ArrayList<>(order);
 
-        // Get current weights.
-        List<Double> weights = weightVals.getWeights().get(0);
-
         // Compute the gradient with random noise added.
-        List<Double> noisyGrad = computeNoisyGrad(weights);
+        List<Double> noisyGrad = computeNoisyGrad();
 
         // Check if wifi is connected to send the gradient.
         if (!Thread.currentThread().isInterrupted()) {
             Log.d("sendGradient", "Sending gradient.");
 
             // Send the gradient to the server.
-            sendUserValues(noisyGrad, false, ++gradientIteration, weightVals.getIteration(), paramIter);
+            sendUserValues(noisyGrad, false, ++gradientIteration, t, paramIter);
 
             // Decrease iteration
             //dataCount--;
@@ -546,16 +604,16 @@ public class BackgroundDataSend extends Service {
         List<Integer> oldOrder = new ArrayList<>(order);
 
         // Get current weights.
-        List<Double> weights = weightVals.getWeights().get(0);
+        //List<Double> weights = weightVals.getWeights().get(0);
         // Calc new weights using local update num.
         for (int i = 0; i < localUpdateNum; i++) {
             if (Thread.currentThread().isInterrupted()) {
                 break;
             }
-            weights = internalWeightCalc(weights);
-            t++;
+            weights = internalWeightCalc();
+            //t++;
             if (VERBOSE_DEBUG)
-                Log.d("sendWeight", "weightIter: " + t);
+                Log.d("sendWeight", "local iter: " + i + 1);
         }
 
         // Check if wifi is connected to send the gradient.
@@ -577,7 +635,7 @@ public class BackgroundDataSend extends Service {
     }
 
     private void sendUserValues(List<Double> gradientsOrWeights, boolean gradientProcessed, int gradIter, int weightIter, int paramIter){
-        userValues.setValue(
+        userRef.setValue(
             new UserData(gradientsOrWeights, gradientProcessed, gradIter, weightIter, paramIter)
         );
     }
@@ -613,6 +671,8 @@ public class BackgroundDataSend extends Service {
         double[] x;
         List<Double> grad;
         for(int i = 0; i < batchSize; i++){
+            // Periodically check if this thread has been interrupted. See the javadocs on
+            // threading for best practices.
             if (Thread.currentThread().isInterrupted()){
                 break;
             }
@@ -624,38 +684,37 @@ public class BackgroundDataSend extends Service {
 
             // Add the current normalized gradient to the avg gradient vector.
             for(int j = 0; j < length; j++) {
-                if (Thread.currentThread().isInterrupted()){
-                    break;
-                }
                 avgGrad.set(j, (avgGrad.get(j) + grad.get(j)) / batchSize);
             }
+
+//            for(int j = 0; j < length; j++) {
+//                avgGrad.set(j, avgGrad.get(j) / batchSize);
+//            }
+
         }
 
         return avgGrad;
     }
 
-    private List<Double> computeNoisyGrad(List<Double> weights){
+    private List<Double> computeNoisyGrad(){
         // Init training sample batch
-        //Log.e("computeNoisyGrad", "Gathering batch samples");
         List<Integer> batchSamples = gatherBatchSamples();
 
+        // TODO(tylermzeller) this is a bottleneck on physical devices. Buffered file I/O seems to
+        // invoke the GC often.
         // Get training sample features.
-        //Log.e("computeNoisyGrad", "Gathering sample features");
         List<double[]> xBatch = readSamples(batchSamples);
 
         // Get training sample labels.
-        //Log.e("computeNoisyGrad", "Gathering sample labels");
         List<Integer> yBatch = readLabels(batchSamples);
 
         // Compute average gradient vector
-        //Log.e("computeNoisyGrad", "Computing avg grad");
         List<Double> avgGrad = computeAverageGrad(xBatch, yBatch, weights);
 
         // Init empty noisy gradient vector
         List<Double> noisyGrad = new ArrayList<>(length);
 
         // Add random noise probed from the client's noise distribution.
-        //Log.e("computeNoisyGrad", "Computing noisy grad");
         for (double avg : avgGrad) {
             if (Thread.currentThread().isInterrupted()) {
                 break;
@@ -666,10 +725,12 @@ public class BackgroundDataSend extends Service {
         return noisyGrad;
     }
 
-    private List<Double> internalWeightCalc(List<Double> weights){
+    private List<Double> internalWeightCalc(){
         // Compute the gradient with random noise added
-        List<Double> noisyGrad = computeNoisyGrad(weights);
+        List<Double> noisyGrad = computeNoisyGrad();
 
+        // Periodically check if this thread has been interrupted. See the javadocs on
+        // threading for best practices.
         if (Thread.currentThread().isInterrupted()){
             return noisyGrad;
         }
@@ -688,9 +749,14 @@ public class BackgroundDataSend extends Service {
             String[] features;
             int max = Collections.max(sampleBatch);
             while ((line = br.readLine()) != null && counter <= max){
+                // Periodically check if this thread has been interrupted. See the javadocs on
+                // threading for best practices.
+                if (Thread.currentThread().isInterrupted()) {
+                    break;
+                }
+
                 if(sampleBatch.contains(counter)){
 
-                    // TODO: redundant escape?
                     features = line.split(",| ");
 
                     // TODO: why is this list necessary?
@@ -704,15 +770,12 @@ public class BackgroundDataSend extends Service {
                 }
                 counter++;
             }
-        } catch (FileNotFoundException e) {
+        } catch (IOException e) {
+            // TODO(tylermzeller) probably a better way to handle this.
             e.printStackTrace();
             dataCount = -1;
-        } catch (IOException e) {
-            e.printStackTrace();
         }
-
         return xBatch;
-
     }
 
     public List<Integer> readLabels(List<Integer> sampleBatch){
@@ -722,9 +785,15 @@ public class BackgroundDataSend extends Service {
             String line;
             int counter = 0;
             while ((line = br.readLine()) != null && counter <= Collections.max(sampleBatch)){
+                // Periodically check if this thread has been interrupted. See the javadocs on
+                // threading for best practices.
+                if (Thread.currentThread().isInterrupted()) {
+                    break;
+                }
+
                 if(sampleBatch.contains(counter)){
                     line = line.trim();
-                    int sampleLabel = (int)Double.parseDouble(line);
+                    int sampleLabel = Integer.parseInt(line);
                     if(sampleLabel == 0 && loss.lossType().equals("binary")){
                         sampleLabel = -1;
                     }
@@ -732,13 +801,11 @@ public class BackgroundDataSend extends Service {
                 }
                 counter++;
             }
-        } catch (FileNotFoundException e) {
+        } catch (IOException e) {
+            // TODO(tylermzeller) probably a better way to handle this.
             e.printStackTrace();
             dataCount = -1;
-        } catch (IOException e) {
-            e.printStackTrace();
         }
-
         return yBatch;
     }
 }
