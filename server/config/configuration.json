@@ -1,0 +1,32 @@
+{
+    "serviceAccount": "crowd-ml-44682222d637.json",
+    "databaseURL": "https://crowd-ml-caaef.firebaseio.com/",
+
+    "descentAlg": "adagrad",
+    "lossFunction": "Softmax",
+    "paramIter": 1,
+    "maxIter": 10000,
+    "D": 50,
+    "naughtRate": 0.5,
+    "K": 10,
+    "L": 1e-6,
+    "N": 60000,
+    "nh": 75,
+    "eps": 1e-6,
+    "maxWeightBatchSize": 1,
+    "maxGradBatchSize": 1,
+    "clientBatchSize": 100,
+    "localUpdateNum": 0,
+
+    "noiseDistribution": "NoNoise",
+    "noiseScale": 1,
+
+    "featureSource": "MNISTTrainImages.50.l2.dat",
+    "labelSource": "MNISTTrainLabels.dat",
+
+    "testFeatures": "MNISTTestImages.50.l2.dat",
+    "testLabels": "MNISTTestLabels.dat",
+    "testN": 1000,
+    "testType": "multiTest",
+    "testFrequency": 1
+}
