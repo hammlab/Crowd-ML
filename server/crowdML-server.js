@@ -16,14 +16,37 @@ function start() {
 }
 
 function loadConfig() {
-	var cofigFile = process.argv[2];
+	var credentials = process.argv[2];
+	if (!credentials) {
+		console.log(new Error(
+			"ERROR: Missing credentials argument:\n" +
+			"  Expecting invocation of: node crowdML-server.js <credentials> <path-to-configuration>"));
+		process.exit(ERROR_CODE);
+	}
+	
+	var credentialsValues = require('./credentials.json');
+	if (!credentialsValues[credentials]) {
+		console.log(new Error(
+			"ERROR: Missing credentials in credentials.json:\n" +
+			"  Expecting credentials for supplied argument: " + credentials));
+		process.exit(ERROR_CODE);
+	}
+	credentialsValues = credentialsValues[credentials];
+
+	var cofigFile = process.argv[3];
 	if (!cofigFile) {
-		console.log("Invalid config file argument. Server command should be: \'node crowdML-server-Android.js config(#).js\'");
+		console.log(new Error(
+			"ERROR: Missing configFile argument:\n" +
+			"  Expecting invocation of: node crowdML-server.js <credentials> <path-to-configuration>"));
 		process.exit(ERROR_CODE);
 	}
 	var configFilename = './' + cofigFile;
 	config = require(configFilename);
 	config.file = configFilename;
+
+	// Credentials
+	config.serviceAccount = credentialsValues.serviceAccount;
+	config.databaseURL = credentialsValues.databaseURL;
 
 	// Additions
 	config.c = config.naughtRate;
