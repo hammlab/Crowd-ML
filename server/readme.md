@@ -39,11 +39,12 @@ docker run -it --rm -v `pwd`:/usr/src/app/ crowdml-server bash
 
 5. Download the service account `.json` file and place it in `server/`
 6. Paste desired testing data, feature and label files (found in `data/`), into the `server/DataFiles/` folder
-7. Setup config, server and gradient constant values in the `Constants.js` file see [Constants Setup](#constants-setup) (*Notice*: You can copy the `Constants.js` file to a numerated file)
-8. Run command within your setup environment:
+7. Tune config, server and gradient values in a `configuration.json` file located in `server/config/` see [Configuration Setup](#configuration-setup) (*Notice*: One supplies this file to setup the server)
+8. Run the following command within your setup environment:
 
 ```bash
-node crowdML-server.js <Desired Constants File>
+# ex: node crowdML-server.js config/configuration.json
+node crowdML-server.js <Desired Configuration File>
 ```
 
 ## What the server does
@@ -51,28 +52,49 @@ node crowdML-server.js <Desired Constants File>
 The server listens to any changes in the data values of the various user trees, and uses any updated gradient information to create new weight values. The Constants folder contains parameter information for both the server itself as well as all of the clients. Any information needed by the clients is sent to the parameters branch of firebase upon running the server code, which the clients can read. The server also updates various iterators and process checks, which is detailed in the firebase ReadMe. Depending on the learning rate algorithm chosen by the user, the server will subtract the adjusted gradient from the current weight to create a new weight which is uploaded to firebase. The Server allows for gradient mini-batches of a size chosen by the user, in which the gradients collected are stored and when the batch is filled, the average is sent to be applied to the weight values. The server also allows for accuracy testing, which when enabled will compare every X weight values uploaded against a chosen dataset to see what percentage of test feature sets return the correct result.
 
 
-## Constants Setup
+## Configuration
+### Configuration Setup
 
-One can change the firebase URL, keys, etc. by editing the `Constants.js` file. This allows one to affect the following:
-* Parameter iteration
-* Service Account json file name
-* database URL (this can be found on the database page of your project console)
-* feature size (D)
-* maximum weight batch and gradient batch sizes
-* naught learning rate
-* epsilon value for learning rate
-* number of classes (K)
-* descent algorithm (constant|simple|sqrt|adagrad|rmsProp)
-* test features folder
-* test labels folder
-* number of test samples (NTest)
-* type of test to run (multiTest|binary|none)
-* frequency of tests run per weight sent
-* regularization constant (L)
-* gradient loss type (LogReg|Hinge|Softmax)
-* feature folder name
-* test folder name
-* Noise type (None|Gaussian|Laplace)
-* Noise variance (noiseScale)
-* Number of training samples (N)
-* Client batch size
+One can change the firebase URL, keys, etc. by editing the `configuration.json` file. This allows one to affect the following:
+
+Area | Field | Modifies
+--- | --- | ---
+Setup | `serviceAccount` | Service Account json file name
+ | `databaseURL` | Database URL (this can be found on the database page of your project console)
+ | |
+Model | `descentAlg` | Descent algorithm (constant|simple|sqrt|adagrad|rmsProp)
+ | `lossFunction` | Gradient loss type (LogReg|Hinge|Softmax)
+ | `paramIter` | Parameter iteration
+ | `maxIter` |
+ | `D` | Feature size
+ | `naughtRate` | Naught learning rate
+ | `K` | Number of classes
+ | `L` | Regularization constant
+ | `N` | Number of training samples
+ | `nh` |
+ | `eps` | Epsilon value for learning rate
+ | `maxWeightBatchSize` | Maximum weight batch
+ | `maxGradBatchSize` | Maximum gradient batch sizes
+ | `clientBatchSize` | Client batch size
+ | `localUpdateNum` |
+ | |
+Privacy | `noiseDistribution` | Noise type (None|Gaussian|Laplace)
+ | `noiseScale` | Noise variance
+ | |
+Data | `featureSource` | Feature file
+ | `labelSource` | Label file
+ | |
+Tests | `testFeatures` | Test features file
+ | `testLabels` | Test labels file
+ | `testN` | Number of test samples (NTest)
+ | `testType` | Type of test to run (multiTest|binary|none)
+ | `testFrequency` | Frequency of tests run per weight sent
+
+### Supported Opperations
+
+Field | Supported Values
+--- | ---
+`descentAlg` | "constant", "adagrad", "simple", "sqrt", "rmsProp"
+`lossFunction` | "LogReg", "Hinge", "Softmax", "SoftmaxNN"
+`testType` | "None", "binaryTest", "multiTest", "NNTest"
+`noiseDistribution` | "NoNoise", "Gaussian", "Laplace"
