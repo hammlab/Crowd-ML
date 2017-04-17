@@ -1,7 +1,9 @@
-package osu.crowd_ml;
+package osu.crowd_ml.loss_functions;
 
 import java.util.ArrayList;
 import java.util.List;
+
+import osu.crowd_ml.loss_functions.LossFunction;
 
 /*
 Copyright 2016 Crowd-ML team
@@ -20,7 +22,7 @@ See the License for the specific language governing permissions and
 limitations under the License
 */
 
-public class Softmax implements LossFunction{
+public class Softmax implements LossFunction {
 
     public String lossType() {
         return "multi";

@@ -1,14 +1,9 @@
-package osu.crowd_ml;
+package osu.crowd_ml.tests;
 
 import android.content.Context;
 
 
-import java.io.BufferedReader;
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.io.InputStreamReader;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 
 /*
@@ -27,7 +22,7 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License
 */
-public class NNTest implements AccTest{
+public class NNTest implements ModelTest {
 
     public double accuracy(Context context, List<Double> weightVals, List<Integer> testLabels, List<double[]> testFeatures, int testN, int D, int K, int nh){
 

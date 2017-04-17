@@ -1,8 +1,6 @@
 package osu.crowd_ml;
 
 import android.content.Intent;
-import android.net.ConnectivityManager;
-import android.net.NetworkInfo;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
 import android.view.View;
@@ -26,6 +24,9 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+
+import osu.crowd_ml.loss_functions.LossFunction;
+import osu.crowd_ml.noise_distributions.Distribution;
 
 /*
     Copyright 2016 Crowd-ML team

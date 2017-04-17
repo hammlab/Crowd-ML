@@ -1,4 +1,4 @@
-package osu.crowd_ml;
+package osu.crowd_ml.firebase;
 
 /*
     Copyright 2016 Crowd-ML team
