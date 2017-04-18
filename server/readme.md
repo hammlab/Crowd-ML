@@ -40,11 +40,12 @@ docker run -it --rm -v `pwd`:/usr/src/app/ crowdml-server bash
 5. Download the service account `.json` file and place it in `server/`
 6. Paste desired testing data, feature and label files (found in `data/`), into the `server/DataFiles/` folder
 7. Tune config, server and gradient values in a `configuration.json` file located in `server/config/` see [Configuration Setup](#configuration-setup) (*Notice*: One supplies this file to setup the server)
+8. Add ones credentials to a `credentials.json` file in `server/` with the format given by [Credentials Setup](#credentials-setup) 
 8. Run the following command within your setup environment:
 
 ```bash
-# ex: node crowdML-server.js config/configuration.json
-node crowdML-server.js <Desired Configuration File>
+# ex: node crowdML-server.js crowdml config/configuration.json
+node crowdML-server.js <Credentials Name> <Desired Configuration File>
 ```
 
 ## What the server does
@@ -53,15 +54,36 @@ The server listens to any changes in the data values of the various user trees, 
 
 
 ## Configuration
+### Credentials Setup
+
+Create a `credentials.json` file within `server/` with the following format and filling in the `<...>` blanks with your credentials data:
+
+```json
+{
+    "<name-of-credential-set>": {
+        "serviceAccount": "<service-account-filename.json>",
+        "databaseURL": "<firebase-url>"
+    }
+}
+```
+
+An example of a completed file is as follows. Multiple credentials can be added with different names:
+
+```json
+{
+    "crowdml": {
+        "serviceAccount": "Crowd-ML-XXXXXXXXXXXX.json",
+        "databaseURL": "https://crowd-ml-XXXXX.firebaseio.com/"
+    }
+}
+```
+
 ### Configuration Setup
 
 One can change the firebase URL, keys, etc. by editing the `configuration.json` file. This allows one to affect the following:
 
 Area | Field | Modifies
 --- | --- | ---
-Setup | `serviceAccount` | Service Account json file name
- | `databaseURL` | Database URL (this can be found on the database page of your project console)
- | |
 Model | `descentAlg` | Descent algorithm (constant|simple|sqrt|adagrad|rmsProp)
  | `lossFunction` | Gradient loss type (LogReg|Hinge|Softmax)
  | `paramIter` | Parameter iteration
