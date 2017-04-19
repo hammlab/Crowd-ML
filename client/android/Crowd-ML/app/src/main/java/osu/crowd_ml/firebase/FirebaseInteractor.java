@@ -1,4 +1,4 @@
-package osu.crowd_ml;
+package osu.crowd_ml.firebase;
 
 import android.content.Context;
 import android.os.Bundle;
@@ -18,6 +18,8 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.HashSet;
 import java.util.UUID;
+
+import osu.crowd_ml.R;
 
 /*
     Copyright 2016 Crowd-ML team

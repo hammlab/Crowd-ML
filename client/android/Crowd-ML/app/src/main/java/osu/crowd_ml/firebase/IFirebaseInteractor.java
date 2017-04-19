@@ -1,4 +1,4 @@
-package osu.crowd_ml;
+package osu.crowd_ml.firebase;
 
 import android.os.Bundle;
 

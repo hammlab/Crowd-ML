@@ -1,6 +1,5 @@
-package osu.crowd_ml;
+package osu.crowd_ml.firebase;
 
-import android.app.ActivityManager;
 import android.app.Application;
 import android.content.Context;
 

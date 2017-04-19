@@ -1,4 +1,4 @@
-package osu.crowd_ml;
+package osu.crowd_ml.firebase;
 
 /*
     Copyright 2016 Crowd-ML team
@@ -19,6 +19,8 @@ package osu.crowd_ml;
 
 import android.os.Bundle;
 import android.util.Log;
+
+import osu.crowd_ml.ILoginView;
 
 public class SetupPresenter implements ILoginPresenter, IFirebaseInteractor.AuthStateListener,
         IFirebaseInteractor.OnCreateUserListener, IFirebaseInteractor.OnSigninUserListener {

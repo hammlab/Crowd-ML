@@ -1,4 +1,4 @@
-package osu.crowd_ml;
+package osu.crowd_ml.firebase;
 
 import android.content.ContentProvider;
 import android.content.ContentValues;

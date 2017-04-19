@@ -4,20 +4,17 @@ import android.annotation.SuppressLint;
 import android.app.ActivityManager;
 import android.content.Context;
 import android.content.Intent;
-import android.content.SharedPreferences;
 import android.os.Bundle;
-import android.preference.PreferenceManager;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.view.View;
-import android.widget.EditText;
 import android.widget.ProgressBar;
 import android.widget.TextView;
-import android.widget.Toast;
 import android.widget.ToggleButton;
 
+import osu.crowd_ml.firebase.ILoginPresenter;
+import osu.crowd_ml.firebase.SetupPresenter;
 import osu.crowd_ml.utils.NetworkUtils;
-import osu.crowd_ml.utils.StringUtils;
 
 /*
     Copyright 2016 Crowd-ML team

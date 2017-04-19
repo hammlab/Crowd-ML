@@ -44,6 +44,8 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Random;
 
+import osu.crowd_ml.loss_functions.LossFunction;
+import osu.crowd_ml.noise_distributions.Distribution;
 import osu.crowd_ml.utils.NetworkUtils;
 
 public class BackgroundDataSend extends Service {
