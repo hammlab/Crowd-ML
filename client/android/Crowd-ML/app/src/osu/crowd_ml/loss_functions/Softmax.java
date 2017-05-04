@@ -3,8 +3,6 @@ package osu.crowd_ml.loss_functions;
 import java.util.ArrayList;
 import java.util.List;
 
-import osu.crowd_ml.loss_functions.LossFunction;
-
 /*
 Copyright 2016 Crowd-ML team
 

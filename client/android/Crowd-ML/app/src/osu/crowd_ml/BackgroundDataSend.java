@@ -297,11 +297,11 @@ public class BackgroundDataSend extends Service {
     @Override public void onDestroy() {
 
         Log.d("onDestroy", "Stopping the worker thread.");
-        // Step 2. End the worker thread, if running.
+        // Step 1. End the worker thread, if running.
         stopWorkThread();
 
         Log.d("onDestroy", "Interrupting the wifi");
-        // Step 1. End the wifi thread.
+        // Step 2. End the wifi thread.
         stopWifiThread();
 
         Log.d("onDestroy", "Removing Listeners.");

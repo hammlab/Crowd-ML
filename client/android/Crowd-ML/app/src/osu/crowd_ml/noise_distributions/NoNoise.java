@@ -1,9 +1,5 @@
 package osu.crowd_ml.noise_distributions;
 
-import java.util.Random;
-
-import osu.crowd_ml.noise_distributions.Distribution;
-
 /*
 Copyright 2016 Crowd-ML team
 
@@ -21,9 +17,9 @@ See the License for the specific language governing permissions and
 limitations under the License
 */
 
-public class Gaussian implements Distribution {
+public class NoNoise implements Distribution {
 
     public double noise(double mu, double noiseScale){
-        return new Random().nextGaussian() * noiseScale + mu;
+        return mu;
     }
 }
