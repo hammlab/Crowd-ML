@@ -37,14 +37,6 @@
                 <action android:name="android.net.conn.CONNECTIVITY_CHANGE" />
             </intent-filter>
         </service>
-<!--        <service
-            android:name=".TestService"
-            android:process=":datasend"
-            android:exported="false">
-        <intent-filter>
-            <action android:name="android.net.conn.CONNECTIVITY_CHANGE" />
-        </intent-filter>
-        </service> -->
         <provider
             android:name="osu.crowd_ml.MultiprocessPreferences"
             android:authorities="@string/multiprocess_preferences_authority"

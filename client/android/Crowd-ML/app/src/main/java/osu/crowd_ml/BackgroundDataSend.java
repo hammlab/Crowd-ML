@@ -20,13 +20,21 @@ package osu.crowd_ml;
 import android.app.Notification;
 import android.app.PendingIntent;
 import android.app.Service;
+import android.content.BroadcastReceiver;
+import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
+import android.net.ConnectivityManager;
+import android.net.NetworkInfo;
+import android.net.wifi.WifiManager;
+import android.os.Bundle;
 import android.os.Handler;
 import android.os.IBinder;
 import android.os.Message;
 import android.os.PowerManager;
 import android.support.annotation.Nullable;
 import android.support.v4.app.NotificationCompat;
+import android.telephony.TelephonyManager;
 import android.util.Log;
 
 import com.google.firebase.database.DataSnapshot;
@@ -110,6 +118,8 @@ public class BackgroundDataSend extends Service {
     private int length;
     private int disconnectCounter = 0;
 
+    private boolean network;
+
     static class WifiHandler extends Handler {
         private final WeakReference<BackgroundDataSend> mService;
 
@@ -147,7 +157,8 @@ public class BackgroundDataSend extends Service {
         return null;
     }
 
-    @Override public void onCreate() {
+    @Override
+    public void onCreate() {
         super.onCreate();
 
         // Step 1. Extract necessary information
@@ -163,6 +174,13 @@ public class BackgroundDataSend extends Service {
 
         // Step 4. Create a worker to handle wifi connectivity.
         wifiHandler = new WifiHandler(this);
+
+        network = isDataConnected();
+        registerReceiver(new BroadcastReceiver() {
+            public void onReceive(Context context, Intent intent) {
+                network = isDataConnected();
+            }
+        }, new IntentFilter("android.net.conn.CONNECTIVITY_CHANGE"));
 
         // Step 5. Acquire a lock on the CPU for computation during sleep.
         PowerManager powerManager = (PowerManager) getSystemService(POWER_SERVICE);
@@ -191,6 +209,22 @@ public class BackgroundDataSend extends Service {
 
     }
 
+    private boolean isDataConnected() {
+        try {
+            ConnectivityManager cm = (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
+            NetworkInfo info = cm.getActiveNetworkInfo();
+
+            //TODO: See if making sure it's not a metered connection would be better? Consult: https://developer.android.com/reference/android/net/ConnectivityManager.html#isActiveNetworkMetered
+            if (info.getType() == ConnectivityManager.TYPE_WIFI) {
+                return cm.getActiveNetworkInfo().isConnectedOrConnecting();
+            } else {
+                return false;
+            }
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
     // Start command is called whenever focus is given back to the app (like when the user clicks
     // the notification for the foreground service.
     @Override public int onStartCommand(Intent intent, int flags, int startId) {
@@ -209,7 +243,7 @@ public class BackgroundDataSend extends Service {
                         while (!isInterrupted()) {
 
                             // Step 2. Check if a wifi connection is detected AND if the user can access the internet.
-                            if (NetworkUtils.isWifiConnected(BackgroundDataSend.this) && NetworkUtils.isOnline()) {
+                            if (network) {
                                 // Step 3. Check if wifi was previously disconnected.
                                 if (!isWifiConnected) {
                                     wifiHandler.sendEmptyMessage(0);
