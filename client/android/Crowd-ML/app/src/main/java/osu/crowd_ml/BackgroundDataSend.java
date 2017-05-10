@@ -20,13 +20,21 @@ package osu.crowd_ml;
 import android.app.Notification;
 import android.app.PendingIntent;
 import android.app.Service;
+import android.content.BroadcastReceiver;
+import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
+import android.net.ConnectivityManager;
+import android.net.NetworkInfo;
+import android.net.wifi.WifiManager;
+import android.os.Bundle;
 import android.os.Handler;
 import android.os.IBinder;
 import android.os.Message;
 import android.os.PowerManager;
 import android.support.annotation.Nullable;
 import android.support.v4.app.NotificationCompat;
+import android.telephony.TelephonyManager;
 import android.util.Log;
 
 import com.google.firebase.database.DataSnapshot;
@@ -108,46 +116,16 @@ public class BackgroundDataSend extends Service {
     private List<Double> weights;
 
     private int length;
-    private int disconnectCounter = 0;
 
-    static class WifiHandler extends Handler {
-        private final WeakReference<BackgroundDataSend> mService;
-
-        WifiHandler(BackgroundDataSend service) {
-            mService = new WeakReference<>(service);
-        }
-        @Override
-        public void handleMessage(Message msg) {
-            BackgroundDataSend service = mService.get();
-            if (service != null) {
-                service.handleMessage(msg);
-            }
-        }
-    }
-
-    public void handleMessage(Message msg){
-        if (msg.what == 0){ // Now connected
-            if (VERBOSE_DEBUG)
-                Log.d("handleMessage", "Handling wifi connect.");
-
-            isWifiConnected = true;
-            addFirebaseListeners();
-        } else if (msg.what == 1){
-            stopWorkThread();
-            if (VERBOSE_DEBUG)
-                Log.d("handleMessage", "Handling wifi disconnect.");
-
-            wifiDisconnect = true;
-            isWifiConnected = false;
-            removeFirebaseListeners();
-        }
-    }
+    private boolean network;
+    private BroadcastReceiver receiver;
 
     @Nullable @Override public IBinder onBind(Intent intent) {
         return null;
     }
 
-    @Override public void onCreate() {
+    @Override
+    public void onCreate() {
         super.onCreate();
 
         // Step 1. Extract necessary information
@@ -161,8 +139,15 @@ public class BackgroundDataSend extends Service {
         userCheck = new UserData();
         params = new Parameters();
 
-        // Step 4. Create a worker to handle wifi connectivity.
-        wifiHandler = new WifiHandler(this);
+        // Step 4. Create a listener to handle wifi connectivity.
+        network = isDataConnected();
+        receiver = new BroadcastReceiver() {
+            public void onReceive(Context context, Intent intent) {
+                network = isDataConnected();
+                handleWifiChange();
+            }
+        };
+        registerReceiver(receiver, new IntentFilter("android.net.conn.CONNECTIVITY_CHANGE"));
 
         // Step 5. Acquire a lock on the CPU for computation during sleep.
         PowerManager powerManager = (PowerManager) getSystemService(POWER_SERVICE);
@@ -191,49 +176,46 @@ public class BackgroundDataSend extends Service {
 
     }
 
-    // Start command is called whenever focus is given back to the app (like when the user clicks
-    // the notification for the foreground service.
-    @Override public int onStartCommand(Intent intent, int flags, int startId) {
-        super.onStartCommand(intent, flags, startId);
+    private boolean isDataConnected() {
+        try {
+            ConnectivityManager cm = (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
+            NetworkInfo info = cm.getActiveNetworkInfo();
 
-        // Make sure there isn't already a wifi thread working.
-        if (wifiThread == null) {
-            wifiThread = new Thread() {
-                @Override
-                public void run() {
-                    try {
-                        if (VERBOSE_DEBUG)
-                            Log.d("wifiThread", "Detecting Wifi.");
-
-                        // Step 1. Run thread until interrupted.
-                        while (!isInterrupted()) {
-
-                            // Step 2. Check if a wifi connection is detected AND if the user can access the internet.
-                            if (NetworkUtils.isWifiConnected(BackgroundDataSend.this) && NetworkUtils.isOnline()) {
-                                // Step 3. Check if wifi was previously disconnected.
-                                if (!isWifiConnected) {
-                                    wifiHandler.sendEmptyMessage(0);
-                                }
-                            } else {
-                                // Step 3. Check if wifi was previously connected.
-                                if (isWifiConnected) {
-                                    wifiHandler.sendEmptyMessage(1);
-                                }
-                            }
-
-                            // Step 4. Sleep 1 second before checking wifi status again.
-                            Thread.sleep(1000);
-                        }
-                    } catch (Exception e) {
-                        Log.e("wifiThread", "Interrupt.");
-                    }
-                }
-            };
-
-            wifiThread.start();
+            //TODO: See if making sure it's not a metered connection would be better? Consult: https://developer.android.com/reference/android/net/ConnectivityManager.html#isActiveNetworkMetered
+            if (info.getType() == ConnectivityManager.TYPE_WIFI) {
+                return cm.getActiveNetworkInfo().isConnectedOrConnecting();
+            } else {
+                return false;
+            }
+        } catch (Exception e) {
+            return false;
         }
+    }
 
-        return START_STICKY;
+    private void handleWifiChange() {
+        if (network) {
+            // Step 3. Check if wifi was previously disconnected.
+            if (!isWifiConnected) {
+                if (VERBOSE_DEBUG) {
+                    Log.d("handleMessage", "Handling wifi connect.");
+                }
+
+                isWifiConnected = true;
+                addFirebaseListeners();
+            }
+        } else {
+            // Step 3. Check if wifi was previously connected.
+            if (isWifiConnected) {
+                stopWorkThread();
+                if (VERBOSE_DEBUG) {
+                    Log.d("handleMessage", "Handling wifi disconnect.");
+                }
+
+                wifiDisconnect = true;
+                isWifiConnected = false;
+                removeFirebaseListeners();
+            }
+        }
     }
 
     private void addFirebaseListeners(){
@@ -297,16 +279,16 @@ public class BackgroundDataSend extends Service {
     @Override public void onDestroy() {
 
         Log.d("onDestroy", "Stopping the worker thread.");
-        // Step 2. End the worker thread, if running.
+        // Step 1. End the worker thread, if running.
         stopWorkThread();
 
-        Log.d("onDestroy", "Interrupting the wifi");
-        // Step 1. End the wifi thread.
-        stopWifiThread();
-
         Log.d("onDestroy", "Removing Listeners.");
-        // Step 3. Remove listeners.
+        // Step 2. Remove listeners.
         removeFirebaseListeners();
+
+        Log.d("onDestroy", "Unregister Wifi receiver.");
+        // Step 3. End the wifi receiver.
+        unregisterReceiver(receiver);
 
         Log.d("onDestroy", "Stopping foreground service.");
         // Step 4. Remove this service from the foreground.
@@ -451,24 +433,6 @@ public class BackgroundDataSend extends Service {
                 // Error
             }
         });
-    }
-
-    private void stopWifiThread(){
-        // Step 1. Check if the worker thread is non-null and running.
-        if (wifiThread != null && wifiThread.isAlive()){
-
-            // Step 2. Interrupt the thread.
-            wifiThread.interrupt();
-
-            // Step 3. Wait for the thread to die.
-            try {
-                wifiThread.join();
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            } finally {
-                Log.d("stopWifiThread", "Wifi thread ended.");
-            }
-        }
     }
 
     private void stopWorkThread(){
@@ -721,6 +685,8 @@ public class BackgroundDataSend extends Service {
             if (Thread.currentThread().isInterrupted()) {
                 break;
             }
+            // TODO(davidsoller): This changes the size of the ArrayList after we initialized it with a certain size
+            // Change to .add(index, element) as per https://developer.android.com/reference/java/util/ArrayList.html
             noisyGrad.add(dist.noise(avg, noiseScale));
         }
 

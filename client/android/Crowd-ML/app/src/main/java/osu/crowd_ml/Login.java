@@ -144,7 +144,7 @@ public class Login extends AppCompatActivity implements ILoginView, View.OnClick
                 }
 
                 // Step 4. For emulator device only! Check whether the wifi is toggled or not.
-                if (NetworkUtils.isWifiOn){
+                if (NetworkUtils.isWifiOnForEmulator){
                     mWifiToggle.setChecked(true);
                 } else {
                     mWifiToggle.setChecked(false);
@@ -263,9 +263,9 @@ public class Login extends AppCompatActivity implements ILoginView, View.OnClick
         } else if (tb == mWifiToggle){
             Log.d("WifiToggle", "toggled");
             if(tb.isChecked()){
-                NetworkUtils.isWifiOn = true;
+                NetworkUtils.isWifiOnForEmulator = true;
             } else {
-                NetworkUtils.isWifiOn = false;
+                NetworkUtils.isWifiOnForEmulator = false;
             }
         }
 
