@@ -118,6 +118,7 @@ public class BackgroundDataSend extends Service {
     private int length;
 
     private boolean network;
+    private BroadcastReceiver receiver;
 
     @Nullable @Override public IBinder onBind(Intent intent) {
         return null;
@@ -140,12 +141,13 @@ public class BackgroundDataSend extends Service {
 
         // Step 4. Create a listener to handle wifi connectivity.
         network = isDataConnected();
-        registerReceiver(new BroadcastReceiver() {
+        receiver = new BroadcastReceiver() {
             public void onReceive(Context context, Intent intent) {
                 network = isDataConnected();
                 handleWifiChange();
             }
-        }, new IntentFilter("android.net.conn.CONNECTIVITY_CHANGE"));
+        };
+        registerReceiver(receiver, new IntentFilter("android.net.conn.CONNECTIVITY_CHANGE"));
 
         // Step 5. Acquire a lock on the CPU for computation during sleep.
         PowerManager powerManager = (PowerManager) getSystemService(POWER_SERVICE);
@@ -276,26 +278,30 @@ public class BackgroundDataSend extends Service {
 
     @Override public void onDestroy() {
 
+        Log.d("onDestroy", "Unregister Wifi receiver.");
+        // Step 1. End the wifi receiver.
+        unregisterReceiver(receiver);
+
         Log.d("onDestroy", "Stopping the worker thread.");
-        // Step 1. End the worker thread, if running.
+        // Step 2. End the worker thread, if running.
         stopWorkThread();
 
         Log.d("onDestroy", "Removing Listeners.");
-        // Step 2. Remove listeners.
+        // Step 3. Remove listeners.
         removeFirebaseListeners();
 
         Log.d("onDestroy", "Stopping foreground service.");
-        // Step 3. Remove this service from the foreground.
+        // Step 4. Remove this service from the foreground.
         stopForeground(true);
 
         Log.d("onDestroy", "Releasing wakelock.");
-        // Step 4. Release the wakelock.
+        // Step 5. Release the wakelock.
         wakeLock.release();
 
-        // Step 5. Stop the service.
+        // Step 6. Stop the service.
         stopSelf();
 
-        // Step 6. Let Android destroy the rest.
+        // Step 7. Let Android destroy the rest.
         super.onDestroy();
     }
 
