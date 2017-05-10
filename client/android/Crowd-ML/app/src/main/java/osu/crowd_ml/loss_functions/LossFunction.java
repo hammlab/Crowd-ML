@@ -21,6 +21,8 @@ limitations under the License
 
 public interface LossFunction {
 
+    public String lossFunctionName();
+
     public String lossType();
 
     public List<Double> gradient(List<Double> weights, double[] X, int Y, int D, int K, double L, int nh);

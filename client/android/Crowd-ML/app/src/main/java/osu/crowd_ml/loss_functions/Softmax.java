@@ -24,6 +24,10 @@ limitations under the License
 
 public class Softmax implements LossFunction {
 
+    public String lossFunctionName() {
+        return "Softmax";
+    }
+
     public String lossType() {
         return "multi";
     }

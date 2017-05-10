@@ -23,6 +23,10 @@ limitations under the License
 
 public class Hinge implements LossFunction {
 
+    public String lossFunctionName() {
+        return "Hinge";
+    }
+
     public String lossType() {
         return "binary";
     }

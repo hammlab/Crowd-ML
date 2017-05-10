@@ -22,6 +22,10 @@ limitations under the License
 
 public class LogReg implements LossFunction {
 
+    public String lossFunctionName() {
+        return "LogReg";
+    }
+
     public String lossType() {
         return "binary";
     }

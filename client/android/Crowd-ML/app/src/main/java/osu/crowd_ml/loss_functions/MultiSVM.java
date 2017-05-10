@@ -24,6 +24,10 @@ import osu.crowd_ml.loss_functions.LossFunction;
 
 public class MultiSVM implements LossFunction {
 
+    public String lossFunctionName() {
+        return "MultiSVM";
+    }
+
     public String lossType() {
         return "multi";
     }
