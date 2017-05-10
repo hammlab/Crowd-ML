@@ -4,6 +4,8 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
+import osu.crowd_ml.Parameters;
+
 /*
 Copyright 2016 Crowd-ML team
 
@@ -23,12 +25,21 @@ limitations under the License
 
 public class Hinge implements LossFunction {
 
+    protected int length;
+
     public String lossFunctionName() {
         return "Hinge";
     }
 
     public String lossType() {
         return "binary";
+    }
+
+    public int getLength() {
+        return length;
+    }
+    public void setLength(Parameters params) {
+        length = params.getD();
     }
 
     public List<Double> gradient(List<Double> weights, double[] X, int Y, int D, int K, double L, int nh){

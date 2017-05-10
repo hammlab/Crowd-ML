@@ -311,7 +311,6 @@ public class BackgroundDataSend extends Service {
 
         // Step 2. Set parameters.
         setParameters();
-        setLength();
 
         if(loss.lossType().equals("binary") && K > 2){
             // Error: Binary classifier used on non-binary data
@@ -334,22 +333,6 @@ public class BackgroundDataSend extends Service {
         addUserListener();
     }
 
-    private void setLength(){
-        // Step 1. Trivially set length.
-        length = D;
-
-        // Step 2. Check if loss type is multi-classification.
-        if(loss.lossType().equals("multi")){
-            length = D * K;
-        }
-
-        // Step 3. Check if loss type is neural network.
-        if(loss.lossType().equals("NN")){
-            // Arch: In W     1HL  1HL W    2HL    Out W  Out
-            length = D * nh + nh + nh * nh + nh + nh * K + K;
-        }
-    }
-
     private void setParameters(){
         paramIter = params.getParamIter();
         dist = params.getNoiseDistribution();
@@ -368,6 +351,10 @@ public class BackgroundDataSend extends Service {
         eps = params.getEps();
         descentAlg = params.getDescentAlg();
         maxIter = params.getMaxIter();
+
+        // Call to setup the length
+        loss.setLength(params);
+        length = loss.getLength();
 
         // Added to stop infinite send loop
         dataCount = maxIter;

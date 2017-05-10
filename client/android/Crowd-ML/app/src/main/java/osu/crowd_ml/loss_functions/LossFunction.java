@@ -2,6 +2,8 @@ package osu.crowd_ml.loss_functions;
 
 import java.util.List;
 
+import osu.crowd_ml.Parameters;
+
 /*
 Copyright 2016 Crowd-ML team
 
@@ -24,6 +26,9 @@ public interface LossFunction {
     public String lossFunctionName();
 
     public String lossType();
+
+    public int getLength();
+    public void setLength(Parameters params);
 
     public List<Double> gradient(List<Double> weights, double[] X, int Y, int D, int K, double L, int nh);
 }
