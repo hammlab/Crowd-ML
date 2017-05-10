@@ -755,6 +755,8 @@ public class BackgroundDataSend extends Service {
             if (Thread.currentThread().isInterrupted()) {
                 break;
             }
+            // TODO(davidsoller): This changes the size of the ArrayList after we initialized it with a certain size
+            // Change to .add(index, element) as per https://developer.android.com/reference/java/util/ArrayList.html
             noisyGrad.add(dist.noise(avg, noiseScale));
         }
 
