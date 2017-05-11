@@ -136,7 +136,6 @@ public class BackgroundDataSend extends Service {
                 }
 
                 isWifiConnected = true;
-                dataSender.setIsWifiConnected(isWifiConnected);
                 dataSender.addFirebaseListeners();
             }
         } else {
@@ -150,7 +149,6 @@ public class BackgroundDataSend extends Service {
                 wifiDisconnect = true;
                 isWifiConnected = false;
                 dataSender.setWifiDisconnect(wifiDisconnect);
-                dataSender.setIsWifiConnected(isWifiConnected);
                 dataSender.removeFirebaseListeners();
             }
         }

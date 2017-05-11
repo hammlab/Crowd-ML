@@ -32,71 +32,43 @@ import osu.crowd_ml.Parameters;
 import osu.crowd_ml.TrainingWeights;
 import osu.crowd_ml.UserData;
 import osu.crowd_ml.loss_functions.LossFunction;
-import osu.crowd_ml.noise_distributions.Distribution;
 
-public final class DataSender implements Runnable {
+public final class DataSender {
 
-    @Override
-    public void run() {
-
-    }
-
-
-    private Thread workThread;
-    private String UID;
-    final static FirebaseDatabase database = FirebaseDatabase.getInstance();
-    final static DatabaseReference ref = database.getReference();
-    final static DatabaseReference weightsRef = ref.child("trainingWeights");
-    final static DatabaseReference parametersRef = ref.child("parameters");
-    DatabaseReference userRef;
-
-    private Parameters params;
-
-
-
-    private TrainingWeights weightVals;
-    private UserData userCheck;
-    private int gradientIteration;
-    private int dataCount = 0;
-    private boolean init;
+    // Firebase references
+    private final static FirebaseDatabase database = FirebaseDatabase.getInstance();
+    private final static DatabaseReference ref = database.getReference();
+    private final static DatabaseReference weightsRef = ref.child("trainingWeights");
+    private final static DatabaseReference parametersRef = ref.child("parameters");
+    private DatabaseReference userRef;
 
     // Database Listeners
     private ValueEventListener userListener;
     private ValueEventListener paramListener;
     private ValueEventListener weightListener;
 
-
     // Handling WiFi connectivity
-    private volatile boolean isWifiConnected = false;
     private boolean wifiDisconnect = false;
 
     // Bebugging
     private boolean VERBOSE_DEBUG = true;
 
+    // Parameters
+    private Parameters params;
     private int paramIter;
-    private Distribution dist;
-    private int K;
     private LossFunction loss;
-    private String labelSource;
-    private String featureSource;
-    private int D;
-    private int N;
-    private int batchSize;
-    private double noiseScale;
-    private double L;
-    private int nh;
     private int localUpdateNum;
-    private double c;
-    private double eps;
-    private String descentAlg;
-    private int maxIter;
     private volatile int t;
-    private List<Double> learningRate;
     private List<Double> weights;
-    private int length;
 
     // Work calculations
+    private Thread workThread;
+    private String UID;
     private DataComputer dataWorker;
+    private TrainingWeights weightVals;
+    private UserData userCheck;
+    private int gradientIteration;
+    private boolean init;
 
     public DataSender(String UID, Context context) {
         // Get database references.
@@ -111,32 +83,10 @@ public final class DataSender implements Runnable {
         wifiDisconnect = state;
     }
 
-    public void setIsWifiConnected(boolean state) {
-        isWifiConnected = state;
-    }
-
     private void setParameters(){
         paramIter = params.getParamIter();
-        dist = params.getNoiseDistribution();
-        K = params.getK();
         loss = params.getLossFunction();
-        labelSource = params.getLabelSource();
-        featureSource = params.getFeatureSource();
-        D = params.getD();
-        N = params.getN();
-        batchSize = params.getClientBatchSize();
-        noiseScale = params.getNoiseScale();
-        L = params.getL();
-        nh = params.getNH();
         localUpdateNum = params.getLocalUpdateNum();
-        c = params.getC();
-        eps = params.getEps();
-        descentAlg = params.getDescentAlg();
-        maxIter = params.getMaxIter();
-
-        // Call to setup the length
-        loss.setLength(params);
-        length = loss.getLength();
     }
 
     public void addFirebaseListeners(){
@@ -264,10 +214,26 @@ public final class DataSender implements Runnable {
                     // Step 7. Check the localUpdateNum for the type of processing the client should do.
                     if (localUpdateNum == 0) {
                         // Step 8. Compute a single step of SGD.
-                        startGradientThread();
+                        Thread gradientThread = new Thread() {
+                            @Override
+                            public void run() {
+                                List<Double> gradients = dataWorker.getNoisyGradients();
+                                Log.d("sendGradientWeights", "Attempting to send.");
+                                sendComputedValues(gradients);
+                            }
+                        };
+                        startWorkThread(gradientThread);
                     } else if (localUpdateNum > 0) {
                         // Step 8. Compute localUpdateNum steps of batchGD.
-                        startWeightThread();
+                        Thread weightThread = new Thread() {
+                            @Override
+                            public void run() {
+                                List<Double> weights = dataWorker.getWeights();
+                                Log.d("sendComputedValues", "Attempting to send.");
+                                sendComputedValues(weights);
+                            }
+                        };
+                        startWorkThread(weightThread);
                     }
                 }
             }
@@ -313,14 +279,11 @@ public final class DataSender implements Runnable {
         );
     }
 
-
-
-
     /**
      * When the client runs with localUpdateNum=0, the client only computes the gradient of the
      * weights and sends the gradients back.
      */
-    private void startGradientThread() {
+    private void startWorkThread(Thread thread) {
         // Step 1. Check if the worker thread is non-null and running.
         if (workThread != null && workThread.isAlive()) {
 
@@ -333,40 +296,7 @@ public final class DataSender implements Runnable {
         }
 
         // Step 2. Reset the worker thread.
-        workThread = new Thread() {
-            @Override
-            public void run() {
-                List<Double> gradients = dataWorker.getNoisyGradients();
-                Log.d("sendGradientWeights", "Attempting to send.");
-                sendComputedValues(gradients);
-            }
-        };
-
-        // Step 3. Start the thread.
-        workThread.start();
-    }
-
-    private void startWeightThread() {
-        // Step 1. Check if the worker thread is non-null and running.
-        if (workThread != null && workThread.isAlive()) {
-
-            // Wait for the thread to stop.
-            try {
-                workThread.join();
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
-        }
-
-        // Step 2. Reset the worker thread.
-        workThread = new Thread() {
-            @Override
-            public void run() {
-                List<Double> weights = dataWorker.getWeights();
-                Log.d("sendComputedValues", "Attempting to send.");
-                sendComputedValues(weights);
-            }
-        };
+        workThread = thread;
 
         // Step 3. Start the thread.
         workThread.start();
