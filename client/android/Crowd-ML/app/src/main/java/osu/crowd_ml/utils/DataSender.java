@@ -31,7 +31,6 @@ import java.util.List;
 import osu.crowd_ml.Parameters;
 import osu.crowd_ml.TrainingWeights;
 import osu.crowd_ml.UserData;
-import osu.crowd_ml.loss_functions.LossFunction;
 
 public final class DataSender {
 
@@ -56,39 +55,52 @@ public final class DataSender {
     // Parameters
     private Parameters params;
     private int paramIter;
-    private LossFunction loss;
     private int localUpdateNum;
     private volatile int t;
     private List<Double> weights;
 
     // Work calculations
     private Thread workThread;
-    private String UID;
     private DataComputer dataWorker;
     private TrainingWeights weightVals;
     private UserData userCheck;
     private int gradientIteration;
     private boolean init;
 
+    /**
+     * Create a new DataSender.
+     *
+     * @param UID -- unique ID that serves as the user reference
+     * @param context -- activity context
+     */
     public DataSender(String UID, Context context) {
         // Get database references.
         userRef = ref.child("users").child(UID);
-        this.UID = UID;
 
         dataWorker = new DataComputer(context);
         params = new Parameters();
     }
 
+    /**
+     * Set WifiDisconnect to the provided state.
+     *
+     * @param state -- state of the wifiDisconnect
+     */
     public void setWifiDisconnect(boolean state) {
         wifiDisconnect = state;
     }
 
+    /**
+     * Sets the parameters.
+     */
     private void setParameters(){
         paramIter = params.getParamIter();
-        loss = params.getLossFunction();
         localUpdateNum = params.getLocalUpdateNum();
     }
 
+    /**
+     * Add the Firebase listeners.
+     */
     public void addFirebaseListeners(){
         if (VERBOSE_DEBUG)
             Log.d("addFirebaseListeners", "Adding listeners.");
@@ -129,6 +141,9 @@ public final class DataSender {
         });
     }
 
+    /**
+     * Remove the Firebase listener.
+     */
     public void removeFirebaseListeners(){
         Log.d("removeFirebaseListeners", "Removing listeners.");
 
@@ -148,7 +163,11 @@ public final class DataSender {
         weightListener = null;
     }
 
-
+    /**
+     * Update the parameters based on the new dataSnapshot.
+     *
+     * @param dataSnapshot -- data to update to
+     */
     private void onParameterDataChange(DataSnapshot dataSnapshot){
         // Step 1. Get all parameters from the data snapshot
         params = dataSnapshot.getValue(Parameters.class);
@@ -166,8 +185,10 @@ public final class DataSender {
         addUserListener();
     }
 
+    /**
+     * Adds a user listener.
+     */
     private void addUserListener(){
-
         // Step 1. Check if there is already a user listener and remove if so.
         if (userListener != null) {
             userRef.removeEventListener(userListener);
@@ -213,27 +234,9 @@ public final class DataSender {
 
                     // Step 7. Check the localUpdateNum for the type of processing the client should do.
                     if (localUpdateNum == 0) {
-                        // Step 8. Compute a single step of SGD.
-                        Thread gradientThread = new Thread() {
-                            @Override
-                            public void run() {
-                                List<Double> gradients = dataWorker.getNoisyGradients();
-                                Log.d("sendGradientWeights", "Attempting to send.");
-                                sendComputedValues(gradients);
-                            }
-                        };
-                        startWorkThread(gradientThread);
+                        startGradientWorkThread();
                     } else if (localUpdateNum > 0) {
-                        // Step 8. Compute localUpdateNum steps of batchGD.
-                        Thread weightThread = new Thread() {
-                            @Override
-                            public void run() {
-                                List<Double> weights = dataWorker.getWeights();
-                                Log.d("sendComputedValues", "Attempting to send.");
-                                sendComputedValues(weights);
-                            }
-                        };
-                        startWorkThread(weightThread);
+                        startWeightWorkThread();
                     }
                 }
             }
@@ -244,17 +247,51 @@ public final class DataSender {
         });
     }
 
-    //allows for newly created users to initialize values
+    /**
+     * Starts a gradient work thread which computes a single step of SGD.
+     */
+    private void startGradientWorkThread() {
+        Thread gradientThread = new Thread() {
+            @Override
+            public void run() {
+                List<Double> gradients = dataWorker.getNoisyGradients();
+                Log.d("sendGradientWeights", "Attempting to send.");
+                sendComputedValues(gradients);
+            }
+        };
+        startWorkThread(gradientThread);
+    }
+
+    /**
+     * Starts a weight work thread which computes localUpdateNum steps of batchGD.
+     */
+    private void startWeightWorkThread() {
+        Thread weightThread = new Thread() {
+            @Override
+            public void run() {
+                List<Double> weights = dataWorker.getWeights();
+                Log.d("sendComputedValues", "Attempting to send.");
+                sendComputedValues(weights);
+            }
+        };
+        startWorkThread(weightThread);
+    }
+
+    /**
+     *  Allows for newly created users to initialize values.
+     */
     private void initUser() {
         // Step 1. Get the current weight vector.
         //List<Double> initGrad = weightVals.getWeights().get(0);
 
         // Step 2. Send the DB the user's initial values.
-        sendUserValues(weights, false, gradientIteration, t, paramIter);
+        sendUserValues(new UserData(weights, false, gradientIteration, t, paramIter));
     }
 
     /**
-     * Compute the gradient of the weights and send back to the server.
+     * Sends the computed values to the server.
+     *
+     * @param values -- The values to send to the server
      */
     private void sendComputedValues(List<Double> values){
         // Check if wifi is connected to send the gradient.
@@ -265,23 +302,27 @@ public final class DataSender {
             // TODO (david soller) : This wasn't changing between Gradient & Weights error?
             boolean gradientProcessed = false;
 
-            // Send the gradient to the server.
-            sendUserValues(values, gradientProcessed, ++gradientIteration, t, paramIter);
+            // Send the values to the server.
+            sendUserValues(new UserData(values, gradientProcessed, ++gradientIteration, t, paramIter));
         } else {
             if (VERBOSE_DEBUG)
                 Log.d("sendComputedValues", "Can't send values to server.");
         }
     }
 
-    private void sendUserValues(List<Double> gradientsOrWeights, boolean gradientProcessed, int gradIter, int weightIter, int paramIter){
-        userRef.setValue(
-                new UserData(gradientsOrWeights, gradientProcessed, gradIter, weightIter, paramIter)
-        );
+    /**
+     * Sends the provided data to the server
+     *
+     * @param data -- The UserData to send
+     */
+    private void sendUserValues(UserData data){
+        userRef.setValue(data);
     }
 
     /**
-     * When the client runs with localUpdateNum=0, the client only computes the gradient of the
-     * weights and sends the gradients back.
+     * Starts the work Thread after the previous one is finished based on the provided thread.
+     *
+     * @param thread -- thread to run as the next work Thread
      */
     private void startWorkThread(Thread thread) {
         // Step 1. Check if the worker thread is non-null and running.
@@ -302,6 +343,9 @@ public final class DataSender {
         workThread.start();
     }
 
+    /**
+     * Stops the work Thread.
+     */
     public void stopWorkThread() {
         // Step 1. Check if the worker thread is non-null and running.
         if (workThread != null && workThread.isAlive()) {
