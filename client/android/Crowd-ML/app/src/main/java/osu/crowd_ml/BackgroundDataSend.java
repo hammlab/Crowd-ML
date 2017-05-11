@@ -159,17 +159,17 @@ public class BackgroundDataSend extends Service {
     @Override
     public void onDestroy() {
 
-        Log.d("onDestroy", "Unregister Wifi receiver.");
-        // Step 1. End the wifi receiver.
-        unregisterReceiver(receiver);
-
         Log.d("onDestroy", "Stopping the worker thread.");
-        // Step 2. End the worker thread, if running.
+        // Step 1. End the worker thread, if running.
         dataSender.stopWorkThread();
 
         Log.d("onDestroy", "Removing Listeners.");
-        // Step 3. Remove listeners.
+        // Step 2. Remove listeners.
         dataSender.removeFirebaseListeners();
+
+        Log.d("onDestroy", "Unregister Wifi receiver.");
+        // Step 3. End the wifi receiver.
+        unregisterReceiver(receiver);
 
         Log.d("onDestroy", "Stopping foreground service.");
         // Step 4. Remove this service from the foreground.
