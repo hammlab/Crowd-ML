@@ -1,4 +1,4 @@
-package osu.crowd_ml;
+package osu.crowd_ml.utils;
 
 import android.util.Log;
 
