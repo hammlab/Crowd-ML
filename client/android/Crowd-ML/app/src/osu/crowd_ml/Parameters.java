@@ -1,7 +1,7 @@
 package osu.crowd_ml;
 
 /*
-Copyright 2016 Crowd-ML team
+Copyright 2017 Crowd-ML team
 
 
 Licensed under the Apache License, Version 2.0 (the "License");
@@ -51,6 +51,7 @@ public class Parameters {
     public Parameters() {
 
     }
+
     public int getParamIter(){
         return paramIter;
     }
