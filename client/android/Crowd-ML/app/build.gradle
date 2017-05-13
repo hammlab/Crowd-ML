@@ -1,12 +1,13 @@
 apply plugin: 'com.android.application'
 
 // Controls output directory in APK and CPU type for Bazel builds.
-def cpuType = 'armeabi-v7a'
+def cpuType = System.getenv("CROWDML__CPU_TYPE")
 
 // Output directory in the local directory for packaging into the APK.
 def nativeOutDir = 'libs/' + cpuType
 
-def pathToTF = System.properties['user.home'] + '/workspace/tensorflow'
+// Path to TensorFlow source
+def pathToTF = System.getenv("CROWDML__PATH_TO_TF")
 
 // Default to building with Bazel and override with make if requested.
 def nativeBuildRule = 'buildNativeBazel'
@@ -115,9 +116,9 @@ task buildNativeBazel(type: Exec) {
          'tensorflow/examples/android:tensorflow_native_libs',  \
          '--crosstool_top=//external:android/crosstool',  \
          '--cpu=' + cpuType,  \
+         '--jobs=1', \
          '--host_crosstool_top=@bazel_tools//tools/cpp:toolchain'
 }
-
 
 task copyNativeLibs(type: Copy) {
     from inferenceLibPath
