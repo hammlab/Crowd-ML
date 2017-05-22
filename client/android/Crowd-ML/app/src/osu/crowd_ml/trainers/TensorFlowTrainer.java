@@ -1,4 +1,4 @@
-package osu.crowd_ml;
+package osu.crowd_ml.trainers;
 
 /*
 Copyright 2017 Crowd-ML team
@@ -26,6 +26,11 @@ import org.tensorflow.contrib.android.TensorFlowTrainingInterface;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
+
+import osu.crowd_ml.CrowdMLApplication;
+import osu.crowd_ml.Parameters;
+import osu.crowd_ml.R;
+import osu.crowd_ml.TrainingDataIO;
 
 public class TensorFlowTrainer implements Trainer {
 

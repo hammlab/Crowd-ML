@@ -1,6 +1,8 @@
-package osu.crowd_ml;
+package osu.crowd_ml.trainers;
 
 import java.util.List;
+
+import osu.crowd_ml.Parameters;
 
 /**
  * Created by tylerzeller on 5/10/17.
