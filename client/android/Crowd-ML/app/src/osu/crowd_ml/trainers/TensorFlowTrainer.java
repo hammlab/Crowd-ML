@@ -39,12 +39,14 @@ public class TensorFlowTrainer implements Trainer {
     private Parameters params;
     private List<Double> weights;
     private int t;
+    private boolean first;
 
     private static TensorFlowTrainer instance = null;
 
     private TensorFlowTrainingInterface trainingInterface = null;
 
     private TensorFlowTrainer(){
+        this.first = true;
     }
     
     public static TensorFlowTrainer getInstance() {
@@ -88,7 +90,10 @@ public class TensorFlowTrainer implements Trainer {
         // Log this method so that it can be analyzed with systrace.
         Trace.beginSection("beginTraining");
 
-        Trace.beginSection("init_vars");
+        if (first) {
+            Trace.beginSection("init_vars");
+            first = false;
+        }
         //trainingInterface.feed(initName, new float[0], 0);
 
         trainingInterface.run(new String[]{}, new String[]{initName});
