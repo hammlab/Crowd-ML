@@ -33,8 +33,8 @@ public class Parameters {
     private double L;
     private int K;
     private double noiseScale;
-    private String noiseDistribution;
-    private String lossFunction;
+    private Distribution noiseDistribution;
+    private LossFunction lossFunction;
     private String labelSource;
     private String featureSource;
     private int D;
@@ -74,20 +74,23 @@ public class Parameters {
     }
 
     public Distribution getNoiseDistribution(){
-        Distribution dist = new NoNoise();
-        if(noiseDistribution.equals("NoNoise")){
-            dist = new NoNoise();
-        }
-        else if(noiseDistribution.equals("Gaussian")){
-            dist = new Gaussian();
-        }
-        else if(noiseDistribution.equals("Laplace")){
-            dist = new Laplace();
-        }
-        return dist;
+        return noiseDistribution;
     }
-    public void setNoiseDistribution(String dist){
-        noiseDistribution = dist;
+    public void setNoiseDistribution(String noiseDistributionName){
+        switch (noiseDistributionName) {
+            case "NoNoise":
+                noiseDistribution = new NoNoise();
+                break;
+            case "Gaussian":
+                noiseDistribution = new Gaussian();
+                break;
+            case "Laplace":
+                noiseDistribution = new Laplace();
+                break;
+            default:
+                noiseDistribution = new NoNoise();
+                break;
+        }
     }
 
     public int getK(){
@@ -98,26 +101,29 @@ public class Parameters {
     }
 
     public LossFunction getLossFunction(){
-        LossFunction loss = new LogReg();
-        if(lossFunction.equals("LogReg")){
-            loss = new LogReg();
-        }
-        else if(lossFunction.equals("Hinge")){
-            loss = new Hinge();
-        }
-        else if(lossFunction.equals("Softmax")){
-            loss = new Softmax();
-        }
-        else if(lossFunction.equals("MultiSVM")){
-            loss = new MultiSVM();
-        }
-        else if(lossFunction.equals("SoftmaxNN")){
-            loss = new SoftmaxNN();
-        }
-        return loss;
+        return lossFunction;
     }
-    public void setLossFunction(String loss){
-        lossFunction = loss;
+    public void setLossFunction(String lossFunctionName){
+        switch (lossFunctionName) {
+            case "LogReg":
+                lossFunction = new LogReg();
+                break;
+            case "Hinge":
+                lossFunction = new Hinge();
+                break;
+            case "Softmax":
+                lossFunction = new Softmax();
+                break;
+            case "MultiSVM":
+                lossFunction = new MultiSVM();
+                break;
+            case "SoftmaxNN":
+                lossFunction = new SoftmaxNN();
+                break;
+            default:
+                lossFunction = new LogReg();
+                break;
+        }
     }
 
     public String getLabelSource(){

@@ -3,6 +3,8 @@ package osu.crowd_ml.loss_functions;
 import java.util.ArrayList;
 import java.util.List;
 
+import osu.crowd_ml.Parameters;
+import osu.crowd_ml.loss_functions.LossFunction;
 /*
 Copyright 2016 Crowd-ML team
 
@@ -22,8 +24,26 @@ limitations under the License
 
 public class SoftmaxNN implements LossFunction {
 
+    protected int length;
+
+    public String lossFunctionName() {
+        return "SoftmaxNN";
+    }
+
     public String lossType() {
         return "NN";
+    }
+
+    public int getLength() {
+        return length;
+    }
+    public void setLength(Parameters params) {
+        int D = params.getD();
+        int K = params.getK();
+        int nh = params.getNH();
+
+        // Arch: In W     1HL  1HL W    2HL    Out W  Out
+        length = D * nh + nh + nh * nh + nh + nh * K + K;
     }
 
     public List<Double> gradient(List<Double> weights, double[] X, int Y, int D, int K, double L, int nh){

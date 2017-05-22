@@ -3,6 +3,9 @@ package osu.crowd_ml.loss_functions;
 import java.util.ArrayList;
 import java.util.List;
 
+import osu.crowd_ml.Parameters;
+import osu.crowd_ml.loss_functions.LossFunction;
+
 /*
     Copyright 2016 Crowd-ML team
 
@@ -22,8 +25,21 @@ import java.util.List;
 
 public class MultiSVM implements LossFunction {
 
+    protected int length;
+
+    public String lossFunctionName() {
+        return "MultiSVM";
+    }
+
     public String lossType() {
         return "multi";
+    }
+
+    public int getLength() {
+        return length;
+    }
+    public void setLength(Parameters params) {
+        length = params.getD() * params.getK();
     }
 
     public List<Double> gradient(List<Double> weights, double[] X, int Y, int D, int K, double L, int nh){

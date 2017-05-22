@@ -2,15 +2,12 @@ package osu.crowd_ml;
 
 import android.util.Log;
 
-import com.google.firebase.analytics.FirebaseAnalytics;
-
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.List;
 
-import osu.crowd_ml.firebase.CrowdMLApplication;
 import osu.crowd_ml.loss_functions.LossFunction;
 import osu.crowd_ml.utils.ArrayUtils;
 

@@ -17,7 +17,6 @@ See the License for the specific language governing permissions and
 limitations under the License
 */
 
-import android.content.Context;
 import android.content.res.AssetManager;
 import android.os.Trace;
 import android.util.Log;
@@ -27,8 +26,6 @@ import org.tensorflow.contrib.android.TensorFlowTrainingInterface;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
-
-import osu.crowd_ml.firebase.CrowdMLApplication;
 
 public class TensorFlowTrainer implements Trainer {
 

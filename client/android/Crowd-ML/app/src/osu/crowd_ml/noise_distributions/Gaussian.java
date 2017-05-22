@@ -21,6 +21,10 @@ limitations under the License
 
 public class Gaussian implements Distribution {
 
+    public String noiseName() {
+        return "Gaussian";
+    }
+
     public double noise(double mu, double noiseScale){
         return new Random().nextGaussian() * noiseScale + mu;
     }

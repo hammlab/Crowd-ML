@@ -19,5 +19,7 @@ limitations under the License
 
 public interface Distribution {
 
+    public String noiseName();
+
     public double noise(double mu, double noiseScale);
 }

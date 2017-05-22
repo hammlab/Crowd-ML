@@ -19,6 +19,7 @@ import java.io.InputStreamReader;
 import java.util.HashSet;
 import java.util.UUID;
 
+import osu.crowd_ml.CrowdMLApplication;
 import osu.crowd_ml.R;
 
 /*
@@ -212,7 +213,7 @@ public class FirebaseInteractor implements IFirebaseInteractor {
 
                 // TODO: invoke BackgroundDataSend when wifi is enabled
 //                        if (task.isSuccessful()) {
-//                            Intent intent = new Intent(Login.this, DataSend.class);
+//                            Intent intent = new Intent(Login.this, DataSender.class);
 //                            intent.putExtra("EMAIL", email);
 //                            intent.putExtra("PASSWORD", password);
 //                            intent.putExtra("UID", uid);

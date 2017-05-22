@@ -19,6 +19,10 @@ limitations under the License
 
 public class NoNoise implements Distribution {
 
+    public String noiseName() {
+        return "NoNoise";
+    }
+
     public double noise(double mu, double noiseScale){
         return mu;
     }
