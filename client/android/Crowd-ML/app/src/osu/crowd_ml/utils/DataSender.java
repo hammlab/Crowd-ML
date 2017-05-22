@@ -17,7 +17,6 @@ package osu.crowd_ml.utils;
     limitations under the License
 */
 
-import android.content.Context;
 import android.util.Log;
 
 import com.google.firebase.database.DataSnapshot;
@@ -32,6 +31,8 @@ import osu.crowd_ml.BuildConfig;
 import osu.crowd_ml.Parameters;
 import osu.crowd_ml.TrainingWeights;
 import osu.crowd_ml.UserData;
+import osu.crowd_ml.trainers.TensorFlowTrainer;
+import osu.crowd_ml.trainers.Trainer;
 
 public final class DataSender {
 
@@ -48,7 +49,7 @@ public final class DataSender {
     private ValueEventListener weightListener;
 
     // Handling WiFi connectivity
-    private boolean wifiDisconnect = false;
+    private boolean wifiDisconnect;
 
     // Parameters
     private Parameters params;
@@ -56,27 +57,38 @@ public final class DataSender {
     private int localUpdateNum;
     private volatile int t;
     private List<Double> weights;
+    private volatile boolean weightsUpdated;
+    private volatile boolean paramsUpdated;
 
     // Work calculations
     private Thread workThread;
-    private DataComputer dataWorker;
     private TrainingWeights weightVals;
     private UserData userCheck;
     private int gradientIteration;
-    private boolean init;
+
+    // Training
+    private Trainer trainer;
 
     /**
      * Create a new DataSender.
      *
      * @param UID -- unique ID that serves as the user reference
-     * @param context -- activity context
      */
-    public DataSender(String UID, Context context) {
+    public DataSender(String UID) {
         // Get database references.
         userRef = ref.child("users").child(UID);
 
-        dataWorker = new DataComputer(context);
+        // WiFi connectivity
+        wifiDisconnect = false;
+
+        // Parameters
         params = new Parameters();
+        weightsUpdated = false;
+        paramsUpdated = false;
+
+        // Setup the ML training libraries
+        trainer = TensorFlowTrainer.getInstance();
+
     }
 
     /**
@@ -129,7 +141,15 @@ public final class DataSender {
                 weightVals = dataSnapshot.getValue(TrainingWeights.class);
                 weights = weightVals.getWeights().get(0);
                 t = weightVals.getIteration();
-                dataWorker.setWeights(weightVals);
+
+                // Weight parameters are now updated
+                weightsUpdated = true;
+
+                Log.d("onDataChange", t + "");
+                if (paramsUpdated) {
+                    initUser();
+                    paramsUpdated = false;
+                }
             }
 
             @Override public void onCancelled(DatabaseError error) {
@@ -163,6 +183,12 @@ public final class DataSender {
 
     /**
      * Update the parameters based on the new dataSnapshot.
+     * 
+     * @requires Communication with the server must be initiated with an {@code initUser()} call. 
+     * The call to this method relies on the retrieval of the most update-to-date parameters and
+     * weights from the firebase listeners. It is unknown what order these listeners will 
+     * dispatch updates, so the check for updates from both listeners happens in both on
+     * DataChange methods.
      *
      * @param dataSnapshot -- data to update to
      */
@@ -172,15 +198,21 @@ public final class DataSender {
 
         // Step 2. Set parameters.
         setParameters();
-        dataWorker.setParameters(params);
-
-        // Calling this method after clearing the order list (the above line) will initialize
-        // it to a list of size N consisting of int values in the range [0, N) in random order.
-        dataWorker.maintainSampleOrder();
+        
+        if (!wifiDisconnect){
+            gradientIteration = 0;
+        }
+        // Parameters are now updated.
+        paramsUpdated = !wifiDisconnect;
 
         // Step 3. ??? TODO: why do we add this here? This adds a new listener every time the parameters are updated
         // TODO: I believe this prevents trying to send gradients before parameters have been set for the client.
         addUserListener();
+        if (paramsUpdated && weightsUpdated){
+            initUser();
+            weightsUpdated = false;
+        }
+        wifiDisconnect = false;
     }
 
     /**
@@ -193,22 +225,7 @@ public final class DataSender {
             userListener = null;
         }
 
-        // Step 2. Check if a wifi disconnect caused this listener to be reinitialized.
-        if (!wifiDisconnect) {
-            // Wifi did not disconnect. This means the application has been launched for the first
-            // time.
-            Log.d("addUserListener", "Wifi was not disconnected.");
-            init = false;
-
-            // TODO(tylermzeller): Gradient iteration needs to be 0 when a new experiment starts.
-            // How do we let the client know a new experiment has started?
-            gradientIteration = 0;
-        }
-
-        // If there was a wifi disconnect, we need to reset the disconnect var.
-        wifiDisconnect = false;
-
-        // Step 3. Add new user listener.
+        // Step 2. Add new user listener.
         userListener = userRef.addValueEventListener(new ValueEventListener() {
             @Override public void onDataChange(DataSnapshot dataSnapshot) {
                 if (BuildConfig.DEBUG)
@@ -216,14 +233,6 @@ public final class DataSender {
 
                 // Step 4. Get updated user values.
                 userCheck = dataSnapshot.getValue(UserData.class);
-
-                // Step 5. If the user hasn't been initialized yet, do it now.
-                if(!init){
-                    if (BuildConfig.DEBUG)
-                        Log.d("userValues", "Init user");
-                    init = true;
-                    initUser();
-                }
 
                 Log.d("userValues", userCheck.getGradientProcessed() + " " + userCheck.getGradIter() + " " + gradientIteration);
 
@@ -252,7 +261,12 @@ public final class DataSender {
         Thread gradientThread = new Thread() {
             @Override
             public void run() {
-                List<Double> gradients = dataWorker.getNoisyGradients();
+                // Compute the gradient with random noise added.
+                trainer .setIter(t)
+                        .setParams(params)
+                        .setWeights(weights);
+                List<Double> gradients = trainer.getNoisyGrad();
+
                 Log.d("sendGradientWeights", "Attempting to send.");
                 sendComputedValues(gradients);
             }
@@ -267,7 +281,12 @@ public final class DataSender {
         Thread weightThread = new Thread() {
             @Override
             public void run() {
-                List<Double> weights = dataWorker.getWeights();
+                // Calc new weights
+                trainer .setIter(t)
+                        .setParams(params)
+                        .setWeights(weights);
+                List<Double> weights = trainer.train(localUpdateNum);
+
                 Log.d("sendComputedValues", "Attempting to send.");
                 sendComputedValues(weights);
             }
@@ -279,8 +298,7 @@ public final class DataSender {
      *  Allows for newly created users to initialize values.
      */
     private void initUser() {
-        // Step 1. Get the current weight vector.
-        //List<Double> initGrad = weightVals.getWeights().get(0);
+        Log.d("initUser", "Param iter: " + paramIter + " Weight iter: " + t);
 
         // Step 2. Send the DB the user's initial values.
         sendUserValues(new UserData(weights, false, gradientIteration, t, paramIter));

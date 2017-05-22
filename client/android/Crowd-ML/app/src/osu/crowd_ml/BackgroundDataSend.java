@@ -32,8 +32,6 @@ import android.support.annotation.Nullable;
 import android.support.v4.app.NotificationCompat;
 import android.util.Log;
 
-import osu.crowd_ml.trainers.TensorFlowTrainer;
-import osu.crowd_ml.trainers.Trainer;
 import osu.crowd_ml.utils.DataSender;
 
 
@@ -56,9 +54,6 @@ public class BackgroundDataSend extends Service {
     private DataSender dataSender;
     private String UID;
 
-    // Training
-    private Trainer trainer;
-
     @Nullable
     @Override
     public IBinder onBind(Intent intent) {
@@ -74,7 +69,7 @@ public class BackgroundDataSend extends Service {
         UID = MultiprocessPreferences.getDefaultSharedPreferences(this).getString("uid", "");
 
         // Step 3. Initialize necessary data.
-        dataSender = new DataSender(UID, this);
+        dataSender = new DataSender(UID);
 
         // Step 4. Create a listener to handle wifi connectivity.
         network = isDataConnected();
@@ -90,9 +85,6 @@ public class BackgroundDataSend extends Service {
         PowerManager powerManager = (PowerManager) getSystemService(POWER_SERVICE);
         wakeLock = powerManager.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "MyWakelockTag");
         wakeLock.acquire();
-
-        // Setup the ML training libraries
-        trainer = TensorFlowTrainer.getInstance();
 
         // Step 6. Begin this service as a foreground service.
         Intent notificationIntent = new Intent(this, Login.class);
