@@ -3,6 +3,7 @@ package osu.crowd_ml.loss_functions;
 import java.util.ArrayList;
 import java.util.List;
 
+import osu.crowd_ml.Parameters;
 import osu.crowd_ml.loss_functions.LossFunction;
 
 /*
@@ -24,8 +25,21 @@ limitations under the License
 
 public class Softmax implements LossFunction {
 
+    protected int length;
+
+    public String lossFunctionName() {
+        return "Softmax";
+    }
+
     public String lossType() {
         return "multi";
+    }
+
+    public int getLength() {
+        return length;
+    }
+    public void setLength(Parameters params) {
+        length = params.getD() * params.getK();
     }
 
     public List<Double> gradient(List<Double> weights, double[] X, int Y, int D, int K, double L, int nh){

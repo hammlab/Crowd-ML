@@ -15,6 +15,10 @@ limitations under the License
 
 public class Laplace implements Distribution {
 
+    public String noiseName() {
+        return "Laplace";
+    }
+
     public double noise(double mu, double noiseScale){
         double rng = Math.random();
         int sgn;
