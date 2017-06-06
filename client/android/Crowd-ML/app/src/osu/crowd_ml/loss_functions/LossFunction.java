@@ -23,5 +23,5 @@ public interface LossFunction {
 
     public String lossType();
 
-    public List<Double> gradient(List<Double> weights, double[] X, int Y, int D, int K, double L, int nh);
+    public List<Double> gradient(List<Double> weights, float[] X, int Y, int D, int K, double L, int nh);
 }

@@ -3,6 +3,7 @@ package osu.crowd_ml;
 import android.util.Log;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Random;
@@ -34,7 +35,7 @@ class InternalTrainer implements Trainer {
 
     private List<Integer> order;
     private Parameters params;
-    private List<Double> weights;
+    private double[] weights;
     private int t;
     private int length;
 
@@ -63,7 +64,7 @@ class InternalTrainer implements Trainer {
      * @return The updated weight matrix.
      */
     @Override
-    public List<Double> train(final int numIterations) {
+    public double[] train(final int numIterations) {
         maintainSampleOrder(); // This line ensures order is never null or empty
         // Cache the old order list if we need to rollback changes.
         List<Integer> oldOrder = new ArrayList<>(order);
@@ -75,7 +76,10 @@ class InternalTrainer implements Trainer {
             List<Double> noisyGrad = computeNoisyGrad();
 
             // Return the updated weights
-            weights = calcWeight(noisyGrad);
+            List<Double> w = calcWeight(noisyGrad);
+            for (int j = 0; j < w.size(); j++) {
+                weights[j] = w.get(j);
+            }
 
             Log.d("sendWeight", "local iter: " + (i + 1));
         }
@@ -94,10 +98,10 @@ class InternalTrainer implements Trainer {
     }
 
     @Override
-    public Trainer setWeights(List<Double> weights) {
-        if (BuildConfig.DEBUG && weights.size() <= 0) throw new AssertionError();
+    public Trainer setWeights(double[] weights) {
+        if (BuildConfig.DEBUG && weights.length <= 0) throw new AssertionError();
         this.weights = weights;
-        this.length = weights.size();
+        this.length = weights.length;
         return getInstance();
     }
 
@@ -137,20 +141,20 @@ class InternalTrainer implements Trainer {
             } else if (descentAlg.equals("simple")) {
                 deltaW = (c / t) * grad.get(i);
             } else if (descentAlg.equals("sqrt")) {
-                deltaW = (c / Math.sqrt(t)) * grad.get(i);
+                deltaW = (c / (double)Math.sqrt(t)) * grad.get(i);
             } else if (descentAlg.equals("adagrad")) {
                 double adagradRate = learningRate[i] + grad.get(i) * grad.get(i);
-                learningRate[i] =  c / Math.sqrt(adagradRate + epsilson);
+                learningRate[i] =  c / (double)Math.sqrt(adagradRate + epsilson);
                 deltaW = learningRate[i] * grad.get(i);
             } else if (descentAlg.equals("rmsProp")) {
-                double rmsRate = 0.9 * learningRate[i] + 0.1 * grad.get(i) * grad.get(i);
-                learningRate[i] = c / Math.sqrt(rmsRate + epsilson);
+                double rmsRate = 0.9f * learningRate[i] + 0.1f * grad.get(i) * grad.get(i);
+                learningRate[i] = c / (double)Math.sqrt(rmsRate + epsilson);
                 deltaW = learningRate[i] * grad.get(i);
             } else {
                 Log.e("InternalTrainer", "Invalid descent algorithm. Defaulting to \'simple\'.");
                 deltaW = (c / t) * grad.get(i);
             }
-            newWeight.add(i, weights.get(i) - deltaW);
+            newWeight.add(i, weights[i] - deltaW);
         }
 
         return newWeight;
@@ -163,7 +167,7 @@ class InternalTrainer implements Trainer {
         // TODO(tylermzeller) this is a bottleneck on physical devices. Buffered file I/O seems to
         // invoke the GC often.
         // Get training sample features.
-        List<double[]> xBatch = TrainingDataIO.getInstance().readSamples(batchSamples, params);
+        List<float[]> xBatch = TrainingDataIO.getInstance().readSamples(batchSamples, params);
 
         // Get training sample labels.
         List<Integer> yBatch = TrainingDataIO.getInstance().readLabels(batchSamples, params);
@@ -210,7 +214,7 @@ class InternalTrainer implements Trainer {
         return batchSamples;
     }
 
-    private List<Double> computeAverageGrad(List<double[]> X, List<Integer> Y) {
+    private List<Double> computeAverageGrad(List<float[]> X, List<Integer> Y) {
         int batchSize = params.getClientBatchSize();
         LossFunction loss = params.getLossFunction();
         int D = params.getD();
@@ -222,7 +226,7 @@ class InternalTrainer implements Trainer {
         List<Double> avgGrad = new ArrayList<>(Collections.nCopies(length, 0.0d));
 
         // For each sample, compute the gradient averaged over the whole batch.
-        double[] x;
+        float[] x;
         List<Double> grad;
         for(int i = 0; i < batchSize; i++){
             // Periodically check if this thread has been interrupted. See the javadocs on
@@ -234,7 +238,10 @@ class InternalTrainer implements Trainer {
             int y = Y.get(i); // current label
 
             // Compute the gradient.
-            grad = loss.gradient(weights, x, y, D, K, L, nh);
+            ArrayList<Double> w = new ArrayList<>();
+            for (double num : weights)
+                w.add(num);
+            grad = loss.gradient(w, x, y, D, K, L, nh);
 
             // Add the current normalized gradient to the avg gradient vector.
             for(int j = 0; j < length; j++) {

@@ -27,7 +27,7 @@ public class Hinge implements LossFunction {
         return "binary";
     }
 
-    public List<Double> gradient(List<Double> weights, double[] X, int Y, int D, int K, double L, int nh){
+    public List<Double> gradient(List<Double> weights, float[] X, int Y, int D, int K, double L, int nh){
         List<Double>  grad = new ArrayList<>(Collections.nCopies(D, 0.0d));
 
         //dot product w*x

@@ -26,7 +26,7 @@ public class Softmax implements LossFunction {
         return "multi";
     }
 
-    public List<Double> gradient(List<Double> weights, double[] X, int Y, int D, int K, double L, int nh){
+    public List<Double> gradient(List<Double> weights, float[] X, int Y, int D, int K, double L, int nh){
 
         List<Double> grad = new ArrayList<>(D*K);
         for(int i = 0; i < D*K; i++){

@@ -23,7 +23,7 @@ function loadConfig() {
 			"  Expecting invocation of: node crowdML-server.js <credentials> <path-to-configuration>"));
 		process.exit(ERROR_CODE);
 	}
-	
+
 	var credentialsValues = require('./credentials.json');
 	if (!credentialsValues[credentials]) {
 		console.log(new Error(
@@ -58,7 +58,7 @@ function loadConfig() {
 	config.iter = 1;
 	config.testNum = 0;
 	//TODO(tylermzeller) Not sure why this -1 is here. Consider removing.
-	config.iterArray = [config.iter, -1];
+	//config.iterArray = [config.iter, -1];
 
 	var D = config.D;
 	var K = config.K;
@@ -69,6 +69,9 @@ function loadConfig() {
 	if (config.lossFunction == 'SoftmaxNN') {
 		config.length = D * nh + nh + nh * nh + nh + nh * K + K;
 	}
+	// if (config.lossFunction == 'TensorFlow') {
+	// 	config.length = D * K + K;
+	// }
 	config.adaG = new Array(config.length);
 	config.rms = new Array(config.length);
 	config.initWeight = new Array(config.length);
@@ -78,7 +81,7 @@ function loadConfig() {
 		config.adaG[i] = 0;
 		config.rms[i] = 0;
 	}
-	config.weightSet = [config.initWeight, config.iterArray];
+	//config.weightSet = [config.initWeight, config.iterArray];
 }
 
 function setupFirebase() {
@@ -142,7 +145,7 @@ function validateConfig() {
  */
 function setupListeners() {
 	// Initialize Values
-	updateWeights(config.iter, [config.initWeight, config.iterArray]);
+	updateWeights(config.iter, config.initWeight);
 	console.log("[ Init: weights initialized   ]");
 
 	// Send parameters to clients
@@ -156,6 +159,7 @@ function setupListeners() {
 		K: config.K,
 		L: config.L,
 		N: config.N,
+		testN: config.testN,
 		nh: config.nh,
 		eps: config.eps,
 		maxIter: config.maxIter,
@@ -288,13 +292,14 @@ function addToWeightBatch(weightArray) {
 	config.weightBatchSize++;
 	if (config.weightBatchSize == config.maxWeightBatchSize) {
 		var newWeight = [];
-		for (i = 0; i < weightArray.length; i++) {
-			var sum = 0;
-			for (j = 0; j < config.maxWeightBatchSize; j++) {
-				sum += config.weightBatch[j][i];
-			}
-			newWeight[i] = sum / config.maxWeightBatchSize;
-		}
+		// for (i = 0; i < weightArray.length; i++) {
+		// 	var sum = 0;
+		// 	for (j = 0; j < config.maxWeightBatchSize; j++) {
+		// 		sum += config.weightBatch[j][i];
+		// 	}
+		// 	newWeight[i] = sum / config.maxWeightBatchSize;
+		// }
+		newWeight = weightArray;
 
 		config.testNum++;
 		if (config.testNum == config.testFreq) {
@@ -310,8 +315,8 @@ function addToWeightBatch(weightArray) {
 		}
 
 		console.log("[ Updating weights in DB      ]");
-		config.iterArray = [config.iter, -1];
-		updateWeights(config.iter, [newWeight, config.iterArray]);
+		//config.iterArray = [config.iter, -1];
+		updateWeights(config.iter, newWeight);
 
 		config.weightBatchSize = 0;
 		config.weightBatch = [];

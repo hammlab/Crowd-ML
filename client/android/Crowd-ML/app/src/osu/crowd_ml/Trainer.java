@@ -8,13 +8,13 @@ import java.util.List;
 
 public interface Trainer {
 
-    List<Double> train(final int numIterations);
+    double[] train(final int numIterations);
 
     List<Double> getNoisyGrad();
 
     Trainer setIter(final int t);
 
-    Trainer setWeights(List<Double> weights);
+    Trainer setWeights(double[] weights);
 
     Trainer setParams(final Parameters params);
 

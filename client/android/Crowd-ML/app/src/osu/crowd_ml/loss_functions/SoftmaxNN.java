@@ -26,7 +26,7 @@ public class SoftmaxNN implements LossFunction {
         return "NN";
     }
 
-    public List<Double> gradient(List<Double> weights, double[] X, int Y, int D, int K, double L, int nh){
+    public List<Double> gradient(List<Double> weights, float[] X, int Y, int D, int K, double L, int nh){
         int length = D*nh + nh + nh*nh + nh + nh*K + K;
         List<Double> grad = new ArrayList<Double>(length);
 

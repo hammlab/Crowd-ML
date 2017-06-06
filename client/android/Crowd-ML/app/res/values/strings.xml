@@ -7,7 +7,7 @@
     <string name="label_name_TF">y</string>
     <string name="train_name_TF">train</string>
     <string name="test_name_TF">test</string>
-    <string name="model_name_TF">mnist_mlp.pb</string>
+    <string name="model_name_TF">mnist_adam_0.001_mlp.pb</string>
     <string name="title_activity_offline_data_send">Offline</string>
     <string name="user_settings_file">user_settings</string>
     <string name="multiprocess_preferences_authority" translatable="false">osu.crowd_ml.multiprocesspreferences.PREFFERENCE_AUTHORITY</string>

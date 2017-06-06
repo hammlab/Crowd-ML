@@ -2,8 +2,6 @@ package osu.crowd_ml;
 
 import android.util.Log;
 
-import com.google.firebase.analytics.FirebaseAnalytics;
-
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -50,17 +48,20 @@ public class TrainingDataIO {
      * @param params
      * @return
      */
-    public List<double[]> readSamples(int[] sampleBatch, final Parameters params) {
+    public List<float[]> readSamples(int[] sampleBatch, final Parameters params) {
+        if (BuildConfig.DEBUG) {
+            Log.d("readSamples", "Begin reading samples");
+        }
         int D = params.getD();
         String featureSrc = params.getFeatureSource();
-        List<double[]> xBatch = new ArrayList<>(sampleBatch.length);
+        List<float[]> xBatch = new ArrayList<>(sampleBatch.length);
         try {
             // TODO(tylermzeller): provide an AssetManager to this class for reading source files
             BufferedReader br = new BufferedReader(new InputStreamReader(
                     CrowdMLApplication.getAppContext().getAssets().open(featureSrc)));
             String line;
             int counter = 0;
-            double[] sampleFeatures = new double[D];
+            float[] sampleFeatures = new float[D];
             String[] features;
             int max = sampleBatch[sampleBatch.length - 1];
             while ((line = br.readLine()) != null && counter <= max){
@@ -74,7 +75,7 @@ public class TrainingDataIO {
                     features = line.split(",| ");
 
                     for(int i = 0; i < D; i++) {
-                        sampleFeatures[i] = Double.parseDouble(features[i]);
+                        sampleFeatures[i] = Float.parseFloat(features[i]);
                     }
                     xBatch.add(sampleFeatures);
                 }
@@ -129,6 +130,9 @@ public class TrainingDataIO {
     }
 
     public float[] getTFFeatureBatch(int[] indices, Parameters params) {
+        if (BuildConfig.DEBUG) {
+            Log.d("getTFFeatureBatch", "Begin reading samples");
+        }
         int D = params.getD();
         int batchSize = params.getClientBatchSize();
         String featureSrc = params.getFeatureSource();
@@ -181,7 +185,9 @@ public class TrainingDataIO {
     }
 
     public float[] getTFTestFeatures(int testN, Parameters params) {
-        Log.d("readTestingFeatures","Begin");
+        if (BuildConfig.DEBUG) {
+            Log.d("getTFTestFeatures", "Begin reading samples");
+        }
         int D = params.getD();
         float[] testFeatures = new float[testN * D];
         BufferedReader reader = null;
@@ -198,7 +204,7 @@ public class TrainingDataIO {
                 features = line.split(",| ");
                 for(int i = 0; i < D; i++) {
                     testFeatures[count * D + i] = Float.parseFloat(features[i]);
-                    //sampleFeatures[i] = Double.parseDouble(features[i]);
+                    //sampleFeatures[i] = Float.parseFloat(features[i]);
                 }
                 count++;
             }
@@ -218,6 +224,9 @@ public class TrainingDataIO {
     }
 
     public float[] getTFLabelBatch(int[] indices, Parameters params) {
+        if (BuildConfig.DEBUG) {
+            Log.d("getTFLabelBatch", "Begin reading labels");
+        }
         // android studio was giving me some bs error about using Arrays.asList ???
         List<Integer> idcs = new ArrayList<>();
         for (int id : indices){
@@ -266,6 +275,9 @@ public class TrainingDataIO {
     }
 
     public float[] getTFTestingLabels(int testN, Parameters params) {
+        if (BuildConfig.DEBUG) {
+            Log.d("getTFTestingLabels", "Begin reading labels");
+        }
         int K = params.getK();
         float[] testLabels = new float[testN * K];
         BufferedReader reader = null;
@@ -298,7 +310,7 @@ public class TrainingDataIO {
         return testLabels;
     }
 
-    public static int[] toOneHot(int num, int size){
+    public static int[] toOneHot(int num, int size) {
         int[] oneHot = new int[size];
         oneHot[num - 1] = 1;
         return oneHot;

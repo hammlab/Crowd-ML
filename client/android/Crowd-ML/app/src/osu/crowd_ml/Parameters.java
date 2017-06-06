@@ -46,6 +46,7 @@ public class Parameters {
     private double c;
     private double eps;
     private String descentAlg;
+    private int testN;
 
 
     public Parameters() {
@@ -180,4 +181,7 @@ public class Parameters {
     public int getMaxIter() {return maxIter;}
 
     public void setMaxIter(int max){maxIter = max;}
+
+    public int getTestN() {return testN;}
+    public void setTestN(int testN) {this.testN = testN;}
 }

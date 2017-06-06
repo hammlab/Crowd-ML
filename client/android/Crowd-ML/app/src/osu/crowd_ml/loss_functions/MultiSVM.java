@@ -26,7 +26,7 @@ public class MultiSVM implements LossFunction {
         return "multi";
     }
 
-    public List<Double> gradient(List<Double> weights, double[] X, int Y, int D, int K, double L, int nh){
+    public List<Double> gradient(List<Double> weights, float[] X, int Y, int D, int K, double L, int nh){
 
         List<Double> grad = new ArrayList<Double>(D*K);
         for(int i = 0; i < D*K; i ++){
@@ -58,10 +58,10 @@ public class MultiSVM implements LossFunction {
 
         for(int j = 0; j < D; j++){
             if(dot < 1+maxDot){
-                grad.set(j + (D*Y), -1 * X[j]);
+                grad.set(j + (D*Y), -1d * X[j]);
             }
             else{
-                grad.set(j + (D*Y), 0.0);
+                grad.set(j + (D*Y), 0.0d);
             }
         }
 

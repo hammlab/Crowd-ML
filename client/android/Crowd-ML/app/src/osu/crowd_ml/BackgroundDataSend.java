@@ -85,7 +85,7 @@ public class BackgroundDataSend extends Service {
     private int paramIter;
     private int localUpdateNum;
     private volatile int t;
-    private List<Double> weights;
+    private double[] weights;
 
     private volatile boolean weightsUpdated = false;
     private volatile boolean paramsUpdated  = false;
@@ -129,6 +129,8 @@ public class BackgroundDataSend extends Service {
 
     @Override public void onCreate() {
         super.onCreate();
+        if (BuildConfig.DEBUG)
+            Log.d("onCreate", "Create Service");
 
         // Step 1. Extract necessary information
         UID = MultiprocessPreferences.getDefaultSharedPreferences(this).getString("uid", "");
@@ -178,6 +180,8 @@ public class BackgroundDataSend extends Service {
     // the notification for the foreground service.
     @Override public int onStartCommand(Intent intent, int flags, int startId) {
         super.onStartCommand(intent, flags, startId);
+        if (BuildConfig.DEBUG)
+            Log.d("onStartCommand", "Start Service");
 
         // Make sure there isn't already a wifi thread working.
         if (wifiThread == null) {
@@ -226,9 +230,6 @@ public class BackgroundDataSend extends Service {
         // Step 1. Add parameters listener.
         paramListener = parametersRef.addValueEventListener(new ValueEventListener() {
             @Override public void onDataChange(DataSnapshot dataSnapshot) {
-                if (BuildConfig.DEBUG)
-                    Log.d("onDataChange", "Got parameters");
-
                 onParameterDataChange(dataSnapshot);
             }
 
@@ -276,6 +277,7 @@ public class BackgroundDataSend extends Service {
         // Step 1. End the worker thread, if running.
         stopWorkThread();
 
+        Log.d("onDestroy", "Destroying the trainer.");
         trainer.destroy();
 
         Log.d("onDestroy", "Interrupting the wifi");
@@ -307,7 +309,9 @@ public class BackgroundDataSend extends Service {
      * the firebase listeners. It is unknown what order these listeners will dispatch updates, so
      * the check for updates from both listeners happens in both on*DataChange methods.
      */
-    private void onParameterDataChange(DataSnapshot dataSnapshot){
+    private void onParameterDataChange(DataSnapshot dataSnapshot) {
+        if (BuildConfig.DEBUG)
+            Log.d("onDataChange", "Got Params");
         // Step 1. Get all parameters from the data snapshot
         params = dataSnapshot.getValue(Parameters.class);
 
@@ -326,6 +330,9 @@ public class BackgroundDataSend extends Service {
         }
 
         // Parameters are now updated.
+        // We don't want to set paramsUpdated to true if there was a wifi disconnection. A wifi
+        // disconnection will reset the listeners which will trigger them with a default
+        // response, not a response triggered by the server.
         paramsUpdated = !wifiDisconnect;
 
 
@@ -333,10 +340,12 @@ public class BackgroundDataSend extends Service {
         // Step 3. ??? TODO: why do we add this here? This adds a new listener every time the parameters are updated
         // TODO: I believe this prevents trying to send gradients before parameters have been set for the client.
         addUserListener();
-        if (paramsUpdated && weightsUpdated){
+        if (paramsUpdated && weightsUpdated) {
             initUser();
             weightsUpdated = false;
         }
+
+        // Always reset wifiDisconnect
         wifiDisconnect = false;
     }
 
@@ -348,7 +357,10 @@ public class BackgroundDataSend extends Service {
         stopWorkThread();
 
         weightVals = dataSnapshot.getValue(TrainingWeights.class);
-        weights = weightVals.getWeights().get(0);
+        List<Float> w = weightVals.getWeights();
+        Log.d("onWeights", w.get(0) + "");
+        weights = new double[w.size()];
+        for (int i = 0; i < w.size(); i++) weights[i] = w.get(i);
         t = weightVals.getIteration();
 
         // Weight parameters are now updated
@@ -361,22 +373,6 @@ public class BackgroundDataSend extends Service {
             paramsUpdated = false;
         }
     }
-
-//    private void setLength(){
-//        // Step 1. Trivially set length.
-//        length = D;
-//
-//        // Step 2. Check if loss type is multi-classification.
-//        if(loss.lossType().equals("multi")){
-//            length = D * K;
-//        }
-//
-//        // Step 3. Check if loss type is neural network.
-//        if(loss.lossType().equals("NN")){
-//            // Arch: In W     1HL  1HL W    2HL    Out W  Out
-//            length = D * nh + nh + nh * nh + nh + nh * K + K;
-//        }
-//    }
 
     private void setParameters() {
         paramIter = params.getParamIter();
@@ -400,11 +396,10 @@ public class BackgroundDataSend extends Service {
                 // Step 4. Get updated user values.
                 userCheck = dataSnapshot.getValue(UserData.class);
 
-                Log.d("userValues", userCheck.getGradientProcessed() + " " + userCheck.getGradIter() + " " + gradientIteration);
-
                 // Step 6. Check if we can compute the gradient.
                 if (userCheck.getGradientProcessed() && userCheck.getGradIter() == gradientIteration) {
-
+                    if (BuildConfig.DEBUG)
+                        Log.d("onDataChange", "Can Start Work Thread");
                     // Step 7. Check the localUpdateNum for the type of processing the client should do.
                     if (localUpdateNum == 0) {
                         // Step 8. Compute a single step of SGD.
@@ -463,6 +458,8 @@ public class BackgroundDataSend extends Service {
      * weights and sends the gradients back.
      */
     private void startGradientThread(){
+        if (BuildConfig.DEBUG)
+            Log.d("startGradientThread", "Starting Work Thread");
         // Step 1. Check if the worker thread is non-null and running.
         if (workThread != null && workThread.isAlive()){
 
@@ -487,6 +484,8 @@ public class BackgroundDataSend extends Service {
     }
 
     private void startWeightThread(){
+        if (BuildConfig.DEBUG)
+            Log.d("startWeightThread", "Starting Work Thread");
         // Step 1. Check if the worker thread is non-null and running.
         if (workThread != null && workThread.isAlive()){
 
@@ -514,17 +513,24 @@ public class BackgroundDataSend extends Service {
     private void initUser() {
         Log.d("initUser", "Param iter: " + paramIter + " Weight iter: " + t);
         // Send the server this user's initial values.
-        sendUserValues(weights, false, gradientIteration, t, paramIter);
+        List<Double> w = new ArrayList<>();
+        for (double num : weights) w.add(num);
+        sendUserValues(w, false, gradientIteration, t, paramIter);
     }
 
     /**
      * Compute the gradient of the weights and send back to the server.
      */
-    private void sendGradient(){
+    private void sendGradient() {
+        if (BuildConfig.DEBUG)
+            Log.d("sendGradient", "Start Send Gradient");
         // Compute the gradient with random noise added.
         trainer .setIter(t)
                 .setParams(params)
                 .setWeights(weights);
+
+        if (BuildConfig.DEBUG)
+            Log.d("sendGradient", "Starting Trainer");
         List<Double> noisyGrad = trainer.getNoisyGrad();
 
         // Check if wifi is connected to send the gradient.
@@ -539,21 +545,30 @@ public class BackgroundDataSend extends Service {
     }
 
     private void sendWeight(){
+        if (BuildConfig.DEBUG)
+            Log.d("sendWeight", "Start Send Weight");
+
         // Calc new weights
         trainer .setIter(t)
                 .setParams(params)
                 .setWeights(weights);
+
+        if (BuildConfig.DEBUG)
+            Log.d("sendWeight", "Starting Trainer");
         weights = trainer.train(localUpdateNum);
+        List<Double> w = new ArrayList<>();
+        for (double num : weights) w.add(num);
 
         // Check if wifi is connected to send the gradient.
         if (!Thread.currentThread().isInterrupted()) {
             if (BuildConfig.DEBUG)
-                Log.d("sendGradient", "Sending gradient.");
+                Log.d("sendWeight", "Sending weights.");
+                Log.d("sendWeight", w.get(0) + "");
 
             // Send the gradient to the server.
-            sendUserValues(weights, false, ++gradientIteration, t, paramIter);
+            sendUserValues(w, false, ++gradientIteration, t, paramIter);
         } else if (BuildConfig.DEBUG) {
-            Log.d("sendGradient", "Can't send gradient.");
+            Log.d("sendWeight", "Can't send weights.");
         }
     }
 
@@ -562,96 +577,4 @@ public class BackgroundDataSend extends Service {
             new UserData(gradientsOrWeights, gradientProcessed, gradIter, weightIter, paramIter)
         );
     }
-
-//    private int[] gatherBatchSamples(){
-//        int[] batchSamples = new int[batchSize];
-//
-//        Random r = new Random(); // rng
-//
-//        // Loop batchSize times
-//        for (int i = 0; i < batchSize; i++) {
-//            // Calling this method here ensures that the order list is never empty. When the order
-//            // list becomes empty, a new epoch of training occurs as the list is repopulated with
-//            // random int values in the range [0, N).
-//            maintainSampleOrder();
-//
-//            // get a random index in the range [0, |order|) to query the order list.
-//            int q = r.nextInt(order.size());
-//
-//            // Remove the value at index q and add it to the current batch of samples.
-//            batchSamples[i] = order.remove(q);
-//        }
-//        ArrayUtils.sort(batchSamples);
-//        return batchSamples;
-//    }
-
-//    private List<Double> computeAverageGrad(List<double[]> X, List<Integer> Y, List<Double> weights){
-//        // Init average gradient vector
-//        List<Double> avgGrad = new ArrayList<>(Collections.nCopies(length, 0.0d));
-//
-//        // For each sample, compute the gradient averaged over the whole batch.
-//        double[] x;
-//        List<Double> grad;
-//        for(int i = 0; i < batchSize; i++){
-//            // Periodically check if this thread has been interrupted. See the javadocs on
-//            // threading for best practices.
-//            if (Thread.currentThread().isInterrupted()){
-//                break;
-//            }
-//            x = X.get(i); // current sample feature
-//            int y = Y.get(i); // current label
-//
-//            // Compute the gradient.
-//            grad = loss.gradient(weights, x, y, D, K, L, nh);
-//
-//            // Add the current normalized gradient to the avg gradient vector.
-//            for(int j = 0; j < length; j++) {
-//                avgGrad.set(j, (avgGrad.get(j) + grad.get(j)) / batchSize);
-//            }
-//        }
-//        return avgGrad;
-//    }
-
-//    private List<Double> computeNoisyGrad(){
-//        // Init training sample batch
-//        int[] batchSamples = gatherBatchSamples();
-//
-//        // TODO(tylermzeller) this is a bottleneck on physical devices. Buffered file I/O seems to
-//        // invoke the GC often.
-//        // Get training sample features.
-//        List<double[]> xBatch = TrainingDataIO.getInstance().readSamples(batchSamples);
-//
-//        // Get training sample labels.
-//        List<Integer> yBatch = TrainingDataIO.getInstance().readLabels(batchSamples);
-//
-//        // Compute average gradient vector
-//        List<Double> avgGrad = computeAverageGrad(xBatch, yBatch, weights);
-//
-//        // Init empty noisy gradient vector
-//        List<Double> noisyGrad = new ArrayList<>(length);
-//
-//        // Add random noise probed from the client's noise distribution.
-//        for (double avg : avgGrad) {
-//            if (Thread.currentThread().isInterrupted()) {
-//                break;
-//            }
-//            noisyGrad.add(dist.noise(avg, noiseScale));
-//        }
-//
-//        return noisyGrad;
-//    }
-
-//    private List<Double> internalWeightCalc(){
-//        // Compute the gradient with random noise added
-//        List<Double> noisyGrad = computeNoisyGrad();
-//
-//        // Periodically check if this thread has been interrupted. See the javadocs on
-//        // threading for best practices.
-//        if (Thread.currentThread().isInterrupted()){
-//            return noisyGrad;
-//        }
-//
-//        // Return the updated weights
-//        return InternalTrainer.getInstance().calcWeight(weights, noisyGrad, learningRate, t, descentAlg, c, eps);
-//    }
 }

@@ -26,7 +26,7 @@ public class LogReg implements LossFunction {
         return "binary";
     }
 
-    public List<Double> gradient(List<Double> weights, double[] X, int Y, int D, int K, double L, int nh){
+    public List<Double> gradient(List<Double> weights, float[] X, int Y, int D, int K, double L, int nh){
         List<Double> grad = new ArrayList<>(D);
         for (int i = 0; i < D; i++) {
             grad.add(0.0);
