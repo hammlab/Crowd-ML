@@ -17,16 +17,16 @@ See the License for the specific language governing permissions and
 limitations under the License
 */
 
-import osu.crowd_ml.loss_functions.Hinge;
 import osu.crowd_ml.loss_functions.LogReg;
-import osu.crowd_ml.loss_functions.LossFunction;
 import osu.crowd_ml.loss_functions.MultiSVM;
-import osu.crowd_ml.loss_functions.Softmax;
 import osu.crowd_ml.loss_functions.SoftmaxNN;
-import osu.crowd_ml.noise_distributions.Distribution;
 import osu.crowd_ml.noise_distributions.Gaussian;
-import osu.crowd_ml.noise_distributions.Laplace;
+import osu.crowd_ml.loss_functions.LossFunction;
+import osu.crowd_ml.loss_functions.Softmax;
 import osu.crowd_ml.noise_distributions.NoNoise;
+import osu.crowd_ml.loss_functions.Hinge;
+import osu.crowd_ml.noise_distributions.Distribution;
+import osu.crowd_ml.noise_distributions.Laplace;
 
 public class Parameters {
     private int paramIter;

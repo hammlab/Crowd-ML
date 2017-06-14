@@ -1,4 +1,5 @@
 apply plugin: 'com.android.application'
+apply plugin: 'com.google.gms.google-services'
 
 // Controls output directory in APK and CPU type for Bazel builds.
 def cpuType = System.getenv("CROWDML__CPU_TYPE")
@@ -39,7 +40,7 @@ android {
 
     defaultConfig {
         applicationId "osu.crowd_ml"
-        minSdkVersion 21
+        minSdkVersion 23
         targetSdkVersion 23
         versionCode 1
         versionName "1.0"
@@ -137,5 +138,3 @@ tasks.whenTaskAdded { task ->
         task.dependsOn 'copyNativeLibs'
     }
 }
-
-apply plugin: 'com.google.gms.google-services'

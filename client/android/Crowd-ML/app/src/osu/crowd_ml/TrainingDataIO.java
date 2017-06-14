@@ -2,8 +2,6 @@ package osu.crowd_ml;
 
 import android.util.Log;
 
-import com.google.firebase.analytics.FirebaseAnalytics;
-
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;

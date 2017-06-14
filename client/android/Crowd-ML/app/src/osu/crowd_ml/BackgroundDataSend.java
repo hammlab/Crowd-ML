@@ -36,14 +36,9 @@ import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
 
 import java.lang.ref.WeakReference;
-import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
-import java.util.Random;
 
-import osu.crowd_ml.loss_functions.LossFunction;
-import osu.crowd_ml.noise_distributions.Distribution;
-import osu.crowd_ml.utils.ArrayUtils;
+import osu.crowd_ml.BuildConfig;
 import osu.crowd_ml.utils.NetworkUtils;
 
 public class BackgroundDataSend extends Service {
