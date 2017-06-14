@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import osu.crowd_ml.Parameters;
+
 /*
 Copyright 2016 Crowd-ML team
 
