@@ -92,12 +92,10 @@ public final class DataSender {
     }
 
     /**
-     * Set WifiDisconnect to the provided state.
-     *
-     * @param state -- state of the wifiDisconnect
+     * Set WifiDisconnect to be disconnected.
      */
-    public void setWifiDisconnect(boolean state) {
-        wifiDisconnect = state;
+    public void setWifiDisconnect() {
+        wifiDisconnect = true;
     }
 
     /**

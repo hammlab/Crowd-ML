@@ -45,7 +45,6 @@ public class BackgroundDataSend extends Service {
     private boolean network;
     private BroadcastReceiver receiver;
     private volatile boolean isWifiConnected = false;
-    private boolean wifiDisconnect = false;
 
     // Wakelock
     private PowerManager.WakeLock wakeLock;
@@ -143,9 +142,8 @@ public class BackgroundDataSend extends Service {
                     Log.d("handleMessage", "Handling wifi disconnect.");
                 }
 
-                wifiDisconnect = true;
                 isWifiConnected = false;
-                dataSender.setWifiDisconnect(wifiDisconnect);
+                dataSender.setWifiDisconnect();
                 dataSender.removeFirebaseListeners();
             }
         }
