@@ -1,11 +1,5 @@
 package osu.crowd_ml.utils;
 
-import android.content.Context;
-import android.net.ConnectivityManager;
-import android.net.NetworkInfo;
-
-import java.io.IOException;
-
 /*
 Copyright 2017 Crowd-ML team
 

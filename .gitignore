@@ -53,11 +53,16 @@ local.properties
 
 # Android Project specific
 client/android/Crowd-ML/.idea/
+client/android/Crowd-ML/*.iml
 client/android/Crowd-ML/app/google-services.json
 client/android/Crowd-ML/app/src/main/assets/*.dat
+client/android/Crowd-ML/app/src/main/assets/*.pb
 client/android/Crowd-ML/*.hprof
 client/android/Crowd-ML/app/gradleBuild/
 client/android/Crowd-ML/app/assets/*.dat
+client/android/Crowd-ML/.settings/
+client/android/Crowd-ML/app/.settings/
+client/android/Crowd-ML/captures/
 server/*.json
 server/DataFiles/.Rhistory
 server/DataFiles/*.dat

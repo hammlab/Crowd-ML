@@ -1,7 +1,5 @@
 package osu.crowd_ml;
 
-import java.util.Map.Entry;
-
 import android.annotation.SuppressLint;
 import android.content.ContentProvider;
 import android.content.ContentResolver;
@@ -14,6 +12,8 @@ import android.database.MatrixCursor;
 import android.net.Uri;
 import android.os.Build;
 import android.preference.PreferenceManager;
+
+import java.util.Map.Entry;
 
 public class MultiprocessPreferences extends ContentProvider {
 

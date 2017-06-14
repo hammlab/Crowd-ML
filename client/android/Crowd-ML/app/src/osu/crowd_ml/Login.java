@@ -12,9 +12,9 @@ import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.ToggleButton;
 
-import osu.crowd_ml.utils.NetworkUtils;
 import osu.crowd_ml.firebase.ILoginPresenter;
 import osu.crowd_ml.firebase.SetupPresenter;
+import osu.crowd_ml.utils.NetworkUtils;
 
 /*
     Copyright 2016 Crowd-ML team
