@@ -13,7 +13,7 @@
     "maxWeightBatchSize": 1,
     "maxGradBatchSize": 1,
     "clientBatchSize": 100,
-    "localUpdateNum": 0,
+    "localUpdateNum": 100,
 
     "noiseDistribution": "NoNoise",
     "noiseScale": 1,
