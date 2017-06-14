@@ -253,6 +253,47 @@ public final class DataSender {
     }
 
     /**
+     *  Allows for newly created users to initialize values.
+     */
+    private void initUser() {
+        Log.d("initUser", "Param iter: " + paramIter + " Weight iter: " + t);
+
+        // Step 2. Send the DB the user's initial values.
+        sendUserValues(new UserData(weights, false, gradientIteration, t, paramIter));
+    }
+
+    /**
+     * Sends the provided data to the server
+     *
+     * @param data -- The UserData to send
+     */
+    private void sendUserValues(UserData data){
+        userRef.setValue(data);
+    }
+
+    /**
+     * Sends the computed values to the server.
+     *
+     * @param values -- The values to send to the server
+     */
+    private void sendComputedValues(List<Double> values){
+        // Check if wifi is connected to send the gradient.
+        if (!Thread.currentThread().isInterrupted()) {
+            if (BuildConfig.DEBUG)
+                Log.d("sendComputedValues", "Sending values to server.");
+
+            // TODO (david soller) : This wasn't changing between Gradient & Weights error?
+            boolean gradientProcessed = false;
+
+            // Send the values to the server.
+            sendUserValues(new UserData(values, gradientProcessed, ++gradientIteration, t, paramIter));
+        } else {
+            if (BuildConfig.DEBUG)
+                Log.d("sendComputedValues", "Can't send values to server.");
+        }
+    }
+
+    /**
      * Starts a gradient work thread which computes a single step of SGD.
      */
     private void startGradientWorkThread() {
@@ -285,52 +326,11 @@ public final class DataSender {
                         .setWeights(weights);
                 List<Double> weights = trainer.train(localUpdateNum);
 
-                Log.d("sendComputedValues", "Attempting to send.");
+                Log.d("sendWeightValues", "Attempting to send.");
                 sendComputedValues(weights);
             }
         };
         startWorkThread(weightThread);
-    }
-
-    /**
-     *  Allows for newly created users to initialize values.
-     */
-    private void initUser() {
-        Log.d("initUser", "Param iter: " + paramIter + " Weight iter: " + t);
-
-        // Step 2. Send the DB the user's initial values.
-        sendUserValues(new UserData(weights, false, gradientIteration, t, paramIter));
-    }
-
-    /**
-     * Sends the computed values to the server.
-     *
-     * @param values -- The values to send to the server
-     */
-    private void sendComputedValues(List<Double> values){
-        // Check if wifi is connected to send the gradient.
-        if (!Thread.currentThread().isInterrupted()) {
-            if (BuildConfig.DEBUG)
-                Log.d("sendComputedValues", "Sending values to server.");
-
-            // TODO (david soller) : This wasn't changing between Gradient & Weights error?
-            boolean gradientProcessed = false;
-
-            // Send the values to the server.
-            sendUserValues(new UserData(values, gradientProcessed, ++gradientIteration, t, paramIter));
-        } else {
-            if (BuildConfig.DEBUG)
-                Log.d("sendComputedValues", "Can't send values to server.");
-        }
-    }
-
-    /**
-     * Sends the provided data to the server
-     *
-     * @param data -- The UserData to send
-     */
-    private void sendUserValues(UserData data){
-        userRef.setValue(data);
     }
 
     /**
