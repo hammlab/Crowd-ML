@@ -31,7 +31,7 @@ See the License for the specific language governing permissions and
 limitations under the License
 */
 
-class InternalTrainer implements Trainer {
+public class InternalTrainer implements Trainer {
 
     private static InternalTrainer instance = null;
 
@@ -43,7 +43,7 @@ class InternalTrainer implements Trainer {
 
     private InternalTrainer(){}
     
-    static InternalTrainer getInstance() {
+    public static Trainer getInstance() {
         if (instance == null) {
             instance = new InternalTrainer();
         }

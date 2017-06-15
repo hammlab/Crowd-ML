@@ -49,7 +49,7 @@ public class TensorFlowTrainer implements Trainer {
         this.first = true;
     }
     
-    public static TensorFlowTrainer getInstance() {
+    public static Trainer getInstance() {
         if (instance == null){
             instance = new TensorFlowTrainer();
         }

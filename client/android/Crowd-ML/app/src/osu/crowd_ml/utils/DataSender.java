@@ -32,6 +32,7 @@ import osu.crowd_ml.Parameters;
 import osu.crowd_ml.TrainingWeights;
 import osu.crowd_ml.UserData;
 import osu.crowd_ml.trainers.TensorFlowTrainer;
+import osu.crowd_ml.trainers.InternalTrainer;
 import osu.crowd_ml.trainers.Trainer;
 
 public final class DataSender {
@@ -85,10 +86,6 @@ public final class DataSender {
         params = new Parameters();
         weightsUpdated = false;
         paramsUpdated = false;
-
-        // Setup the ML training libraries
-        trainer = TensorFlowTrainer.getInstance();
-
     }
 
     /**
@@ -237,7 +234,15 @@ public final class DataSender {
                 // Step 6. Check if we can compute the gradient.
                 if (userCheck.getGradientProcessed() && userCheck.getGradIter() == gradientIteration) {
 
-                    // Step 7. Check the localUpdateNum for the type of processing the client should do.
+                    // Step 7. Setup the ML training libraries
+                    // Is it a TensorFlow or Internal Trainer?
+                    if ("tf".equals(params.getLossFunction().lossFunctionName())) {
+                        trainer = TensorFlowTrainer.getInstance();
+                    } else {
+                        trainer = InternalTrainer.getInstance();
+                    }
+
+                    // Step 8. Check the localUpdateNum for the type of processing the client should do.
                     if (localUpdateNum == 0) {
                         startGradientWorkThread();
                     } else if (localUpdateNum > 0) {

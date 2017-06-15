@@ -23,6 +23,7 @@ import osu.crowd_ml.loss_functions.LossFunction;
 import osu.crowd_ml.loss_functions.MultiSVM;
 import osu.crowd_ml.loss_functions.Softmax;
 import osu.crowd_ml.loss_functions.SoftmaxNN;
+import osu.crowd_ml.loss_functions.TensorFlowLF;
 import osu.crowd_ml.noise_distributions.Distribution;
 import osu.crowd_ml.noise_distributions.Gaussian;
 import osu.crowd_ml.noise_distributions.Laplace;
@@ -119,6 +120,9 @@ public class Parameters {
                 break;
             case "SoftmaxNN":
                 lossFunction = new SoftmaxNN();
+                break;
+            case "tf":
+                lossFunction = new TensorFlowLF();
                 break;
             default:
                 lossFunction = new LogReg();

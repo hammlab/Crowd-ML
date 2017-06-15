@@ -1,6 +1,6 @@
 {
-    "descentAlg": "adagrad",
-    "lossFunction": "Softmax",
+    "descentAlg": "tf",
+    "lossFunction": "tf",
     "paramIter": 1,
     "maxIter": 10000,
     "D": 50,
@@ -13,7 +13,7 @@
     "maxWeightBatchSize": 1,
     "maxGradBatchSize": 1,
     "clientBatchSize": 100,
-    "localUpdateNum": 0,
+    "localUpdateNum": 20,
 
     "noiseDistribution": "NoNoise",
     "noiseScale": 1,
@@ -24,6 +24,6 @@
     "testFeatures": "MNISTTestImages.50.l2.dat",
     "testLabels": "MNISTTestLabels.dat",
     "testN": 1000,
-    "testType": "multiTest",
+    "testType": "None",
     "testFrequency": 1
 }
