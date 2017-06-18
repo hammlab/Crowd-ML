@@ -1,4 +1,24 @@
 # Server
+
+<!-- TOC depthFrom:2 -->
+
+- [What does the server do?](#what-does-the-server-do)
+- [Pre-Setup -- Local Build](#pre-setup----local-build)
+- [Pre-Setup -- Docker](#pre-setup----docker)
+- [Final setup and running of the server](#final-setup-and-running-of-the-server)
+- [Configuration Setup](#configuration-setup)
+    - [Credentials](#credentials)
+    - [Configuration File](#configuration-file)
+        - [Types](#types)
+        - [Supported Tokens](#supported-tokens)
+
+<!-- /TOC -->
+
+
+## What does the server do?
+
+The server listens to any changes in the data values of the various user trees, and uses any updated gradient information to create new weight values. The `config/` folder contains configuration information for both the server itself as well as all of the clients. Any information needed by the clients is sent to the parameters branch of firebase upon initially running the server code, which the clients can read. The server also updates various iterators and process checks, which is detailed in the [firebase readme](../firebase/). Depending on the learning rate algorithm chosen by the user, the server will subtract the adjusted gradient from the current weight to create a new weight which is uploaded to firebase. The Server allows for gradient mini-batches of a size chosen by the user, in which the gradients collected are stored and when the batch is filled, the average is sent to be applied to the weight values. The server also allows for accuracy testing, which when enabled will compare every X weight values uploaded against a chosen dataset to see what percentage of test feature sets return the correct result.
+
 ## Pre-Setup -- Local Build
 
 1. Download and install [Node.js and npm](http://nodejs.org/en/) which can be done here: [nodejs.org](http://nodejs.org/)
@@ -48,13 +68,8 @@ docker run -it --rm -v `pwd`:/usr/src/app/ crowdml-server bash
 node crowdML-server.js <Credentials Name> <Desired Configuration File>
 ```
 
-## What the server does
-
-The server listens to any changes in the data values of the various user trees, and uses any updated gradient information to create new weight values. The Constants folder contains parameter information for both the server itself as well as all of the clients. Any information needed by the clients is sent to the parameters branch of firebase upon running the server code, which the clients can read. The server also updates various iterators and process checks, which is detailed in the firebase ReadMe. Depending on the learning rate algorithm chosen by the user, the server will subtract the adjusted gradient from the current weight to create a new weight which is uploaded to firebase. The Server allows for gradient mini-batches of a size chosen by the user, in which the gradients collected are stored and when the batch is filled, the average is sent to be applied to the weight values. The server also allows for accuracy testing, which when enabled will compare every X weight values uploaded against a chosen dataset to see what percentage of test feature sets return the correct result.
-
-
-## Configuration
-### Credentials Setup
+## Configuration Setup
+### Credentials
 
 Create a `credentials.json` file within `server/` with the following format and filling in the `<...>` blanks with your credentials data:
 
@@ -78,45 +93,54 @@ An example of a completed file is as follows. Multiple credentials can be added 
 }
 ```
 
-### Configuration Setup
+### Configuration File
 
-One can change the firebase URL, keys, etc. by editing the `configuration.json` file. This allows one to affect the following:
+One can change the firebase URL, keys, etc. by editing the `configuration.json` file. To manage multiple configurations simply supply a different file with the same parameter format at the server's runtime. The configuration allows one to affect the following with the [type]() description below:
 
-Area | Field | Modifies
---- | --- | ---
-Model | `descentAlg` | Descent algorithm (constant|simple|sqrt|adagrad|rmsProp)
- | `lossFunction` | Gradient loss type (LogReg|Hinge|Softmax)
- | `paramIter` | Parameter iteration
- | `maxIter` |
- | `D` | Feature size
- | `naughtRate` | Naught learning rate
- | `K` | Number of classes
- | `L` | Regularization constant
- | `N` | Number of training samples
- | `nh` |
- | `eps` | Epsilon value for learning rate
- | `maxWeightBatchSize` | Maximum weight batch
- | `maxGradBatchSize` | Maximum gradient batch sizes
- | `clientBatchSize` | Client batch size
- | `localUpdateNum` |
+Area | Field | Type | Description
+--- | --- | --- | ---
+Model | `descentAlg` | `token` | Descent algorithm
+ | `lossFunction` | `token` | Gradient loss type
+ | `paramIter` | `int` | Parameter iteration
+ | `maxIter` | `int` |
+ | `D` | `int` | Feature size
+ | `naughtRate` | `float` | Naught learning rate
+ | `K` | `int` | Number of classes
+ | `L` | `float` | Regularization constant
+ | `N` | `int` | Number of training samples
+ | `nh` | `int` |
+ | `eps` | `float` | Epsilon value for learning rate
+ | `maxWeightBatchSize` | `int` | Maximum weight batch
+ | `maxGradBatchSize` | `int` | Maximum gradient batch sizes
+ | `clientBatchSize` | `int` | Client batch size
+ | `localUpdateNum` | `int` |
+ | | |
+Privacy | `noiseDistribution` | `token` | Noise type
+ | `noiseScale` | `float` | Noise variance
  | |
-Privacy | `noiseDistribution` | Noise type (None|Gaussian|Laplace)
- | `noiseScale` | Noise variance
- | |
-Data | `featureSource` | Feature file
- | `labelSource` | Label file
- | |
-Tests | `testFeatures` | Test features file
- | `testLabels` | Test labels file
- | `testN` | Number of test samples (NTest)
- | `testType` | Type of test to run (multiTest|binary|none)
- | `testFrequency` | Frequency of tests run per weight sent
+Data | `featureSource` | `filename` | Feature file
+ | `labelSource` | `filename` | Label file
+ | | |
+Tests | `testFeatures` | `filename` | Test features file
+ | `testLabels` | `filename` | Test labels file
+ | `testN` | `int` | Number of test samples (NTest)
+ | `testType` | `token` | Type of test to run
+ | `testFrequency` | `int` | Frequency of tests run per weight sent
 
-### Supported Opperations
+#### Types
 
-Field | Supported Values
+Type | Description
 --- | ---
-`descentAlg` | "constant", "adagrad", "simple", "sqrt", "rmsProp"
-`lossFunction` | "LogReg", "Hinge", "Softmax", "SoftmaxNN"
-`testType` | "None", "binaryTest", "multiTest", "NNTest"
-`noiseDistribution` | "NoNoise", "Gaussian", "Laplace"
+`token` | String contained in the fields [supported tokens/opperations set](#supported-tokens)
+`int` | A valid integer
+`float` | A valid rational number
+`filename` | A string of the files name
+
+#### Supported Tokens
+
+Field | Supported Token Values
+--- | ---
+`descentAlg` | 'constant', 'adagrad', 'simple', 'sqrt', 'rmsProp', 'tf'
+`lossFunction` | 'LogReg', 'Hinge', 'Softmax', 'SoftmaxNN', 'tf'
+`testType` | 'None', 'binaryTest', 'multiTest', 'NNTest'
+`noiseDistribution` | 'NoNoise', 'Gaussian', 'Laplace'

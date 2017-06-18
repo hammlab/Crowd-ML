@@ -10,6 +10,22 @@
 5. From the [Firebase console](console.firebase.google.com), go to your Firebase project and click 'Add Firebase to your Android app' and follow the steps
 6. Downloaded and copy the `google-services.json` file into your app's module folder (typically `.../app/`)
 
+## Setup
+
+Setup the following environment variables for your environment:
+
+```BASH
+# Controls output directory in APK and CPU type for Bazel builds.
+# Ex: `armeabi-v7a` or `arm64-v8a`
+export CROWDML__CPU_TYPE="<cpu type>"
+
+# Path to TensorFlow source
+# Ex: '/home/user/workspace/tensorflow'
+export CROWDML__PATH_TO_TF="<path to tensorflow>"
+```
+
+**NOTE**: `ANDROID_NDK` may also need to be set to point to the given ndk
+
 ## Add the SDK 
 
 Most dependencies are universal between Android projects and are included in the download, however if you wish to add more features, you may need to add additional Firebase dependencies. To do this, in your module Gradle file (in the app/build.gradle) file, add the apply plugin line at the bottom of the file to enable the Gradle plugin:

@@ -1,0 +1,13 @@
+<resources>
+    <string name="app_name">Crowd-ML</string>
+    <string name="init_name_TF" >init</string>
+    <string name="input_name_TF">x</string>
+    <string name="weights_in_TF">weights_in</string>
+    <string name="weights_op_TF">weights</string>
+    <string name="label_name_TF">y</string>
+    <string name="train_name_TF">train</string>
+    <string name="test_name_TF">test</string>
+    <string name="model_name_TF">mnist_mlp.pb</string>
+    <string name="user_settings_file">user_settings</string>
+    <string name="multiprocess_preferences_authority" translatable="false">osu.crowd_ml.multiprocesspreferences.PREFFERENCE_AUTHORITY</string>
+</resources>

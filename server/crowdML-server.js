@@ -10,7 +10,16 @@ start()
 function start() {
 	loadConfig();
 	validateConfig();
-	manage.test = require('./tests/' + config.testType);
+	if (config.testType !== "None") {
+		manage.test = require('./tests/' + config.testType);
+	} else {
+		manage.test = { 
+			accuracy: function accuracy(testWeight, constStr) {
+				console.log('   Unknown test results. Configuration set to testType: None');
+				console.log('');
+			}
+		};
+	}
 	setupFirebase();
 	setupListeners();
 }
@@ -98,10 +107,10 @@ function setupFirebase() {
 
 function validateConfig() {
 	// Update the Server README with changes also
-	var supportedDescentAlgs = ["constant", "adagrad", "simple", "sqrt", "rmsProp"];
+	var supportedDescentAlgs = ["constant", "adagrad", "simple", "sqrt", "rmsProp", "tf"];
 	var supportedTestTypes = ["None", "binaryTest", "multiTest", "NNTest"];
 	var supportedNoiseDistributions = ["NoNoise", "Gaussian", "Laplace"];
-	var supportedLossFunctions = ["LogReg", "Hinge", "Softmax", "SoftmaxNN"];
+	var supportedLossFunctions = ["LogReg", "Hinge", "Softmax", "SoftmaxNN", "tf"];
 
 	if (!supportedDescentAlgs.includes(config.descentAlg)) {
 		console.log(new Error(
@@ -247,7 +256,7 @@ function addToGradBatch(gradient) {
 			case 'constant':
 				learningRate = c;
 				for (i = 0; i < length; i++) {
-					newWeight[i] = currentWeight[i] - (learningRate * avgGradient[i]);
+					newWeight[i] = config.currentWeight[i] - (learningRate * avgGradient[i]);
 				}
 				break;
 			case 'simple':
@@ -275,6 +284,10 @@ function addToGradBatch(gradient) {
 					learningRate = c / Math.sqrt(config.rms[i] + eps);
 					newWeight[i] = config.currentWeight[i] - (learningRate * avgGradient[i]);
 				}
+				break;
+			case 'tf':
+				newWeight = config.currentWeight;
+				break;
 			default:
 				console.log(new Error("ERROR: Didn't execute a valid descentAlg"));
 		}

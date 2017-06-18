@@ -1,0 +1,94 @@
+<?xml version="1.0" encoding="utf-8"?>
+<android.support.design.widget.CoordinatorLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:fitsSystemWindows="true"
+    tools:context="osu.crowd_ml.crowd_ml.Login">
+
+    <android.support.design.widget.AppBarLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"/>
+
+
+    <RelativeLayout
+        android:orientation="vertical"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        app:layout_behavior="@string/appbar_scrolling_view_behavior"
+        tools:context="osu.crowd_ml.crowd_ml.Login"
+        tools:showIn="@layout/activity_login">
+
+
+        <ToggleButton
+            android:text="Toggle Service"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignParentBottom="true"
+            android:layout_centerHorizontal="true"
+            android:layout_marginBottom="60dp"
+            android:id="@+id/toggle_button"
+            android:visibility="visible"/>
+
+        <TextView
+            android:text="Service is Running."
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_above="@+id/toggle_button"
+            android:layout_centerHorizontal="true"
+            android:layout_marginBottom="28dp"
+            android:id="@+id/service_status"
+            android:visibility="visible"/>
+
+        <TextView
+            android:text="User sign in."
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:id="@+id/message"
+            android:layout_marginTop="38dp"
+            android:gravity="center"
+            android:textSize="18sp"
+            android:fontFamily="sans-serif-thin"
+            android:textStyle="bold"
+            android:textColor="@color/common_google_signin_btn_text_light"
+            android:textAppearance="@style/TextAppearance.AppCompat"
+            android:visibility="invisible"
+            android:layout_alignParentTop="true"
+            android:layout_centerHorizontal="true" />
+
+        <ProgressBar
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:id="@+id/progress"
+            android:indeterminate="true"
+            android:visibility="visible"
+            android:layout_below="@+id/message"
+            android:layout_centerHorizontal="true"
+            android:layout_marginTop="49dp" />
+
+        <TextView
+            android:text="Use this to toggle the wifi"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_below="@+id/progress"
+            android:layout_centerHorizontal="true"
+            android:layout_marginTop="55dp"
+            android:gravity="center"
+            android:id="@+id/batch_size_text"
+            android:visibility="visible"/>
+
+        <ToggleButton
+            android:text="Toggle Service"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:id="@+id/wifi_toggle"
+            android:visibility="visible"
+            android:layout_below="@+id/batch_size_text"
+            android:layout_alignStart="@+id/toggle_button"
+            android:layout_marginTop="35dp" />
+
+    </RelativeLayout>
+    <!--<include layout="@layout/content_setup" />-->
+
+</android.support.design.widget.CoordinatorLayout>

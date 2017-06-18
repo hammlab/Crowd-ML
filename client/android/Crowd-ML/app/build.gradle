@@ -1,16 +1,50 @@
 apply plugin: 'com.android.application'
 
+// Controls output directory in APK and CPU type for Bazel builds.
+def cpuType = System.getenv("CROWDML__CPU_TYPE")
+
+// Output directory in the local directory for packaging into the APK.
+def nativeOutDir = 'libs/' + cpuType
+
+// Path to TensorFlow source
+def pathToTF = System.getenv("CROWDML__PATH_TO_TF")
+
+// Default to building with Bazel and override with make if requested.
+def nativeBuildRule = 'buildNativeBazel'
+def inferenceLibPath = pathToTF + '/bazel-bin/tensorflow/contrib/android/libtensorflow_inference.so'
+
+// If building with Bazel, this is the location of the bazel binary.
+def bazelLocation = '/usr/local/bin/bazel'
+
+project.buildDir = 'gradleBuild'
+getProject().setBuildDir('gradleBuild')
+
+// import DownloadModels task
+project.ext.ASSET_DIR = projectDir.toString() + '/assets'
+project.ext.TMP_DIR   = project.buildDir.toString() + '/downloads'
+
+buildscript {
+    repositories {
+        jcenter()
+    }
+
+    dependencies {
+        classpath 'com.android.tools.build:gradle:2.3.2'
+    }
+}
+
 android {
     compileSdkVersion 23
-    buildToolsVersion '25.0.0'
+    buildToolsVersion "25.0.2"
 
     defaultConfig {
         applicationId "osu.crowd_ml"
-        minSdkVersion 19
+        minSdkVersion 21
         targetSdkVersion 23
         versionCode 1
         versionName "1.0"
     }
+
     buildTypes {
         release {
             minifyEnabled false
@@ -28,16 +62,80 @@ android {
         exclude 'META-INF/NOTICE.txt'
         exclude 'META-INF/LICENSE.txt'
     }
+
+    lintOptions {
+        abortOnError false
+    }
+
+    sourceSets {
+        main {
+            // TensorFlow Java API sources.
+            java {
+                srcDir pathToTF + '/tensorflow/java/src/main/java'
+                exclude '**/examples/**'
+            }
+
+            // Android TensorFlow wrappers, etc.
+            java {
+                srcDir pathToTF + '/tensorflow/contrib/android/java'
+            }
+
+            // Android demo app sources.
+            java {
+                srcDir 'src'
+            }
+
+            manifest.srcFile 'AndroidManifest.xml'
+            resources.srcDirs = ['src']
+            aidl.srcDirs = ['src']
+            renderscript.srcDirs = ['src']
+            res.srcDirs = ['res']
+            assets.srcDirs = [project.ext.ASSET_DIR]
+            jniLibs.srcDirs = ['libs']
+        }
+
+        debug.setRoot('build-types/debug')
+        release.setRoot('build-types/release')
+    }
 }
 
 dependencies {
     compile fileTree(dir: 'libs', include: ['*.jar'])
     testCompile 'junit:junit:4.12'
+    compile 'junit:junit:4.12'
     compile 'com.android.support:appcompat-v7:23.1.1'
     compile 'com.android.support:design:23.1.1'
     compile 'com.firebase:firebase-client-android:2.5.1+'
     compile 'com.google.firebase:firebase-auth:9.0.0'
     compile 'com.google.firebase:firebase-database:9.0.0'
+}
+
+task buildNativeBazel(type: Exec) {
+    workingDir pathToTF
+    commandLine bazelLocation, 'build', '-c', 'opt',  \
+         'tensorflow/examples/android:tensorflow_native_libs',  \
+         '--crosstool_top=//external:android/crosstool',  \
+         '--cpu=' + cpuType,  \
+         '--jobs=1', \
+         '--host_crosstool_top=@bazel_tools//tools/cpp:toolchain'
+}
+
+task copyNativeLibs(type: Copy) {
+    from inferenceLibPath
+    into nativeOutDir
+    duplicatesStrategy = 'include'
+    dependsOn nativeBuildRule
+    fileMode 0644
+}
+
+
+tasks.whenTaskAdded { task ->
+    if (task.name == 'assembleDebug') {
+        task.dependsOn 'copyNativeLibs'
+    }
+    if (task.name == 'assembleRelease') {
+        task.dependsOn 'copyNativeLibs'
+    }
 }
 
 apply plugin: 'com.google.gms.google-services'
