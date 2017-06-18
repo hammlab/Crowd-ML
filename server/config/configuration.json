@@ -18,10 +18,10 @@
     "noiseDistribution": "NoNoise",
     "noiseScale": 1,
 
-    "featureSource": "MNISTTrainImages.50.l2.dat",
+    "featureSource": "MNISTTrainImages.dat",
     "labelSource": "MNISTTrainLabels.dat",
 
-    "testFeatures": "MNISTTestImages.50.l2.dat",
+    "testFeatures": "MNISTTestImages.dat",
     "testLabels": "MNISTTestLabels.dat",
     "testN": 1000,
     "testType": "multiTest",

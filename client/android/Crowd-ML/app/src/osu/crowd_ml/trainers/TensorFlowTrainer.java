@@ -93,10 +93,10 @@ public class TensorFlowTrainer implements Trainer {
         if (first) {
             Trace.beginSection("init_vars");
             first = false;
+            trainingInterface.run(new String[]{}, new String[]{initName});
         }
         //trainingInterface.feed(initName, new float[0], 0);
 
-        trainingInterface.run(new String[]{}, new String[]{initName});
         Trace.endSection();
 
         for (int i = 0; i < numIterations; i++) {
@@ -130,7 +130,6 @@ public class TensorFlowTrainer implements Trainer {
             Trace.beginSection("fetch");
             trainingInterface.fetch(weightsOp, w);
             Trace.endSection();
-            //Log.d("weights", w[0] + "");
 
             Log.d("TFTrainingInterface", i + " iteration");
 
