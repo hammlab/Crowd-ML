@@ -27,6 +27,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 
+import osu.crowd_ml.R;
 import osu.crowd_ml.firebase.CrowdMLApplication;
 
 public class TensorFlowTrainer implements Trainer {

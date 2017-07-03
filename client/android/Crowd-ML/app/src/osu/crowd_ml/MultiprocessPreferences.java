@@ -15,6 +15,8 @@ import android.net.Uri;
 import android.os.Build;
 import android.preference.PreferenceManager;
 
+import osu.crowd_ml.R;
+
 public class MultiprocessPreferences extends ContentProvider {
 
     public static String PREFFERENCE_AUTHORITY;

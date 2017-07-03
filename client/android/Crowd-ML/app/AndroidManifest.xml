@@ -39,7 +39,7 @@
         </intent-filter>
         </service> -->
         <provider
-            android:name="osu.crowd_ml.MultiprocessPreferences"
+            android:name=".MultiprocessPreferences"
             android:authorities="@string/multiprocess_preferences_authority"
             android:exported="false" />
         <provider
