@@ -23,6 +23,7 @@ import android.util.Log;
 
 import org.tensorflow.contrib.android.TensorFlowTrainingInterface;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 
@@ -62,25 +63,16 @@ public class TensorFlowTrainer implements Trainer {
 
     @Override
     public double[] train(final int numIterations) {
-        int batchSize = params.getClientBatchSize();
-        int N = params.getN();
-        int K = params.getK();
-        int D = params.getD();
-        int testN = params.getTestN();
-        String initName  = CrowdMLApplication.getAppContext().getString(R.string.init_name_TF);
-        String trainName = CrowdMLApplication.getAppContext().getString(R.string.train_name_TF);
-        String testName  = CrowdMLApplication.getAppContext().getString(R.string.test_name_TF);
-        String samplesName  = CrowdMLApplication.getAppContext().getString(R.string.input_name_TF);
-        String labelsName = CrowdMLApplication.getAppContext().getString(R.string.label_name_TF);
-        String weightsIn = CrowdMLApplication.getAppContext().getString(R.string.weights_in_TF);
-        String weightsOp = CrowdMLApplication.getAppContext().getString(R.string.weights_op_TF);
+        int length = weights.length; // get the length of all the parameters
+        String initName  = params.getTfInitOp();
+        //String weightsIn = CrowdMLApplication.getAppContext().getString(R.string.weights_in_TF);
 
-        float[] w = new float[weights.length];
-        for (int j = 0; j < weights.length; j++) {
-            w[j] = (float)weights[j];
-        }
+//        float[] w = new float[weights.length];
+//        for (int j = 0; j < weights.length; j++) {
+//            w[j] = (float)weights[j];
+//        }
 
-        float[] all_params = new float[D * K + K];
+        float[] all_params = new float[length];
 
         // Initialize the training interface if this is the first round of training
         trainingInterface = getTrainingInterface();
@@ -90,91 +82,131 @@ public class TensorFlowTrainer implements Trainer {
 
         if (!init) {
             Trace.beginSection("init_vars");
-            Log.d("train", "initializing all vars");
             trainingInterface.run(new String[]{}, new String[]{initName});
-            Trace.endSection();
+            Trace.endSection(); // init vars
             init = true;
         }
 
         for (int i = 0; i < numIterations; i++) {
-
-            float[] trainFeatureBatch;
-            float[] trainLabelBatch;
-
-            int[] indices = new int[batchSize];
-            for (int j = 0; j < batchSize; j++){
-                indices[j] = new Random().nextInt(N);
-            }
-
-            // Get the training feature
-            trainFeatureBatch = TrainingDataIO.getInstance().getTFFeatureBatch(indices, params);
-            // Get the training label
-            trainLabelBatch = TrainingDataIO.getInstance().getTFLabelBatch(indices, params);
-
-            Log.d("train", "feeding samples, weights, and labels");
-
-            // Copy the training data into TensorFlow.
-            Trace.beginSection("feed");
-            trainingInterface.feed(samplesName, trainFeatureBatch, batchSize, D);
-            //trainingInterface.feed(weightsIn, w, D, K); // TODO: inject bias
-            trainingInterface.feed(labelsName, trainLabelBatch, batchSize, K);
-            Trace.endSection();
-
-            Log.d("train", "training step");
-
-            // Run a single step of training
-            Trace.beginSection("train");
-            trainingInterface.run(new String[]{weightsOp, "get_params"}, new String[]{trainName});
-            Trace.endSection();
-
-            Log.d("train", "fetching weights");
-
-            // Copy the weights Tensor into the weights array.
-            Trace.beginSection("fetch");
-            trainingInterface.fetch(weightsOp, w);
-            trainingInterface.fetch("get_params", all_params);
-            Log.d("all params", all_params[0] + "");
-            Trace.endSection();
-
-            Log.d("train", "iteration " + i);
+            Log.d("train", "iteration " + (i + 1));
+            runTrainingStep(all_params);
 
             if (i == 0 || (i+1) % stepsToTest == 0){
-                float[] testFeatures = TrainingDataIO.getInstance().getTFTestFeatures(testN, params);
-                float[] testLabels = TrainingDataIO.getInstance().getTFTestingLabels(testN, params);
-
-                Log.d("train", "feeding test samples and labels");
-
-                // Copy the test data into TensorFlow.
-                Trace.beginSection("feed");
-                trainingInterface.feed(samplesName, testFeatures, testN, D);
-                trainingInterface.feed(labelsName, testLabels, testN, K);
-                Trace.endSection();
-
-                Log.d("train", "test the accuracy");
-
-                // Run the inference call.
-                Trace.beginSection("test");
-                trainingInterface.run(new String[]{testName}, new String[]{});
-                Trace.endSection();
-
-                Log.d("train", "fetching the results");
-
-                // Copy the accuracy Tensor into the output array.
-                float[] outputs = new float[1];
-                Trace.beginSection("fetch");
-                trainingInterface.fetch(testName, outputs);
-                Trace.endSection();
-                Log.d("train", (outputs[0] * 100) + "%");
-
-                Trace.endSection(); // "beginTraining"
+                runTest();
             }
         }
 
-        double[] newWeights = new double[D * K]; // TODO: include the bias
-        for (int j = 0; j < D * K; j++){
-            newWeights[j] = (double)w[j];
+        Trace.endSection(); // "beginTraining"
+
+        double[] newWeights = new double[length]; // TODO: include the bias
+        for (int j = 0; j < length; j++){
+            newWeights[j] = (double)all_params[j];
         }
         return newWeights;
+    }
+
+    private void runTest() {
+        int K = params.getK();
+        int D = params.getD();
+        int testN = params.getTestN();
+        String testName  = params.getTfTestOp();
+        String samplesName  = params.getTfFeaturesName();
+        String labelsName = params.getTfLabelsName();
+        float[] testFeatures = TrainingDataIO.getInstance().getTFTestFeatures(testN, params);
+        float[] testLabels = TrainingDataIO.getInstance().getTFTestingLabels(testN, params);
+
+        Log.d("train", "feeding test samples and labels");
+
+        // Copy the test data into TensorFlow.
+        Trace.beginSection("feed");
+        trainingInterface.feed(samplesName, testFeatures, testN, D);
+        trainingInterface.feed(labelsName, testLabels, testN, K);
+        Trace.endSection(); // feed
+
+        // Run the inference call.
+        Trace.beginSection("test");
+        trainingInterface.run(new String[]{testName}, new String[]{});
+        Trace.endSection(); // test
+
+        // Copy the accuracy Tensor into the output array.
+        float[] outputs = new float[1];
+        Trace.beginSection("fetch");
+        trainingInterface.fetch(testName, outputs);
+        Trace.endSection(); // fetch
+        Log.d("train", (outputs[0] * 100) + "%");
+    }
+
+    private void runTrainingStep(float[] all_params) {
+        int batchSize = params.getClientBatchSize();
+        int N = params.getN();
+        int K = params.getK();
+        int D = params.getD();
+        String trainName = params.getTfTrainOp();
+        String samplesName  = params.getTfFeaturesName();
+        String labelsName = params.getTfLabelsName();
+        List<String> trainableParameters = params.getTfParameters();
+        float[] trainFeatureBatch;
+        float[] trainLabelBatch;
+
+        int[] indices = new int[batchSize];
+        for (int j = 0; j < batchSize; j++){
+            indices[j] = new Random().nextInt(N);
+        }
+
+        // Get the training feature
+        trainFeatureBatch = TrainingDataIO.getInstance().getTFFeatureBatch(indices, params);
+        // Get the training label
+        trainLabelBatch = TrainingDataIO.getInstance().getTFLabelBatch(indices, params);
+
+        Log.d("train", "feeding samples, weights, and labels");
+
+        // Copy the training data into TensorFlow.
+        Trace.beginSection("feed");
+        trainingInterface.feed(samplesName, trainFeatureBatch, batchSize, D);
+        //trainingInterface.feed(weightsIn, w, D, K); // TODO: inject bias
+        trainingInterface.feed(labelsName, trainLabelBatch, batchSize, K);
+        Trace.endSection();
+
+        Log.d("train", "training step");
+
+        // Run a single step of training
+        Trace.beginSection("train");
+        trainingInterface.run(trainableParameters.toArray(new String[0]), new String[]{trainName});
+        Trace.endSection();
+
+        Log.d("train", "fetching weights");
+
+        Trace.beginSection("fetch");
+        // Copy all trainable Tensor's into a 1-D Java array
+        getTrainableParameters(trainableParameters, all_params);
+        Trace.endSection();
+    }
+
+    private void getTrainableParameters(List<String> trainableParameters, float[] all_params) {
+        int offset = 0;
+        // Copy the weights Tensor into the weights array.
+        for (String param : trainableParameters) {
+            // Fetch the Tensor's value
+            float[] temp = getTensorValue(param);
+            concatParams(all_params, temp, offset);
+            offset += temp.length;
+        }
+    }
+
+    private void concatParams(float[] all_params, float[] temp, int offset) {
+        for (int i = 0; i < temp.length; i++){
+            all_params[offset + i] = temp[i];
+        }
+    }
+
+    private float[] getTensorValue(String param) {
+        // Get the length of this Tensor
+        int length = trainingInterface.getNumElements(param);
+        // Create a temporary array to hold the Tensor's value
+        float[] temp = new float[length];
+        // Fetch the Tensor's value
+        trainingInterface.fetch(param, temp);
+        return temp;
     }
 
     @Override

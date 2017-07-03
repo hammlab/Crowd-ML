@@ -62,16 +62,16 @@ function loadConfig() {
 
 	var D = config.D;
 	var K = config.K;
+	var nh = config.nh;
 	config.length = D;
 	if (K > 2) {
 		config.length = D * K;
 	}
 	if (config.lossFunction == 'SoftmaxNN') {
 		config.length = D * nh + nh + nh * nh + nh + nh * K + K;
+	} else if (config.lossFunction == 'TensorFlow') {
+		config.length = D * nh + nh + nh * K + K; // single layer network
 	}
-	// if (config.lossFunction == 'TensorFlow') {
-	// 	config.length = D * K + K;
-	// }
 	config.adaG = new Array(config.length);
 	config.rms = new Array(config.length);
 	config.initWeight = new Array(config.length);
@@ -104,7 +104,7 @@ function validateConfig() {
 	var supportedDescentAlgs = ["constant", "adagrad", "simple", "sqrt", "rmsProp"];
 	var supportedTestTypes = ["None", "binaryTest", "multiTest", "NNTest"];
 	var supportedNoiseDistributions = ["NoNoise", "Gaussian", "Laplace"];
-	var supportedLossFunctions = ["LogReg", "Hinge", "Softmax", "SoftmaxNN"];
+	var supportedLossFunctions = ["LogReg", "Hinge", "Softmax", "SoftmaxNN", "TensorFlow"];
 
 	if (!supportedDescentAlgs.includes(config.descentAlg)) {
 		console.log(new Error(
@@ -174,6 +174,14 @@ function setupListeners() {
 		// Data
 		labelSource: config.labelSource,
 		featureSource: config.featureSource,
+
+		// TensorFlow ops
+		tfFeaturesName: config.tfFeaturesName,
+    tfLabelsName: config.tfLabelsName,
+    tfTrainOp: config.tfTrainOp,
+    tfInitOp: config.tfInitOp,
+    tfTestOp: config.tfTestOp,
+    tfParameters: config.tfParameters,
 	});
 	console.log("[ Init: parameters set        ]");
 	console.log("[ Init: complete              ]");

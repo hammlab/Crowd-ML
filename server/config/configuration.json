@@ -1,6 +1,6 @@
 {
     "descentAlg": "adagrad",
-    "lossFunction": "Softmax",
+    "lossFunction": "TensorFlow",
     "paramIter": 1,
     "maxIter": 0,
     "D": 784,
@@ -25,5 +25,12 @@
     "testLabels": "MNISTTestLabels.dat",
     "testN": 1000,
     "testType": "multiTest",
-    "testFrequency": 0
+    "testFrequency": 0,
+
+    "tfFeaturesName": "x",
+    "tfLabelsName": "y",
+    "tfTrainOp": "train",
+    "tfInitOp": "init",
+    "tfTestOp": "test",
+    "tfParameters": ["w1", "b1", "w2", "b2"]
 }

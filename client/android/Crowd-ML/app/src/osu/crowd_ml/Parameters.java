@@ -17,6 +17,8 @@ See the License for the specific language governing permissions and
 limitations under the License
 */
 
+import java.util.List;
+
 import osu.crowd_ml.loss_functions.Hinge;
 import osu.crowd_ml.loss_functions.LogReg;
 import osu.crowd_ml.loss_functions.LossFunction;
@@ -47,6 +49,14 @@ public class Parameters {
     private double eps;
     private String descentAlg;
     private int testN;
+
+    // TensorFlow string params
+    private String tfFeaturesName;
+    private String tfLabelsName;
+    private String tfTrainOp;
+    private String tfTestOp;
+    private String tfInitOp;
+    private List<String> tfParameters;
 
 
     public Parameters() {
@@ -183,5 +193,54 @@ public class Parameters {
     public void setMaxIter(int max){maxIter = max;}
 
     public int getTestN() {return testN;}
+
     public void setTestN(int testN) {this.testN = testN;}
+
+    public String getTfFeaturesName() {
+        return tfFeaturesName;
+    }
+
+    public void setTfFeaturesName(String tfFeaturesName) {
+        this.tfFeaturesName = tfFeaturesName;
+    }
+
+    public String getTfLabelsName() {
+        return tfLabelsName;
+    }
+
+    public void setTfLabelsName(String tfLabelsName) {
+        this.tfLabelsName = tfLabelsName;
+    }
+
+    public String getTfTrainOp() {
+        return tfTrainOp;
+    }
+
+    public void setTfTrainOp(String tfTrainOp) {
+        this.tfTrainOp = tfTrainOp;
+    }
+
+    public String getTfTestOp() {
+        return tfTestOp;
+    }
+
+    public void setTfTestOp(String tfTestOp) {
+        this.tfTestOp = tfTestOp;
+    }
+
+    public String getTfInitOp() {
+        return tfInitOp;
+    }
+
+    public void setTfInitOp(String tfInitOp) {
+        this.tfInitOp = tfInitOp;
+    }
+
+    public List<String> getTfParameters() {
+        return tfParameters;
+    }
+
+    public void setTfParameters(List<String> tfParameters) {
+        this.tfParameters = tfParameters;
+    }
 }
